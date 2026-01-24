@@ -1,5 +1,3 @@
 package frc.robot.subsystems.hopper;
 
-public class HopperIOSim {
-    
-}
+public class HopperIOSim {}
