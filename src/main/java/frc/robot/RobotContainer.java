@@ -8,16 +8,64 @@ import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+
+import static frc.robot.Constants.GeneralConstants.*;
+import static frc.robot.Constants.VisionConstants.APTAG_CAMERA_NAMES;
+
+import dev.doglog.DogLog;
+import dev.doglog.DogLogOptions;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.Constants.OperatorConstants;
+import frc.robot.Constants.SwerveConstants;
+import frc.robot.Constants.VisionConstants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Superstructure;
+import frc.robot.subsystems.climber.ClimberSubsystem;
+import frc.robot.subsystems.hopper.HopperSubsystem;
+import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.vision.VisionIOPhotonVision;
+import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
+import frc.robot.subsystems.vision.VisionSubsystem;
 
 public class RobotContainer {
+
+  /* Robot Subsystems */
+  public final CommandSwerveDrivetrain swerveSubsystem;
+  public final IntakeSubsystem intakeSubsystem;
+  public final HopperSubsystem hopperSubsystem;
+  public final ShooterSubsystem shooterSubsystem;
+  public final ClimberSubsystem climberSubsystem;
+  public final VisionSubsystem visionSubsystem;
+  public final Superstructure superstructureSubsystem;  
+
+  /* Driver Controllers */
+  private final CommandXboxController driverController;
+  private final CommandXboxController operatorController;
+
+  /* Swerve Commands */
+  private Command defaultDriveCommand;
+  private Command driveAimedAtHubCommand;
+  private Command swerveBrakeCommand;
+  private Command seedFieldCentralCommand;
+
+  /* Intake Commands */
+  private Command intakeCommand;
+
+  /* Shooter Commands */
+  private Command shootCommand;
+
+  /* Climber Commands */
+  private Command deployClimberCommand;
+  private Command climbCommand;
+
   private double MaxSpeed =
       1.0
           * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond)
@@ -38,11 +86,131 @@ public class RobotContainer {
 
   private final Telemetry logger = new Telemetry(MaxSpeed);
 
-  private final CommandXboxController joystick = new CommandXboxController(0);
+  private final CommandXboxController joystick = new CommandXboxController(OperatorConstants.DRIVER_PORT);
 
   public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
   public RobotContainer() {
+
+    /* Setup DogLog */
+    DogLog.setOptions(new DogLogOptions().withCaptureDs(true));
+    DogLog.setPdh(new PowerDistribution());
+
+    /* Initialize Joysticks */
+    driverController = new CommandXboxController(OperatorConstants.DRIVER_PORT);
+    operatorController = new CommandXboxController(OperatorConstants.OPERATOR_PORT);
+
+    /* Initialize Subsystems */
+    swerveSubsystem =
+        TunerConstants.createDrivetrain(
+            250, SwerveConstants.ODOMETRY_STD, VisionConstants.DEFAULT_TAG_STDDEV);
+
+    // Change initialization based on the state of the robot //
+    switch (CURRENT_MODE) {
+      case COMP:
+        intakeSubsystem = new IntakeSubsystem();
+        hopperSubsystem = new HopperSubsystem();
+        shooterSubsystem = new ShooterSubsystem();
+        climberSubsystem = new ClimberSubsystem();
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[0],
+                    VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[1],
+                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    swerveSubsystem::getState));
+        break;
+      case SIM:
+        intakeSubsystem = new IntakeSubsystem();
+        hopperSubsystem = new HopperSubsystem();
+        shooterSubsystem = new ShooterSubsystem();
+        climberSubsystem = new ClimberSubsystem();
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                // Auto-Align Cameras //
+                new VisionIOPhotonVisionSim(
+                    APTAG_CAMERA_NAMES[0],
+                    VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVisionSim(
+                    APTAG_CAMERA_NAMES[1],
+                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    swerveSubsystem::getState)
+                // // Apriltag Pose-Estimation Cameras //
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[2],
+                //     VisionConstants.APTAG_POSE_EST_CAFL_POS,
+                //     swerveSubsystem::getState),
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[3],
+                //     VisionConstants.APTAG_POSE_EST_CAFR_POS,
+                //     swerveSubsystem::getState),
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[4],
+                //     VisionConstants.APTAG_POSE_EST_CABL_POS,
+                //     swerveSubsystem::getState),
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[5],
+                //     VisionConstants.APTAG_POSE_EST_CABR_POS,
+                //     swerveSubsystem::getState)
+                );
+        break;
+      case TEST:
+        intakeSubsystem = new IntakeSubsystem();
+        hopperSubsystem = new HopperSubsystem();
+        shooterSubsystem = new ShooterSubsystem();
+        climberSubsystem = new ClimberSubsystem();
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[0],
+                    VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[1],
+                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    swerveSubsystem::getState));
+        break;
+      default: // Default should be in comp mode //
+        intakeSubsystem = new IntakeSubsystem();
+        hopperSubsystem = new HopperSubsystem();
+        shooterSubsystem = new ShooterSubsystem();
+        climberSubsystem = new ClimberSubsystem();
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[0],
+                    VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[1],
+                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    swerveSubsystem::getState));
+        break;
+    }
+
+    // Create the superstructure subsystem //
+    superstructureSubsystem =
+        new Superstructure(
+            swerveSubsystem,
+            intakeSubsystem,
+            hopperSubsystem,
+            shooterSubsystem,
+            climberSubsystem,
+            visionSubsystem,
+            this);
+
     configureBindings();
   }
 
