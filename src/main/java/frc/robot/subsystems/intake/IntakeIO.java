@@ -51,4 +51,6 @@ public interface IntakeIO {
     @Getter @Setter private double intakeArmMotorTemperature;
     @Getter @Setter private double intakeArmMotorSetpoint;
   }
+
+  default void updateInputs(IntakeIOInputs inputs) {}
 }

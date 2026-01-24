@@ -31,4 +31,6 @@ public interface ClimberIO {
     @Getter @Setter private double climberMotorSetpoint;
     @Getter @Setter private double climberMotorVelocity;
   }
+
+  default void updateInputs(ClimberIOInputs inputs) {}
 }

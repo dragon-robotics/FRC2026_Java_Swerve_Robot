@@ -29,4 +29,6 @@ public interface ShooterIO {
     @Getter @Setter private double shooterMotorTemperature;
     @Getter @Setter private double shooterMotorVelocity;
   }
+
+  default void updateInputs(ShooterIOInputs inputs) {}
 }

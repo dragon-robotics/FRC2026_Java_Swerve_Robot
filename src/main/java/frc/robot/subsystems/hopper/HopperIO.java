@@ -51,4 +51,6 @@ public interface HopperIO {
     @Getter @Setter private double hopperExtensionMotorTemperature;
     @Getter @Setter private double hopperExtensionMotorSetpoint;
   }
+
+  default void updateInputs(HopperIOInputs inputs) {}
 }
