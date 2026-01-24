@@ -222,20 +222,83 @@ public class Constants {
     public static double ANGULAR_STDDEV_MEGATAG2_ANGLE_FACTOR = Double.POSITIVE_INFINITY;
     ; // More stable than full 3D
     // solve
+  }
 
-    // Vision range and aim PID constants //
-    public static final double RANGE_P = 2;
-    public static final double RANGE_I = 0;
-    public static final double RANGE_D = 0;
-    public static final double RANGE_TOLERANCE = 0.02;
+  public static class SwerveConstants {
+    // General constants for swerve drive //
+    public static final double STEER_KP = 100;
+    public static final double STEER_KI = 0;
+    public static final double STEER_KD = 0.5;
+    public static final double STEER_KS = 0.1;
+    public static final double STEER_KV = 1.59;
+    public static final double STEER_KA = 0;
 
-    public static final double AIM_P = 2;
-    public static final double AIM_I = 0;
-    public static final double AIM_D = 0;
-    public static final double AIM_TOLERANCE = 0.02;
+    public static final double DRIVE_KP = 0.1;
+    public static final double DRIVE_KI = 0;
+    public static final double DRIVE_KD = 0;
+    public static final double DRIVE_KS = 0;
+    public static final double DRIVE_KV = 0.124;
+    public static final double DRIVE_KA = 0;
 
-    public static final double DESIRED_RANGE = 0.25;
-    public static final double DESIRED_YAW_RIGHT = 0.03;
-    public static final double DESIRED_YAW_LEFT = -0.03;
+    public static final double HEADING_KP = 5;
+    public static final double HEADING_KI = 0;
+    public static final double HEADING_KD = 0.5;
+    public static final double HEADING_TOLERANCE = 0.01;
+
+    public static final double ANGLE_GEAR_RATIO = 12.8;
+    public static final double DRIVE_GEAR_RATIO = 6.12;
+    public static final double PULSE_PER_ROTATION = 1;
+    public static final double WHEEL_DIAMETER_INCHES = 4.0;
+    public static final double WHEEL_DIAMETER_METERS = Units.inchesToMeters(WHEEL_DIAMETER_INCHES);
+    public static final double MAX_SPEED_FEET_PER_SECOND = 18.2; // 18.2 feet per second
+    public static final double MAX_SPEED_METERS_PER_SECOND =
+        Units.feetToMeters(MAX_SPEED_FEET_PER_SECOND); // 18.2 feet
+    // per
+    // second
+
+    public static final double ROBOT_MASS = (148 - 20.3) * 0.453592;
+    public static final double CHASSIS_MASS = ROBOT_MASS;
+    public static final Translation3d CHASSIS_CG = new Translation3d(0, 0, Units.inchesToMeters(8));
+    public static final double LOOP_TIME = 0.13;
+
+    // Hold time on motor brakes when disabled
+    public static final double WHEEL_LOCK_TIME = 10;
+
+    public static final double SWERVE_DEADBAND = 0.1;
+
+    // SWERVE MODULE ODOMETRY STANDARD DEVIATIONS //
+    // public static final Matrix<N3, N1> ODOMETRY_STD = VecBuilder.fill(0.1, 0.1,
+    // Units.degreesToRadians(5));
+    public static final Matrix<N3, N1> ODOMETRY_STD =
+        VecBuilder.fill(0.2, 0.2, Units.degreesToRadians(3));
+  }  
+
+  public static class OperatorConstants {
+    public static final int DRIVER_PORT = 0;
+    public static final int OPERATOR_PORT = 1;
+    public static final int OPERATOR_BUTTON_PORT = 2;
+    public static final int TEST_PORT = 3;
+  }
+
+  public static class JoystickConstants {
+    // Joystick Analog Axis/Stick //
+    public static final int STICK_LEFT_X = 0;
+    public static final int STICK_LEFT_Y = 1;
+    public static final int TRIGGER_LEFT = 2;
+    public static final int TRIGGER_RIGHT = 3;
+    public static final int STICK_RIGHT_X = 4;
+    public static final int STICK_RIGHT_Y = 5;
+
+    // Joystick Buttons //
+    public static final int BTN_A = 1;
+    public static final int BTN_B = 2;
+    public static final int BTN_X = 3;
+    public static final int BTN_Y = 4;
+    public static final int BUMPER_LEFT = 5;
+    public static final int BUMPER_RIGHT = 6;
+    public static final int BTN_BACK = 7;
+    public static final int BTN_START = 8;
+    public static final int BTN_STICK_LEFT = 9;
+    public static final int BTN_STICK_RIGHT = 10;
   }
 }
