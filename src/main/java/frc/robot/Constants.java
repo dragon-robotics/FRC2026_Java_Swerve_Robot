@@ -78,8 +78,8 @@ public class Constants {
 
   public static class VisionConstants {
     public static final String[] APTAG_CAMERA_NAMES = {
-      "AprilTagAlignLeftCamera",
-      "AprilTagAlignRightCamera",
+      "LEFT_CAM",
+      "RIGHT_CAM",
       "AprilTagPoseEstCameraFL",
       "AprilTagPoseEstCameraFR",
       "AprilTagPoseEstCameraBL",
@@ -93,7 +93,7 @@ public class Constants {
             new Translation3d(
                 Units.inchesToMeters(9.249),
                 Units.inchesToMeters(4.910),
-                Units.inchesToMeters(8.3885)),
+                Units.inchesToMeters(7.3885)),
             new Rotation3d(0, Units.degreesToRadians(-20), 0));
 
     // Main Apriltag alignment cam mounted facing forward, half a meter forward of
@@ -103,7 +103,7 @@ public class Constants {
             new Translation3d(
                 Units.inchesToMeters(9.249),
                 Units.inchesToMeters(-4.910),
-                Units.inchesToMeters(8.3885)),
+                Units.inchesToMeters(7.3885)),
             new Rotation3d(0, Units.degreesToRadians(-20), 0));
 
     // Front-Left Camera: Mounted at front-left corner, pointing outward at 30
@@ -271,7 +271,7 @@ public class Constants {
     // Units.degreesToRadians(5));
     public static final Matrix<N3, N1> ODOMETRY_STD =
         VecBuilder.fill(0.2, 0.2, Units.degreesToRadians(3));
-  }  
+  }
 
   public static class OperatorConstants {
     public static final int DRIVER_PORT = 0;
