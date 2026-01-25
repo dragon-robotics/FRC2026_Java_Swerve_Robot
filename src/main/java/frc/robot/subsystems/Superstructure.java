@@ -4,13 +4,8 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
-import java.util.Optional;
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -28,6 +23,9 @@ import frc.robot.subsystems.hopper.HopperSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem;
+import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 public class Superstructure extends SubsystemBase {
 
@@ -49,7 +47,7 @@ public class Superstructure extends SubsystemBase {
 
   /* Used for path following */
   private final SwerveRequest.ApplyFieldSpeeds applyFieldSpeeds;
-  private final SwerveRequest.ApplyRobotSpeeds applyRobotSpeeds;  
+  private final SwerveRequest.ApplyRobotSpeeds applyRobotSpeeds;
 
   private final double maxSpeed;
   private final double maxAngularRate;
@@ -77,7 +75,6 @@ public class Superstructure extends SubsystemBase {
     maxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // Max speed at 12 volts
     maxAngularRate =
         RotationsPerSecond.of(1).in(RadiansPerSecond); // 1 rotation per second max angular velocity
-
 
     /* Instantiate default field centric drive (no need to maintain heading) */
     drive =
@@ -122,14 +119,14 @@ public class Superstructure extends SubsystemBase {
     applyRobotSpeeds =
         new SwerveRequest.ApplyRobotSpeeds()
             .withDesaturateWheelSpeeds(true)
-            .withDriveRequestType(DriveRequestType.Velocity); 
-            
+            .withDriveRequestType(DriveRequestType.Velocity);
+
     /* Instantiate current heading as empty */
     currentHeading = Optional.empty(); // Keeps track of current heading
 
     /* Instantiate the rotation last triggered as 0 */
     rotationLastTriggered = 0.0;
-    
+
     /* Instantiate the logger for telemetry */
     logger = new Telemetry(maxSpeed);
 
