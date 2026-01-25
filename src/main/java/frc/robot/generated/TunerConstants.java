@@ -59,16 +59,52 @@ public class TunerConstants {
 
   // Initial configs for the drive and steer motors and the azimuth encoder; these cannot be null.
   // Some configs will be overwritten; check the `with*InitialConfigs()` API documentation.
-  private static final TalonFXConfiguration driveInitialConfigs = new TalonFXConfiguration();
+  private static final TalonFXConfiguration driveInitialConfigs =
+      new TalonFXConfiguration()
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(Amps.of(70))
+                  .withSupplyCurrentLimitEnable(true)
+                  .withSupplyCurrentLowerLimit(Amps.of(40))
+                  .withSupplyCurrentLowerTime(Seconds.of(1))
+                  .withSupplyCurrentLimit(Amps.of(50)))
+          .withVoltage(
+              new VoltageConfigs()
+                  .withPeakForwardVoltage(Volts.of(12))
+                  .withPeakReverseVoltage(Volts.of(-12)))
+          .withOpenLoopRamps(
+              new OpenLoopRampsConfigs()
+                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.25))
+                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.25))
+                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.25)))
+          .withClosedLoopRamps(
+              new ClosedLoopRampsConfigs()
+                  .withDutyCycleClosedLoopRampPeriod(Seconds.of(0.1))
+                  .withTorqueClosedLoopRampPeriod(Seconds.of(0.1))
+                  .withVoltageClosedLoopRampPeriod(Seconds.of(0.1)))
+          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
   private static final TalonFXConfiguration steerInitialConfigs =
       new TalonFXConfiguration()
           .withCurrentLimits(
               new CurrentLimitsConfigs()
-                  // Swerve azimuth does not require much torque output, so we can set a relatively
-                  // low
-                  // stator current limit to help avoid brownouts without impacting performance.
-                  .withStatorCurrentLimit(Amps.of(60))
-                  .withStatorCurrentLimitEnable(true));
+                  // Swerve azimuth does not require much torque output, so we can set a
+                  // relatively low stator current limit to help avoid brownouts without
+                  // impacting performance.
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(Amps.of(40))
+                  .withSupplyCurrentLimitEnable(true)
+                  .withSupplyCurrentLimit(Amps.of(20)))
+          .withVoltage(
+              new VoltageConfigs()
+                  .withPeakForwardVoltage(Volts.of(12))
+                  .withPeakReverseVoltage(Volts.of(-12)))
+          .withOpenLoopRamps(
+              new OpenLoopRampsConfigs()
+                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.25))
+                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.25))
+                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.25)))
+          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake));
   private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
   // Configs for the Pigeon 2; leave this null to skip applying Pigeon 2 configs
   private static final Pigeon2Configuration pigeonConfigs = null;
@@ -265,7 +301,7 @@ public class TunerConstants {
         FrontRight,
         BackLeft,
         BackRight);
-  }  
+  }
 
   /** Swerve Drive class utilizing CTR Electronics' Phoenix 6 API with the selected device types. */
   public static class TunerSwerveDrivetrain extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
