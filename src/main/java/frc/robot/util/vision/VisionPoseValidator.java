@@ -30,13 +30,13 @@ public class VisionPoseValidator {
           "Ambiguity: %.3f > %.3f".formatted(observation.ambiguity(), MAX_AMBIGUITY));
     }
 
-    // Check Z coordinate
-    if (Math.abs(pose.getZ()) > MAX_Z_ERROR) {
-      return new RejectedPose(
-          observation,
-          RejectionReason.INVALID_Z_COORDINATE,
-          "Z: %.3f > %.3f".formatted(Math.abs(pose.getZ()), MAX_Z_ERROR));
-    }
+    // // Check Z coordinate
+    // if (Math.abs(pose.getZ()) > MAX_Z_ERROR) {
+    //   return new RejectedPose(
+    //       observation,
+    //       RejectionReason.INVALID_Z_COORDINATE,
+    //       "Z: %.3f > %.3f".formatted(Math.abs(pose.getZ()), MAX_Z_ERROR));
+    // }
 
     // Check field boundaries
     var pose2d = pose.toPose2d();
