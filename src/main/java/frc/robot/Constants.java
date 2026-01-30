@@ -101,7 +101,7 @@ public class Constants {
     public static final Transform3d APTAG_ALIGN_RIGHT_CAM_POS =
         new Transform3d(
             new Translation3d(
-                Units.inchesToMeters(9.249),
+                Units.inchesToMeters(9.749),
                 Units.inchesToMeters(-4.910),
                 Units.inchesToMeters(7.3885)),
             new Rotation3d(0, Units.degreesToRadians(-20), 0));
@@ -270,7 +270,7 @@ public class Constants {
     // public static final Matrix<N3, N1> ODOMETRY_STD = VecBuilder.fill(0.1, 0.1,
     // Units.degreesToRadians(5));
     public static final Matrix<N3, N1> ODOMETRY_STD =
-        VecBuilder.fill(0.2, 0.2, Units.degreesToRadians(3));
+        VecBuilder.fill(Units.inchesToMeters(0.5), Units.inchesToMeters(0.5), Units.degreesToRadians(3));
   }
 
   public static class OperatorConstants {
