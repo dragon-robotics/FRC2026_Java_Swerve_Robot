@@ -82,7 +82,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     // Initialize logging values
     // LinkedList<Pose3d> allTagPoses = new LinkedList<>();
-    LinkedList<Pose3d> allRobotPoses = new LinkedList<>();
+    // LinkedList<Pose3d> allRobotPoses = new LinkedList<>();
     LinkedList<Pose3d> allRobotPosesAccepted = new LinkedList<>();
     // LinkedList<Pose3d> allRobotPosesRejected = new LinkedList<>();
 
@@ -94,13 +94,13 @@ public class VisionSubsystem extends SubsystemBase {
 
       // Efficient collection operations
       // allTagPoses.addAll(result.tagPoses());
-      allRobotPoses.addAll(result.robotPoses());
+      // allRobotPoses.addAll(result.robotPoses());
       allRobotPosesAccepted.addAll(result.acceptedPoses());
       // allRobotPosesRejected.addAll(result.rejectedPoses());
     }
 
     // DogLog.log("Vision/Summary/TagPoses", allTagPoses.toArray(Pose3d[]::new));
-    DogLog.log("Vision/Summary/RobotPoses", allRobotPoses.toArray(Pose3d[]::new));
+    // DogLog.log("Vision/Summary/RobotPoses", allRobotPoses.toArray(Pose3d[]::new));
     DogLog.log("Vision/Summary/RobotPosesAccepted", allRobotPosesAccepted.toArray(Pose3d[]::new));
     // DogLog.log("Vision/Summary/RobotPosesRejected",
     // allRobotPosesRejected.toArray(Pose3d[]::new));
