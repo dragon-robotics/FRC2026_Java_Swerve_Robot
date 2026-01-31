@@ -17,6 +17,8 @@ import edu.wpi.first.wpilibj.RobotBase;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import com.ctre.phoenix6.signals.NeutralModeValue;
+
 public class Constants {
   /** General robot constants */
   public static final class GeneralConstants {
@@ -254,9 +256,9 @@ public class Constants {
     public static final double DRIVE_KV = 0.124;
     public static final double DRIVE_KA = 0;
 
-    public static final double HEADING_KP = 7;
+    public static final double HEADING_KP = 10;
     public static final double HEADING_KI = 0;
-    public static final double HEADING_KD = 0.5;
+    public static final double HEADING_KD = 0.1;
     public static final double HEADING_TOLERANCE = 0.01;
 
     public static final double ANGLE_GEAR_RATIO = 12.8;
@@ -286,6 +288,38 @@ public class Constants {
     public static final Matrix<N3, N1> ODOMETRY_STD =
         VecBuilder.fill(
             Units.inchesToMeters(0.5), Units.inchesToMeters(0.5), Units.degreesToRadians(3));
+  }
+
+  public static class IntakeSubsystemConstants {
+
+    public static final int INTAKE_ROLLER_MOTOR_ID = 1;
+    public static final int INTAKE_ARM_MOTOR_ID = 2;
+
+    /* Intake roller motor properties */
+    public static final double INTAKE_ROLLER_MAX_VOLTAGE = 10.0;
+    public static final double INTAKE_ROLLER_SUPPLY_CURRENT_LIMIT = 40.0; // Amps
+    public static final double INTAKE_ROLLER_STATOR_CURRENT_LIMIT = 20.0; // Amps
+    public static final double INTAKE_ROLLER_RAMP_RATE = 0.1; // Seconds from 0 to full
+    public static final NeutralModeValue INTAKE_ROLLER_NEUTRAL_MODE = NeutralModeValue.Coast;
+
+    /* Desired controls for intake roller */
+    public static final double INTAKE_ROLLER_DUTY_CYCLE = 0.5;
+    public static final double INTAKE_ROLLER_VOLTAGE = 5.0;
+    public static final double INTAKE_ROLLER_RPM = 4000.0;
+    public static final double OUTTAKE_ROLLER_DUTY_CYCLE = -0.5;
+    public static final double OUTTAKE_ROLLER_VOLTAGE = -5.0;
+    public static final double OUTTAKE_ROLLER_RPM = -4000.0;
+
+    /* Intake arm motor properties */
+    public static final double INTAKE_ARM_MAX_VOLTAGE = 10.0;
+    public static final double INTAKE_ARM_SUPPLY_CURRENT_LIMIT = 30.0; // Amps
+    public static final double INTAKE_ARM_STATOR_CURRENT_LIMIT = 15.0; // Amps
+    public static final double INTAKE_ARM_RAMP_RATE = 0.2; // Seconds from 0 to full
+    public static final NeutralModeValue INTAKE_ARM_NEUTRAL_MODE = NeutralModeValue.Brake;
+
+    /* Desired controls for intake arm */
+    public static final double INTAKE_MOTOR_STOWED_POSITION = 0.0; // Degrees
+    public static final double INTAKE_MOTOR_DEPLOYED_POSITION = 90.0; // Degrees
   }
 
   public static class OperatorConstants {
