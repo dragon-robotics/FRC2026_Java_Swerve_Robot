@@ -7,13 +7,17 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.RobotContainer;
 import frc.robot.Telemetry;
@@ -220,6 +224,41 @@ public class Superstructure extends SubsystemBase {
               .withVelocityY(strafe)
               .withTargetDirection(targetDirection));
     }
+  }
+
+  public Command driveAimedTowardsHubCmd(DoubleSupplier translationSup, DoubleSupplier strafeSup) {
+    return new RunCommand(
+        () -> {
+          double translation = (translationSup.getAsDouble() * maxSpeed) / 4;
+          double strafe = (strafeSup.getAsDouble() * maxSpeed) / 4;
+
+          // Grab the robot's current alliance
+          Optional<Alliance> alliance = DriverStation.getAlliance();
+
+          // Choose which hub to aim to depending on alliance color
+          Translation2d hubToAimTowards =
+              alliance.isPresent() && (alliance.get() == Alliance.Red)
+                  ? FieldConstants.Hub.RED_HUB_CENTER_POSE
+                  : FieldConstants.Hub.BLUE_HUB_CENTER_POSE;
+
+          // Current robot translation (x,y) in field coordinates
+          var robotTranslation = swerve.getState().Pose.getTranslation();
+
+          // Vector from robot to target hub
+          var delta = hubToAimTowards.minus(robotTranslation);
+
+          // Absolute angle in field frame pointing from robot to hub
+          Rotation2d angleToPointAt = new Rotation2d(Math.atan2(delta.getY(), delta.getX()));
+
+          currentHeading = Optional.of(angleToPointAt);
+
+          swerve.setControl(
+              driveMaintainHeading
+                  .withVelocityX(translation)
+                  .withVelocityY(strafe)
+                  .withTargetDirection(angleToPointAt));
+        },
+        swerve);
   }
 
   public Command swerveBrakeCmd() {
