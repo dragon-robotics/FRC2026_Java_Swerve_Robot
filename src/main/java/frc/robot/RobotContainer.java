@@ -8,11 +8,13 @@ import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.GeneralConstants.*;
 import static frc.robot.Constants.VisionConstants.APTAG_CAMERA_NAMES;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -212,7 +214,7 @@ public class RobotContainer {
         .whileTrue(swerveSubsystem.applyRequest(() -> idle).ignoringDisable(true));
 
     // Brake the drivetrain on pressing the back button.
-    driverController.back().onTrue(swerveBrakeCommand);
+    driverController.back().whileTrue(swerveBrakeCommand);
 
     // Reset the field-centric heading on start button press.
     driverController.start().onTrue(seedFieldCentricCommand);
@@ -235,6 +237,8 @@ public class RobotContainer {
         .start()
         .and(driverController.x())
         .whileTrue(swerveSubsystem.sysIdQuasistatic(Direction.kReverse));
+
+    driverController.b().onTrue(Commands.runOnce(() -> SignalLogger.stop()));
   }
 
   public Command getAutonomousCommand() {
