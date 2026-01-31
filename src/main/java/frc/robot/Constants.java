@@ -78,14 +78,14 @@ public class Constants {
 
     public static class Hub {
       public static final double BLUE_HUB_CENTER_X =
-          (APTAG_FIELD_LAYOUT.getTagPose(19).get().getX()
+          (APTAG_FIELD_LAYOUT.getTagPose(20).get().getX()
                   + APTAG_FIELD_LAYOUT.getTagPose(26).get().getX())
               / 2;
       public static final Translation2d BLUE_HUB_CENTER_POSE =
-          new Translation2d(BLUE_HUB_CENTER_X, APTAG_FIELD_LAYOUT.getTagPose(19).get().getY());
+          new Translation2d(BLUE_HUB_CENTER_X, APTAG_FIELD_LAYOUT.getTagPose(20).get().getY());
       public static final double RED_HUB_CENTER_X =
           (APTAG_FIELD_LAYOUT.getTagPose(4).get().getX()
-                  + APTAG_FIELD_LAYOUT.getTagPose(9).get().getX())
+                  + APTAG_FIELD_LAYOUT.getTagPose(10).get().getX())
               / 2;
       public static final Translation2d RED_HUB_CENTER_POSE =
           new Translation2d(RED_HUB_CENTER_X, APTAG_FIELD_LAYOUT.getTagPose(4).get().getY());
@@ -256,9 +256,9 @@ public class Constants {
     public static final double DRIVE_KV = 0.124;
     public static final double DRIVE_KA = 0;
 
-    public static final double HEADING_KP = 10;
+    public static final double HEADING_KP = 8;
     public static final double HEADING_KI = 0;
-    public static final double HEADING_KD = 0.1;
+    public static final double HEADING_KD = 0.3;
     public static final double HEADING_TOLERANCE = 0.01;
 
     public static final double ANGLE_GEAR_RATIO = 12.8;
