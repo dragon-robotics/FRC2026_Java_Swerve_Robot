@@ -4,8 +4,11 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -73,7 +76,12 @@ public class Constants {
     public static final double FIELD_LENGTH = APTAG_FIELD_LAYOUT.getFieldLength();
     public static final double FIELD_WIDTH = APTAG_FIELD_LAYOUT.getFieldWidth();
 
-    // Positions to line to for shooting //
+    public static class Hub {
+      public static final double BLUE_HUB_CENTER_X = (APTAG_FIELD_LAYOUT.getTagPose(19).get().getX() + APTAG_FIELD_LAYOUT.getTagPose(26).get().getX()) / 2;
+      public static final Translation2d BLUE_HUB_CENTER_POSE = new Translation2d(BLUE_HUB_CENTER_X, APTAG_FIELD_LAYOUT.getTagPose(19).get().getY());
+      public static final double RED_HUB_CENTER_X = (APTAG_FIELD_LAYOUT.getTagPose(4).get().getX() + APTAG_FIELD_LAYOUT.getTagPose(9).get().getX()) / 2;
+      public static final Translation2d RED_HUB_CENTER_POSE = new Translation2d(RED_HUB_CENTER_X, APTAG_FIELD_LAYOUT.getTagPose(4).get().getY());
+    }
   }
 
   public static class VisionConstants {
@@ -240,7 +248,7 @@ public class Constants {
     public static final double DRIVE_KV = 0.124;
     public static final double DRIVE_KA = 0;
 
-    public static final double HEADING_KP = 5;
+    public static final double HEADING_KP = 7;
     public static final double HEADING_KI = 0;
     public static final double HEADING_KD = 0.5;
     public static final double HEADING_TOLERANCE = 0.01;
@@ -270,7 +278,8 @@ public class Constants {
     // public static final Matrix<N3, N1> ODOMETRY_STD = VecBuilder.fill(0.1, 0.1,
     // Units.degreesToRadians(5));
     public static final Matrix<N3, N1> ODOMETRY_STD =
-        VecBuilder.fill(Units.inchesToMeters(0.5), Units.inchesToMeters(0.5), Units.degreesToRadians(3));
+        VecBuilder.fill(
+            Units.inchesToMeters(0.5), Units.inchesToMeters(0.5), Units.degreesToRadians(3));
   }
 
   public static class OperatorConstants {
