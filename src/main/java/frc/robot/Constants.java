@@ -4,8 +4,6 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -77,10 +75,18 @@ public class Constants {
     public static final double FIELD_WIDTH = APTAG_FIELD_LAYOUT.getFieldWidth();
 
     public static class Hub {
-      public static final double BLUE_HUB_CENTER_X = (APTAG_FIELD_LAYOUT.getTagPose(19).get().getX() + APTAG_FIELD_LAYOUT.getTagPose(26).get().getX()) / 2;
-      public static final Translation2d BLUE_HUB_CENTER_POSE = new Translation2d(BLUE_HUB_CENTER_X, APTAG_FIELD_LAYOUT.getTagPose(19).get().getY());
-      public static final double RED_HUB_CENTER_X = (APTAG_FIELD_LAYOUT.getTagPose(4).get().getX() + APTAG_FIELD_LAYOUT.getTagPose(9).get().getX()) / 2;
-      public static final Translation2d RED_HUB_CENTER_POSE = new Translation2d(RED_HUB_CENTER_X, APTAG_FIELD_LAYOUT.getTagPose(4).get().getY());
+      public static final double BLUE_HUB_CENTER_X =
+          (APTAG_FIELD_LAYOUT.getTagPose(19).get().getX()
+                  + APTAG_FIELD_LAYOUT.getTagPose(26).get().getX())
+              / 2;
+      public static final Translation2d BLUE_HUB_CENTER_POSE =
+          new Translation2d(BLUE_HUB_CENTER_X, APTAG_FIELD_LAYOUT.getTagPose(19).get().getY());
+      public static final double RED_HUB_CENTER_X =
+          (APTAG_FIELD_LAYOUT.getTagPose(4).get().getX()
+                  + APTAG_FIELD_LAYOUT.getTagPose(9).get().getX())
+              / 2;
+      public static final Translation2d RED_HUB_CENTER_POSE =
+          new Translation2d(RED_HUB_CENTER_X, APTAG_FIELD_LAYOUT.getTagPose(4).get().getY());
     }
   }
 
