@@ -254,7 +254,8 @@ public class Superstructure extends SubsystemBase {
               driveMaintainHeading
                   .withVelocityX(translation)
                   .withVelocityY(strafe)
-                  .withTargetDirection(angleToPointAt));
+                  .withTargetDirection(angleToPointAt)
+                  .withTargetRateFeedforward(0.1));
         },
         swerve);
   }
