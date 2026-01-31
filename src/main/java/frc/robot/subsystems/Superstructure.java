@@ -18,18 +18,19 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.RobotContainer;
-import frc.robot.Telemetry;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.hopper.HopperSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem;
+import frc.robot.util.Telemetry;
+
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
-public class Superstructure extends SubsystemBase {
+public class Superstructure {
 
   private final CommandSwerveDrivetrain swerve;
   private final IntakeSubsystem intake;
@@ -227,8 +228,8 @@ public class Superstructure extends SubsystemBase {
   public Command driveAimedTowardsHubCmd(DoubleSupplier translationSup, DoubleSupplier strafeSup) {
     return new RunCommand(
         () -> {
-          double translation = (translationSup.getAsDouble() * maxSpeed) / 4;
-          double strafe = (strafeSup.getAsDouble() * maxSpeed) / 4;
+          double translation = (translationSup.getAsDouble() * maxSpeed) / 3;
+          double strafe = (strafeSup.getAsDouble() * maxSpeed) / 3;
 
           // Grab the robot's current alliance
           Optional<Alliance> alliance = DriverStation.getAlliance();
