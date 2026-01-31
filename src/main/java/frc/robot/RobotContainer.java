@@ -188,6 +188,10 @@ public class RobotContainer {
             () -> -driverController.getRightX(),
             () -> driverController.getHID().getPOV() == 0);
 
+    driveAimedAtHubCommand =
+        superstructureSubsystem.driveAimedTowardsHubCmd(
+            () -> -driverController.getLeftY(), () -> -driverController.getLeftX());
+
     swerveBrakeCommand = superstructureSubsystem.swerveBrakeCmd();
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
 
@@ -198,6 +202,8 @@ public class RobotContainer {
     // Note that X is defined as forward according to WPILib convention,
     // and Y is defined as to the left according to WPILib convention.
     swerveSubsystem.setDefaultCommand(defaultDriveCommand);
+
+    driverController.rightBumper().whileTrue(driveAimedAtHubCommand);
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
