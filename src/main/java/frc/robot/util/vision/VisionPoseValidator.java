@@ -2,7 +2,6 @@ package frc.robot.util.vision;
 
 import static frc.robot.Constants.FieldConstants.APTAG_FIELD_LAYOUT;
 import static frc.robot.Constants.VisionConstants.MAX_AMBIGUITY;
-import static frc.robot.Constants.VisionConstants.MAX_Z_ERROR;
 
 import frc.robot.subsystems.vision.VisionIO.PoseObservation;
 
