@@ -32,11 +32,11 @@ public interface ShooterIO {
 
     class ShooterIOInputs {
         /* Shooter motor data */
-        private double forwardMotorVelocity;
-        private double inverseMotorVelocity;
-        private double forwardMotorCurrent; 
-        private double inverseMotorCurrent;
-        private boolean isPrep;
+        @Getter @Setter private double forwardMotorVelocity;
+        @Getter @Setter private double inverseMotorVelocity;
+        @Getter @Setter private double forwardMotorCurrent; 
+        @Getter @Setter private double inverseMotorCurrent;
+        @Getter @Setter private boolean isPrep;
     }
 
     default void updateInputs(ShooterIOInputs shooterInputs) {}

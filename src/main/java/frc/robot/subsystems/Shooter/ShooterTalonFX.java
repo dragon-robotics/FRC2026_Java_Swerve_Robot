@@ -17,7 +17,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import frc.robot.Constants;
 public class ShooterTalonFX implements ShooterIO {
-    
+
         private final TalonFX forwardMotor;
         private final TalonFX inverseMotor; 
         
@@ -66,5 +66,10 @@ public class ShooterTalonFX implements ShooterIO {
     }
     public double getShooterSpeed() { 
         return forwardMotor.getVelocity().getValueAsDouble();
+    }
+
+    
+    public void updateInputs() {
+        
     }
 }

@@ -26,10 +26,12 @@ public class ShooterSubsystem extends SubsystemBase{
     public ShooterState getCurrentState() {
         return shooterState;
     }
+    public void setState(ShooterState newState) {
+        shooterState = newState; 
+    }
 
-    public void handleShooterState(ShooterState currentShooterState) {
-        shooterState = currentShooterState;
-        switch (currentShooterState) {
+    public void handleShooterState() {
+        switch (shooterState) {
             case STOP:
                 shooterIO.stopShooter();
                 break;
@@ -45,9 +47,8 @@ public class ShooterSubsystem extends SubsystemBase{
     }
     @Override
     public void periodic() {
-        getCurrentState();
-        
         shooterIO.updateInputs(shooterInputs);
+        handleShooterState();
     } 
 
 }
