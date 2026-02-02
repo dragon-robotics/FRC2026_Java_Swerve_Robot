@@ -26,6 +26,8 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.hopper.HopperSubsystem;
+import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.intake.IntakeIOTalonFX;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
@@ -81,7 +83,7 @@ public class RobotContainer {
     // Change initialization based on the state of the robot //
     switch (CURRENT_MODE) {
       case COMP:
-        intakeSubsystem = new IntakeSubsystem();
+        intakeSubsystem = new IntakeSubsystem(new IntakeIOTalonFX());
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -99,7 +101,7 @@ public class RobotContainer {
                     swerveSubsystem::getState));
         break;
       case SIM:
-        intakeSubsystem = new IntakeSubsystem();
+        intakeSubsystem = new IntakeSubsystem(new IntakeIOSim());
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -135,7 +137,7 @@ public class RobotContainer {
                     swerveSubsystem::getState));
         break;
       case TEST:
-        intakeSubsystem = new IntakeSubsystem();
+        intakeSubsystem = new IntakeSubsystem(new IntakeIOTalonFX());
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -153,7 +155,7 @@ public class RobotContainer {
                     swerveSubsystem::getState));
         break;
       default: // Default should be in comp mode //
-        intakeSubsystem = new IntakeSubsystem();
+        intakeSubsystem = new IntakeSubsystem(new IntakeIOTalonFX());
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
