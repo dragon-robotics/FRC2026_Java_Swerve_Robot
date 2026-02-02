@@ -83,5 +83,52 @@ public class IntakeIOTalonFX implements IntakeIO {
         intakeArmMotor.getConfigurator().apply(armConfig);
     }
 
+    @Override
+    public void setIntakeRollerMotorVoltage(double voltage) {
+        intakeRollerMotor.setVoltage(voltage);
+    }
+
+    @Override
+    public void setIntakeRollerMotorPercentage(double percentage) {
+        intakeRollerMotor.set(percentage);
+    }
+
+    @Override
+    public void setIntakeRollerMotorRPM(double rpm) {
+        intakeRollerMotor.set(rpm);
+    }
+
+    @Override
+    public void setIntakeArmMotorVoltage(double voltage) {
+        intakeArmMotor.setVoltage(voltage);
+    }
     
+    @Override
+    public void setIntakeArmMotorPercentage(double percentage) {
+        intakeArmMotor.set(percentage);
+    }
+
+    @Override
+    public void setIntakeArmMotorSetpoint(double setpoint) {
+        intakeArmMotor.setPosition(setpoint);
+    }
+
+    @Override
+    public void updateInputs(IntakeIOInputs inputs) {
+
+        inputs.setIntakeRollerMotorConnected(intakeRollerMotor.isConnected());
+        inputs.setIntakeArmMotorConnected(intakeArmMotor.isConnected());
+
+        inputs.setIntakeRollerMotorVoltage(intakeRollerMotor.getMotorVoltage().getValueAsDouble());
+        inputs.setIntakeRollerMotorDutyCycle(intakeRollerMotor.getDutyCycle().getValueAsDouble());
+        inputs.setIntakeRollerMotorCurrent(intakeRollerMotor.getStatorCurrent().getValueAsDouble());
+        inputs.setIntakeRollerMotorTemperature(intakeRollerMotor.getDeviceTemp().getValueAsDouble());
+        inputs.setIntakeRollerMotorVelocity(intakeRollerMotor.getVelocity().getValueAsDouble());
+
+        inputs.setIntakeArmMotorVoltage(intakeArmMotor.getMotorVoltage().getValueAsDouble());
+        inputs.setIntakeArmMotorDutyCycle(intakeArmMotor.getDutyCycle().getValueAsDouble());
+        inputs.setIntakeArmMotorCurrent(intakeArmMotor.getStatorCurrent().getValueAsDouble());
+        inputs.setIntakeArmMotorTemperature(intakeArmMotor.getDeviceTemp().getValueAsDouble());
+        inputs.setIntakeArmMotorSetpoint(intakeArmMotor.getPosition().getValueAsDouble());
+    }
 }
