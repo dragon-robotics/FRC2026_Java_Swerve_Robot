@@ -318,8 +318,9 @@ public class Constants {
     public static final NeutralModeValue INTAKE_ARM_NEUTRAL_MODE = NeutralModeValue.Brake;
 
     /* Desired controls for intake arm */
-    public static final double INTAKE_MOTOR_STOWED_POSITION = 0.0; // Degrees
-    public static final double INTAKE_MOTOR_DEPLOYED_POSITION = 90.0; // Degrees
+    public static final double INTAKE_MOTOR_STOWED_POSITION = 0.0; // Setpoint
+    public static final double INTAKE_MOTOR_DEPLOYED_POSITION = 90.0; // Setpoint
+    public static final double INTAKE_ARM_POSITION_TOLERANCE = 5.0; // Setpoint
   }
 
   public static class OperatorConstants {
