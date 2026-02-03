@@ -32,6 +32,10 @@ public class IntakeIOTalonFX implements IntakeIO {
     intakeRollerMotor = new TalonFX(INTAKE_ROLLER_MOTOR_ID);
     intakeArmMotor = new TalonFX(INTAKE_ARM_MOTOR_ID);
 
+    /* Clear any existing faults */
+    intakeRollerMotor.clearStickyFaults();
+    intakeArmMotor.clearStickyFaults();
+
     /* Configure the motors */
     /* Roller motor configuration */
     TalonFXConfiguration rollerConfig =

@@ -311,10 +311,12 @@ public class Constants {
 
     /* Intake arm motor properties */
     public static final double INTAKE_ARM_MAX_VOLTAGE = 10.0;
-    public static final double INTAKE_ARM_SUPPLY_CURRENT_LIMIT = 30.0; // Amps
-    public static final double INTAKE_ARM_STATOR_CURRENT_LIMIT = 15.0; // Amps
+    public static final double INTAKE_ARM_SUPPLY_CURRENT_LIMIT = 40.0; // Amps
+    public static final double INTAKE_ARM_STATOR_CURRENT_LIMIT = 20.0; // Amps
     public static final double INTAKE_ARM_RAMP_RATE = 0.2; // Seconds from 0 to full
     public static final NeutralModeValue INTAKE_ARM_NEUTRAL_MODE = NeutralModeValue.Brake;
+    public static final double INTAKE_ARM_MAXMOTION_MAX_VELOCITY = 4000;
+    public static final double INTAKE_ARM_MAXMOTION_MAX_ACCELERATION = 4000 * 2;
 
     /* Desired controls for intake arm */
     public static final double INTAKE_MOTOR_STOWED_POSITION = 0.0; // Setpoint
