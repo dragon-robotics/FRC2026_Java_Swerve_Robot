@@ -14,7 +14,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.RobotContainer;
@@ -25,7 +24,6 @@ import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.util.Telemetry;
-
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;

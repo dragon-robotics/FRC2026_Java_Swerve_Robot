@@ -7,7 +7,6 @@ package frc.robot.subsystems.intake;
 import static frc.robot.Constants.IntakeSubsystemConstants.*;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIO.IntakeIOInputs;
 
 public class IntakeSubsystem extends SubsystemBase {
@@ -115,7 +114,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public double getIntakeArmSetpoint() {
     return inputs.getIntakeArmMotorSetpoint();
   }
-  
+
   public double getIntakeRollerSpeed() {
     return inputs.getIntakeRollerMotorVelocity();
   }
@@ -152,7 +151,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public void periodic() {
 
     // Handle the state transitions
-    switch(currIntakeState) {
+    switch (currIntakeState) {
       case HOME:
         // Set intake arm to home setpoint
         stowIntakeArm();
@@ -176,11 +175,12 @@ public class IntakeSubsystem extends SubsystemBase {
         deployIntakeArm();
         // Set intake rollers off
         stopIntake();
-        // When intake arm reaches setpoint, transition to INTAKE or OUTTAKE state depending on desired state
-        if(isIntakeArmAtDeployed()) {
-          if(desiredIntakeState == IntakeState.INTAKE) {
+        // When intake arm reaches setpoint, transition to INTAKE or OUTTAKE state depending on
+        // desired state
+        if (isIntakeArmAtDeployed()) {
+          if (desiredIntakeState == IntakeState.INTAKE) {
             currIntakeState = IntakeState.INTAKE;
-          } else if(desiredIntakeState == IntakeState.OUTTAKE) {
+          } else if (desiredIntakeState == IntakeState.OUTTAKE) {
             currIntakeState = IntakeState.OUTTAKE;
           }
         }
@@ -191,7 +191,7 @@ public class IntakeSubsystem extends SubsystemBase {
         // Set intake rollers off
         stopIntake();
         // When intake arm reaches setpoint, transition to HOME state
-        if(isIntakeArmAtStowed()) {
+        if (isIntakeArmAtStowed()) {
           currIntakeState = IntakeState.HOME;
         }
         break;

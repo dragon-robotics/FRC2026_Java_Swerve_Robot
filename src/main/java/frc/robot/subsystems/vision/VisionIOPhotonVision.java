@@ -3,8 +3,6 @@ package frc.robot.subsystems.vision;
 import static frc.robot.Constants.FieldConstants.APTAG_FIELD_LAYOUT;
 
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
-
-import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.Timer;
@@ -18,7 +16,6 @@ import java.util.function.Supplier;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.proto.Photon;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class VisionIOPhotonVision implements VisionIO {
@@ -93,7 +90,6 @@ public class VisionIOPhotonVision implements VisionIO {
 
       // Add pose observation based on how many tags we see
       Optional<EstimatedRobotPose> visionEst = poseEstimator.estimateCoprocMultiTagPose(result);
-      
 
       visionEst.ifPresent(
           estimator -> {

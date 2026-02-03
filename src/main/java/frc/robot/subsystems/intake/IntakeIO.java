@@ -37,6 +37,7 @@ public interface IntakeIO {
 
     /** Intake roller motor data */
     @Getter @Setter private double intakeRollerMotorVoltage;
+
     @Getter @Setter private double intakeRollerMotorDutyCycle;
     @Getter @Setter private double intakeRollerMotorCurrent;
     @Getter @Setter private double intakeRollerMotorTemperature;
@@ -44,6 +45,7 @@ public interface IntakeIO {
 
     /** Intake arm motor data */
     @Getter @Setter private double intakeArmMotorVoltage;
+
     @Getter @Setter private double intakeArmMotorDutyCycle;
     @Getter @Setter private double intakeArmMotorCurrent;
     @Getter @Setter private double intakeArmMotorTemperature;

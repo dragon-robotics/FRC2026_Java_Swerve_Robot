@@ -1,5 +1,6 @@
 package frc.robot;
 
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
@@ -16,8 +17,6 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.RobotBase;
 import java.io.IOException;
 import java.nio.file.Path;
-
-import com.ctre.phoenix6.signals.NeutralModeValue;
 
 public class Constants {
   /** General robot constants */
