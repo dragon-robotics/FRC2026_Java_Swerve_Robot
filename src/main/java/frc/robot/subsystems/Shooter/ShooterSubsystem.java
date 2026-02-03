@@ -14,41 +14,76 @@ public class ShooterSubsystem extends SubsystemBase{
         SHOOT
     }
 
-    private ShooterState shooterState;
+    private ShooterState desiredShooterState;
+    private ShooterState currentShooterState; 
+
     private ShooterIOInputs shooterInputs; 
     private ShooterIO shooterIO;
     public ShooterSubsystem(ShooterIO shooterIO) {
         this.shooterIO = shooterIO; 
-        this.shooterState = ShooterState.STOP;
-        shooterInputs = new ShooterIOInputs(); 
+        this.shooterInputs = new ShooterIOInputs();
+
+        // initialize shooter states 
+        this.desiredShooterState = ShooterState.STOP;
+        this.currentShooterState = ShooterState.STOP;
     }
 
-    public ShooterState getCurrentState() {
-        return shooterState;
-    }
-    public void setState(ShooterState newState) {
-        shooterState = newState; 
-    }
-
-    public void handleShooterState() {
-        switch (shooterState) {
+    /* Setters */
+    public void setDesiredState(ShooterState state) {
+        this.desiredShooterState = state; 
+        switch (desiredShooterState) {
             case STOP:
-                shooterIO.stopShooter();
+                currentShooterState = ShooterState.STOP;
                 break;
             case PREPFUEL:
-                shooterIO.runShooter(ShooterConstants.SHOOTER_RPM / 2);
+                currentShooterState = ShooterState.PREPFUEL;
                 break;
             case SHOOT:
-                shooterIO.runShooter(ShooterConstants.SHOOTER_RPM);
+                currentShooterState = ShooterState.SHOOT; 
                 break;
             default:
                 break;
         }
     }
+    public ShooterState getCurrentState() {
+        return this.currentShooterState; 
+    }
+    public ShooterState getShooterState() {
+        return this.desiredShooterState; 
+    }
+
+    /* Getters */
+    public void runShooter() {
+        shooterIO.runShooter(ShooterConstants.SHOOTER_RPM);
+    }
+
+    public void stopShooter() {
+        shooterIO.stopShooter();
+    }
+    public double getShooterSpeed() {
+        return shooterIO.getShooterSpeed(); 
+    }
+    public boolean isShooting() {
+        return getShooterSpeed() > 5; 
+    }
+    public boolean isShooterStopped() {
+        return getShooterSpeed() == 0; 
+    }
+
     @Override
     public void periodic() {
-        shooterIO.updateInputs(shooterInputs);
-        handleShooterState();
+        switch (currentShooterState) {
+            case STOP:
+                stopShooter();
+                break;
+            case PREPFUEL: 
+                runShooter();
+                break;
+            case SHOOT: 
+                runShooter();
+            default:
+                break;
+        }
     } 
 
 }

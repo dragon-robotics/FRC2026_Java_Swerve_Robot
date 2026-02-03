@@ -54,7 +54,8 @@ public class ShooterTalonFX implements ShooterIO {
 
                 forwardMotor.getConfigurator().apply(shooterConfig);
                 inverseMotor.getConfigurator().apply(shooterConfig);
-        }
+    }
+
     public void runShooter(double rpm) {
         Constants.ShooterConstants.IS_SHOOTING = true;
         forwardMotor.setControl(new VelocityVoltage(rpm));
@@ -64,12 +65,29 @@ public class ShooterTalonFX implements ShooterIO {
         Constants.ShooterConstants.IS_SHOOTING = false; 
         runShooter(0.0);
     }
-    public double getShooterSpeed() { 
-        return forwardMotor.getVelocity().getValueAsDouble();
+    // returns the average velocity of both motors
+    public double getShooterSpeed() {
+        double forward = forwardMotor.getVelocity().getValueAsDouble();
+        double inverse = inverseMotor.getVelocity().getValueAsDouble();
+        
+        return (forward + inverse) / 2;    
     }
 
-    
-    public void updateInputs() {
+    @Override
+    public void updateInputs(ShooterIOInputs shooterInputs) {
         
+        shooterInputs.setForwardMotorConnected(forwardMotor.isConnected());
+        shooterInputs.setInverseMotorConnected(inverseMotor.isConnected());
+        
+        // grab forward motor data and set it 
+        shooterInputs.setForwardMotorVelocity(forwardMotor.getVelocity().getValueAsDouble());
+        shooterInputs.setForwardMotorTemprature(forwardMotor.getDeviceTemp().getValueAsDouble());
+        shooterInputs.setForwardMotorVoltage(forwardMotor.getMotorVoltage().getValueAsDouble());
+        shooterInputs.setForwardMotorCurrent(forwardMotor.getStatorCurrent().getValueAsDouble());
+        // grab inverse motor data and set it 
+        shooterInputs.setInverseMotorVelocity(inverseMotor.getVelocity().getValueAsDouble());
+        shooterInputs.setInverseMotorCurrent(inverseMotor.getStatorCurrent().getValueAsDouble());
+        shooterInputs.setInverseMotorTemprature(inverseMotor.getDeviceTemp().getValueAsDouble());
+        shooterInputs.setInverseMotorVoltage(inverseMotor.getMotorVoltage().getValueAsDouble());
     }
 }

@@ -351,7 +351,6 @@ public class Constants {
   }
 
   public static class ShooterConstants {
-
     public static boolean IS_SHOOTING = false; 
     public static final int FORWARD_MOTOR_ID = 3;
     public static final int INVERSE_MOTOR_ID = 4; 
@@ -360,6 +359,5 @@ public class Constants {
     public static final double SHOOTER_MAX_VOLTAGE = 10.0; 
     public static final double SHOOTER_RAMP_RATE = 0.5;
     public static final double SHOOTER_RPM = 1.0; // placeholder value
-
   }
 }
