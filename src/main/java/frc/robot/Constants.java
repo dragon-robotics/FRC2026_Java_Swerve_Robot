@@ -514,4 +514,15 @@ public class Constants {
     public static final int BTN_STICK_LEFT = 9;
     public static final int BTN_STICK_RIGHT = 10;
   }
+
+  public static class ShooterConstants {
+    public static boolean IS_SHOOTING = false; 
+    public static final int FORWARD_MOTOR_ID = 3;
+    public static final int INVERSE_MOTOR_ID = 4; 
+    public static final double SHOOTER_STATOR_CURRENT_LIMIT = 20.0;
+    public static final double SHOOTER_SUPPLY_CURRENT_LIMIT = 40.0; 
+    public static final double SHOOTER_MAX_VOLTAGE = 10.0; 
+    public static final double SHOOTER_RAMP_RATE = 0.5;
+    public static final double SHOOTER_RPM = 4000.0; // placeholder value
+  }
 }
