@@ -358,6 +358,6 @@ public class Constants {
     public static final double SHOOTER_SUPPLY_CURRENT_LIMIT = 40.0; 
     public static final double SHOOTER_MAX_VOLTAGE = 10.0; 
     public static final double SHOOTER_RAMP_RATE = 0.5;
-    public static final double SHOOTER_RPM = 1.0; // placeholder value
+    public static final double SHOOTER_RPM = 4000.0; // placeholder value
   }
 }
