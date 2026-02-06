@@ -36,6 +36,7 @@ public interface ShooterIO {
         @Getter @Setter private boolean forwardMotorConnected;
         @Getter @Setter private boolean inverseMotorConnected;
         // shooterSpeed
+        
         @Getter @Setter private double forwardMotorVelocity;
         @Getter @Setter private double inverseMotorVelocity;
 
