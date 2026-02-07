@@ -6,6 +6,10 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.GeneralConstants.*;
+import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_MOTOR_ID;
+import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_TALONFX_CONFIG;
+import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ROLLER_MOTOR_ID;
+import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ROLLER_TALONFX_CONFIG;
 import static frc.robot.Constants.VisionConstants.APTAG_CAMERA_NAMES;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -90,7 +94,10 @@ public class RobotContainer {
     // Change initialization based on the state of the robot //
     switch (CURRENT_MODE) {
       case COMP:
-        intakeSubsystem = new IntakeSubsystem(new IntakeIOTalonFX());
+        intakeSubsystem =
+            new IntakeSubsystem(
+                new IntakeIOTalonFX(INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG),
+                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -108,7 +115,7 @@ public class RobotContainer {
                     swerveSubsystem::getState));
         break;
       case SIM:
-        intakeSubsystem = new IntakeSubsystem(new IntakeIOSim());
+        intakeSubsystem = new IntakeSubsystem(new IntakeIOSim(), new IntakeIOSim());
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -144,7 +151,10 @@ public class RobotContainer {
                     swerveSubsystem::getState));
         break;
       case TEST:
-        intakeSubsystem = new IntakeSubsystem(new IntakeIOTalonFX());
+        intakeSubsystem =
+            new IntakeSubsystem(
+                new IntakeIOTalonFX(INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG),
+                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -162,7 +172,10 @@ public class RobotContainer {
                     swerveSubsystem::getState));
         break;
       default: // Default should be in comp mode //
-        intakeSubsystem = new IntakeSubsystem(new IntakeIOTalonFX());
+        intakeSubsystem =
+            new IntakeSubsystem(
+                new IntakeIOTalonFX(INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG),
+                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
