@@ -1,7 +1,8 @@
-package frc.robot.subsystems.Hopper;
+package frc.robot.subsystems.hopper;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.Hopper.HopperIO.HopperIOInputs;
+import frc.robot.subsystems.hopper.HopperIO.HopperIOInputs;
+
 import static frc.robot.Constants.HopperConstants.*; 
 
 public class HopperSubsystem extends SubsystemBase {
@@ -13,16 +14,24 @@ public class HopperSubsystem extends SubsystemBase {
         STOWING, 
         DEPLOYING 
     }
-    
+    // current state
     private HopperState currHopperState; 
+    // desired state
     private HopperState desiredHopperState; 
+    // inputs  
 
-    private final HopperIO hopperIO; 
-    private final HopperIOInputs hopperInputs; 
+    private final HopperIO expandingMotorIO; 
+    private final HopperIO rollerMotorIO; 
+    // hardware layer
+    private final HopperIOInputs rollerMotorIOInputs;
+    private final HopperIOInputs expandingMotorInputs;
 
-    public HopperSubsystem(HopperIO hopperIO) {
-        this.hopperIO = hopperIO; 
-        this.hopperInputs = new HopperIOInputs(); 
+    public HopperSubsystem(HopperIO expandingMotorIO, HopperIO rollerMotorIO) {
+
+        this.expandingMotorIO = expandingMotorIO;
+        this.rollerMotorIO = rollerMotorIO; 
+        this.expandingMotorInputs = new HopperIOInputs(); 
+        this.rollerMotorIOInputs = new HopperIOInputs();
 
         this.currHopperState = HopperState.STOWED;
         this.desiredHopperState = HopperState.STOWED;
@@ -57,25 +66,25 @@ public class HopperSubsystem extends SubsystemBase {
 
     /** Check if expanding motor has reached target position */
     private boolean isDeployed(double targetPosition, double tolerance) {
-        return Math.abs(hopperInputs.getExpandingMotorPosition() - targetPosition) < tolerance;
+        return Math.abs(expandingMotorInputs.getExpandingMotorPosition() - targetPosition) < tolerance;
     }
 
     public void expandHopper() {
-        hopperIO.expandHopper(EXPANDING_SETPOINT, ROLLER_RPM);
+        expandingMotorIO.expandHopper(EXPANDING_SETPOINT);
     }
 
     public void stowHopper() {
-        hopperIO.stowHopper();
+        expandingMotorIO.stowHopper();
     }
 
     /** Index fuel toward shooter */
     public void indexToShooter() {
-        hopperIO.expandHopper(EXPANDING_SETPOINT, ROLLER_RPM);
+        rollerMotorIO.expandHopper(ROLLER_RPM);
     }
 
     /** Index fuel toward intake/outtake */
     public void indexToIntake() {
-        hopperIO.expandHopper(0.0, -ROLLER_RPM);
+        rollerMotorIO.expandHopper(-ROLLER_RPM);
     }
 
     /* getters */
@@ -91,7 +100,8 @@ public class HopperSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         // Update sensor inputs
-        hopperIO.updateInputs(hopperInputs);
+        rollerMotorIO.updateInputs(rollerMotorIOInputs);
+        expandingMotorIO.updateInputs(expandingMotorInputs);
 
         // State machine logic
         switch (currHopperState) {
@@ -127,7 +137,7 @@ public class HopperSubsystem extends SubsystemBase {
             default:
                 break;
         }
-        
-        hopperIO.updateInputs(hopperInputs);
+        expandingMotorIO.updateInputs(expandingMotorInputs);
+        rollerMotorIO.updateInputs(rollerMotorIOInputs);
     }
 }

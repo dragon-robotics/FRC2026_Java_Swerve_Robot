@@ -1,10 +1,11 @@
-package frc.robot.subsystems.Hopper;
+package frc.robot.subsystems.hopper;
+import frc.robot.subsystems.hopper.HopperIO.HopperIOInputs;
 import lombok.Getter;
 import lombok.Setter;
 
 public interface HopperIO {
 
-    default void expandHopper(double setpoint, double rpm) {
+    default void expandHopper(double setpoint) {
         throw new UnsupportedOperationException("expandHopper not implemented");
     }
     default void stowHopper() {
@@ -14,6 +15,11 @@ public interface HopperIO {
     default void getCurrent() {
         throw new UnsupportedOperationException("getCurrent not implemented");
     }
+    
+    default void runRollers(double rpm) {
+        throw new UnsupportedOperationException("getCurrent not implemented");
+    }
+
     public class HopperIOInputs {
         // are the motors connected 
         @Getter @Setter private boolean expandingMotorConnected; 
