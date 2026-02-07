@@ -76,7 +76,8 @@ public class ShooterTalonFX implements ShooterIO {
         // create Motion Magic Velocity request for shooter 
         shooterMotionMagicVelocityTorqueCurrentFOCRequest =  new MotionMagicVelocityTorqueCurrentFOC(0);
     }
-
+    
+    @Override
     public void runShooter(double rpm) {
          IS_SHOOTING = true;
         forwardMotor.setControl(
@@ -86,13 +87,14 @@ public class ShooterTalonFX implements ShooterIO {
             shooterMotionMagicVelocityTorqueCurrentFOCRequest.withVelocity(-rpm)
         );
     }
-    
+    @Override
     public void stopShooter() {
          IS_SHOOTING = false; 
         runShooter(0.0);
     }
 
     // returns the average velocity of both motors
+    @Override
     public double getShooterSpeed() {
         double forward = forwardMotor.getVelocity().getValueAsDouble();
         double inverse = inverseMotor.getVelocity().getValueAsDouble();
