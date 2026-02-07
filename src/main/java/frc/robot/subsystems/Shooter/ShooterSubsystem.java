@@ -1,8 +1,8 @@
-package frc.robot.subsystems.Shooter;
+package frc.robot.subsystems.shooter;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ShooterConstants;
-import frc.robot.subsystems.Shooter.ShooterIO.ShooterIOInputs;
+import frc.robot.subsystems.shooter.ShooterIO.ShooterIOInputs;
 public class ShooterSubsystem extends SubsystemBase{
     public enum ShooterState {
         STOP, 
