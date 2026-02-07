@@ -4,52 +4,35 @@ import lombok.Getter;
 import lombok.Setter;
 
 public interface IntakeIO {
-  default void setIntakeRollerMotorVoltage(double voltage) {
-    throw new UnsupportedOperationException("setIntakeRollerMotorVoltage is not implemented");
+  default void setMotorVoltage(double voltage) {
+    throw new UnsupportedOperationException("setMotorVoltage is not implemented");
   }
 
-  default void setIntakeRollerMotorPercentage(double percentage) {
-    throw new UnsupportedOperationException("setIntakeRollerMotorPercentage is not implemented");
+  default void setMotorPercentage(double percentage) {
+    throw new UnsupportedOperationException("setMotorPercentage is not implemented");
   }
 
-  default void setIntakeRollerMotorRPM(double rpm) {
-    throw new UnsupportedOperationException("setIntakeRollerMotorRPM is not implemented");
+  default void setMotorRPM(double rpm) {
+    throw new UnsupportedOperationException("setMotorRPM is not implemented");
   }
 
-  default void setIntakeArmMotorVoltage(double voltage) {
-    throw new UnsupportedOperationException("setIntakeArmMotorVoltage is not implemented");
-  }
-
-  default void setIntakeArmMotorPercentage(double percentage) {
-    throw new UnsupportedOperationException("setIntakeArmMotorPercentage is not implemented");
-  }
-
-  default void setIntakeArmMotorSetpoint(double setpoint) {
-    throw new UnsupportedOperationException("setIntakeArmMotorSetpoint is not implemented");
+  default void setMotorPosition(double setpoint) {
+    throw new UnsupportedOperationException("setMotorPosition is not implemented");
   }
 
   class IntakeIOInputs {
 
-    /** Are the intake motors connected? */
-    @Getter @Setter private boolean intakeRollerMotorConnected;
+    /** Is the motor connected? */
+    @Getter @Setter private boolean motorConnected;
 
-    @Getter @Setter private boolean intakeArmMotorConnected;
+    /** Motor data */
+    @Getter @Setter private double motorVoltage;
 
-    /** Intake roller motor data */
-    @Getter @Setter private double intakeRollerMotorVoltage;
-
-    @Getter @Setter private double intakeRollerMotorDutyCycle;
-    @Getter @Setter private double intakeRollerMotorCurrent;
-    @Getter @Setter private double intakeRollerMotorTemperature;
-    @Getter @Setter private double intakeRollerMotorVelocity;
-
-    /** Intake arm motor data */
-    @Getter @Setter private double intakeArmMotorVoltage;
-
-    @Getter @Setter private double intakeArmMotorDutyCycle;
-    @Getter @Setter private double intakeArmMotorCurrent;
-    @Getter @Setter private double intakeArmMotorTemperature;
-    @Getter @Setter private double intakeArmMotorSetpoint;
+    @Getter @Setter private double motorDutyCycle;
+    @Getter @Setter private double motorCurrent;
+    @Getter @Setter private double motorTemperature;
+    @Getter @Setter private double motorVelocity;
+    @Getter @Setter private double motorPosition;
   }
 
   default void updateInputs(IntakeIOInputs inputs) {}
