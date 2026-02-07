@@ -22,14 +22,18 @@ public class IntakeSubsystem extends SubsystemBase {
   private IntakeState currIntakeState;
   private IntakeState desiredIntakeState;
 
-  private final IntakeIO intakeIO;
-  private final IntakeIOInputs inputs;
+  private final IntakeIO intakeRollerIO;
+  private final IntakeIO intakeArmIO;
+  private final IntakeIOInputs intakeRollerInputs;
+  private final IntakeIOInputs intakeArmInputs;
 
   /** Creates a new IntakeSubsystem. */
-  public IntakeSubsystem(IntakeIO intakeIO) {
+  public IntakeSubsystem(IntakeIO intakeRollerIO, IntakeIO intakeArmIO) {
 
-    this.intakeIO = intakeIO;
-    this.inputs = new IntakeIOInputs();
+    this.intakeRollerIO = intakeRollerIO;
+    this.intakeArmIO = intakeArmIO;
+    this.intakeRollerInputs = new IntakeIOInputs();
+    this.intakeArmInputs = new IntakeIOInputs();
 
     /* Initialize intake states */
     currIntakeState = IntakeState.HOME;
@@ -66,39 +70,39 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void runIntakeRollerRPM(double rpm) {
-    intakeIO.setIntakeRollerMotorRPM(rpm);
+    intakeRollerIO.setMotorRPM(rpm);
   }
 
   public void runIntakeRollerVoltage(double voltage) {
-    intakeIO.setIntakeRollerMotorVoltage(voltage);
+    intakeRollerIO.setMotorVoltage(voltage);
   }
 
   public void runIntakeRollerPercentage(double percentage) {
-    intakeIO.setIntakeRollerMotorPercentage(percentage);
+    intakeRollerIO.setMotorPercentage(percentage);
   }
 
   public void runIntake() {
-    intakeIO.setIntakeRollerMotorPercentage(INTAKE_ROLLER_DUTY_CYCLE);
+    intakeRollerIO.setMotorPercentage(INTAKE_ROLLER_DUTY_CYCLE);
   }
 
   public void runOuttake() {
-    intakeIO.setIntakeRollerMotorPercentage(OUTTAKE_ROLLER_DUTY_CYCLE);
+    intakeRollerIO.setMotorPercentage(OUTTAKE_ROLLER_DUTY_CYCLE);
   }
 
   public void stopIntake() {
-    intakeIO.setIntakeRollerMotorPercentage(0.0);
+    intakeRollerIO.setMotorPercentage(0.0);
   }
 
   public void setIntakeArmSetpoint(double setpoint) {
-    intakeIO.setIntakeArmMotorSetpoint(setpoint);
+    intakeArmIO.setMotorPosition(setpoint);
   }
 
   public void deployIntakeArm() {
-    intakeIO.setIntakeArmMotorSetpoint(INTAKE_MOTOR_DEPLOYED_POSITION);
+    intakeArmIO.setMotorPosition(INTAKE_MOTOR_DEPLOYED_POSITION);
   }
 
   public void stowIntakeArm() {
-    intakeIO.setIntakeArmMotorSetpoint(INTAKE_MOTOR_STOWED_POSITION);
+    intakeArmIO.setMotorPosition(INTAKE_MOTOR_STOWED_POSITION);
   }
 
   /* Getters */
@@ -112,22 +116,22 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public double getIntakeArmSetpoint() {
-    return inputs.getIntakeArmMotorSetpoint();
+    return intakeArmInputs.getMotorPosition();
   }
 
   public double getIntakeRollerSpeed() {
-    return inputs.getIntakeRollerMotorVelocity();
+    return intakeRollerInputs.getMotorVelocity();
   }
 
   public boolean isIntakeArmAtDeployed() {
     double positionError =
-        Math.abs(INTAKE_MOTOR_DEPLOYED_POSITION - inputs.getIntakeArmMotorSetpoint());
+        Math.abs(INTAKE_MOTOR_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtStowed() {
     double positionError =
-        Math.abs(INTAKE_MOTOR_STOWED_POSITION - inputs.getIntakeArmMotorSetpoint());
+        Math.abs(INTAKE_MOTOR_STOWED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
@@ -140,11 +144,11 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public double getIntakeRollerCurrent() {
-    return inputs.getIntakeRollerMotorCurrent();
+    return intakeRollerInputs.getMotorCurrent();
   }
 
   public double getIntakeArmCurrent() {
-    return inputs.getIntakeArmMotorCurrent();
+    return intakeArmInputs.getMotorCurrent();
   }
 
   @Override
@@ -198,6 +202,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     // This method will be called once per scheduler run
-    intakeIO.updateInputs(inputs);
+    intakeRollerIO.updateInputs(intakeRollerInputs);
+    intakeArmIO.updateInputs(intakeArmInputs);
   }
 }
