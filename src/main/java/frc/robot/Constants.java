@@ -14,6 +14,7 @@ import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.VoltageConfigs;
+import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.hardware.core.CoreCANcoder;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -42,6 +43,11 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.RobotBase;
+
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
+
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -516,6 +522,49 @@ public class Constants {
   }
 
   public static class ShooterConstants {
+    
+    TalonFXConfiguration shooterConfig =
+    new TalonFXConfiguration()
+        .withCurrentLimits(
+            new CurrentLimitsConfigs()
+                .withStatorCurrentLimitEnable(true)
+                .withStatorCurrentLimit(Amps.of(SHOOTER_SUPPLY_CURRENT_LIMIT))
+                .withSupplyCurrentLimitEnable(true)
+                .withSupplyCurrentLimit(Amps.of(SHOOTER_SUPPLY_CURRENT_LIMIT)
+                )
+    )
+    .withVoltage(
+        new VoltageConfigs()
+            .withPeakForwardVoltage(Volts.of(SHOOTER_MAX_VOLTAGE))
+            .withPeakReverseVoltage(Volts.of(-SHOOTER_MAX_VOLTAGE))
+    ).withOpenLoopRamps(
+        new OpenLoopRampsConfigs()
+            .withDutyCycleOpenLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))
+            .withTorqueOpenLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))
+            .withVoltageOpenLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))
+    ).withClosedLoopRamps(
+        new ClosedLoopRampsConfigs()
+            .withDutyCycleClosedLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))
+            .withTorqueClosedLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))
+            .withVoltageClosedLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))       
+    ).withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake)
+    ).withSlot0(
+      new Slot0Configs()
+        .withKS(0.25)
+        .withKV(0.12)
+        .withKA(0.01)
+        .withKP(0.11)
+        .withKI(0.0)
+        .withKD(0.0)
+    ).withMotionMagic(
+      new MotionMagicConfigs()
+        .withMotionMagicCruiseVelocity(4000)
+        .withMotionMagicAcceleration(400)
+        .withMotionMagicJerk(4000)
+    );
+    
+
+  
     public static boolean IS_SHOOTING = false; 
     public static final int FORWARD_MOTOR_ID = 3;
     public static final int INVERSE_MOTOR_ID = 4; 
@@ -544,5 +593,65 @@ public class Constants {
     public static final double EXPANDING_REVERSE_RPM = -500.0;
     public static final double EXPANDING_SETPOINT = 0.0; // place holder value; 
     public static final double EXPANDING_TOLERANCE = 0.0; // plcaeholder value 
+  }
+
+  public static class ClimberConstants {
+    TalonFXConfiguration climberConfig = new TalonFXConfiguration()
+        .withCurrentLimits(
+            new CurrentLimitsConfigs()
+                .withStatorCurrentLimitEnable(true)
+                .withStatorCurrentLimit(Amps.of(CLIMBER_STATOR_CURRENT_LIMIT))
+                .withSupplyCurrentLimitEnable(true)
+                .withSupplyCurrentLimit(Amps.of(CLIMBER_SUPPLY_CURRENT_LIMIT))
+        )
+        .withVoltage(
+            new VoltageConfigs()
+                .withPeakForwardVoltage(Volts.of(CLIMBER_MAX_VOLTAGE))
+                .withPeakReverseVoltage(Volts.of(-CLIMBER_MAX_VOLTAGE))
+        )
+        .withOpenLoopRamps(
+            new OpenLoopRampsConfigs()
+                .withDutyCycleOpenLoopRampPeriod(Seconds.of(CLIMBER_RAMP_RATE))
+                .withTorqueOpenLoopRampPeriod(Seconds.of(CLIMBER_RAMP_RATE))
+                .withVoltageOpenLoopRampPeriod(Seconds.of(CLIMBER_RAMP_RATE))
+        )
+        .withClosedLoopRamps(
+            new ClosedLoopRampsConfigs()
+                .withDutyCycleClosedLoopRampPeriod(Seconds.of(CLIMBER_RAMP_RATE))
+                .withTorqueClosedLoopRampPeriod(Seconds.of(CLIMBER_RAMP_RATE))
+                .withVoltageClosedLoopRampPeriod(Seconds.of(CLIMBER_RAMP_RATE))
+        )
+        .withMotorOutput(
+            new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake)
+        ).withSlot0(
+        // Climber PID configs - @TODO: NEEDS TO BE TESTED AND TUNED
+          new Slot0Configs()
+            .withKS(0.25)
+            .withKV(12)
+            .withKA(0.01)
+            .withKP(0.11)
+            .withKI(0.0)
+            .withKD(0.0)
+        ).withMotionMagic(
+          new MotionMagicConfigs()
+            // Motion Magic configuration for position control
+            .withMotionMagicAcceleration(100)
+            .withMotionMagicJerk(1000)
+        );
+    
+    // Motor IDs
+    public static final int LEAD_MOTOR_ID = 7;       
+    public static final int FOLLOWER_MOTOR_ID = 8;   
+    
+    public static final double CLIMBER_STATOR_CURRENT_LIMIT = 40.0;
+    public static final double CLIMBER_SUPPLY_CURRENT_LIMIT = 60.0;
+    public static final double CLIMBER_MAX_VOLTAGE = 10.0;
+    public static final double CLIMBER_RAMP_RATE = 0.5;
+    public static final double CLIMBER_HOME_SETPOINT = 0.0;
+    public static final double CLIMBER_RETRACTED_SETPOINT = 25.0; // placeholder value
+    public static final double CLIMBER_L1_SETPOINT = 50.0;  // placeholder value
+    // Tolerance for position checking
+    public static final double POSITION_TOLERANCE = 0.5;
+    
   }
 }

@@ -4,15 +4,13 @@ import lombok.Setter;
 
 public interface HopperIO {
 
-    default void expandHopper(double setpoint) {
+    default void expandHopper(double setpoint, double rpm) {
         throw new UnsupportedOperationException("expandHopper not implemented");
-    }
-    default void stopHopper() {
-        throw new UnsupportedOperationException("stopHopper not implemented");
     }
     default void stowHopper() {
         throw new UnsupportedOperationException("stowHopper not implemented");
     }
+    /* getters */
     default void getCurrent() {
         throw new UnsupportedOperationException("getCurrent not implemented");
     }
