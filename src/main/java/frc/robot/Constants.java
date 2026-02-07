@@ -575,6 +575,86 @@ public class Constants {
     public static final double SHOOTER_RPM = 4000.0; // placeholder value
   }
   public static class HopperConstants {
+
+    TalonFXConfiguration rollerConfig = 
+      new TalonFXConfiguration()
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(ROLLER_STATOR_CURRENT_LIMIT)
+                  .withSupplyCurrentLimitEnable(true)
+                  .withSupplyCurrentLimit(ROLLER_SUPPLY_CURRENT_LIMIT)
+          )
+          .withVoltage(
+              new VoltageConfigs()
+                  .withPeakForwardVoltage(ROLLER_MAX_VOLTAGE)
+                  .withPeakReverseVoltage(-ROLLER_MAX_VOLTAGE)
+          ).withOpenLoopRamps(
+              new OpenLoopRampsConfigs()
+                  .withDutyCycleOpenLoopRampPeriod(ROLLER_RAMP_RATE)
+                  .withTorqueOpenLoopRampPeriod(ROLLER_RAMP_RATE)
+                  .withVoltageOpenLoopRampPeriod(ROLLER_RAMP_RATE)
+          ).withClosedLoopRamps(
+              new ClosedLoopRampsConfigs()
+                  .withDutyCycleClosedLoopRampPeriod(ROLLER_RAMP_RATE)
+                  .withTorqueClosedLoopRampPeriod(ROLLER_RAMP_RATE)
+                  .withVoltageClosedLoopRampPeriod(ROLLER_RAMP_RATE)   
+          ).withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
+          .withMotionMagic(
+            new MotionMagicConfigs()
+              .withMotionMagicAcceleration(200)
+              .withMotionMagicJerk(2000)
+          ).withSlot0(
+            new Slot0Configs()
+              .withKS(0.25)
+              .withKV(0.12)
+              .withKA(0.01)
+              .withKP(0.11)
+              .withKI(0.0)
+              .withKD(0.0)
+          );
+          
+
+          TalonFXConfiguration expandingConfig = 
+              new TalonFXConfiguration()
+                  .withCurrentLimits(
+                      new CurrentLimitsConfigs()
+                          .withStatorCurrentLimitEnable(true)
+                          .withStatorCurrentLimit(EXPANDING_STATOR_CURRENT_LIMIT)
+                          .withSupplyCurrentLimitEnable(true)
+                          .withSupplyCurrentLimit(EXPANDING_SUPPLY_CURRENT_LIMIT)
+                  )
+                  .withVoltage(
+                      new VoltageConfigs()
+                      .withPeakForwardVoltage(EXPANDING_MAX_VOLTAGE)
+                      .withPeakReverseVoltage(-EXPANDING_MAX_VOLTAGE)
+                  ).withOpenLoopRamps(
+                      new OpenLoopRampsConfigs()
+                      .withDutyCycleOpenLoopRampPeriod(EXPANDING_RAMP_RATE)
+                      .withTorqueOpenLoopRampPeriod(EXPANDING_RAMP_RATE)
+                      .withVoltageOpenLoopRampPeriod(EXPANDING_RAMP_RATE)
+                  ).withClosedLoopRamps(
+                      new ClosedLoopRampsConfigs()
+                      .withDutyCycleClosedLoopRampPeriod(EXPANDING_RAMP_RATE)
+                      .withTorqueClosedLoopRampPeriod(EXPANDING_RAMP_RATE)
+                      .withVoltageClosedLoopRampPeriod(EXPANDING_RAMP_RATE)
+                  ).withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
+                  .withMotionMagic(
+                    new MotionMagicConfigs()
+                    .withMotionMagicAcceleration(200)
+                    .withMotionMagicJerk(2000)  
+                  )
+                  .withSlot0(
+                    new Slot0Configs()
+                      .withKS(0.25)
+                      .withKV(0.12)
+                      .withKA(0.01)
+                      .withKP(0.11)
+                      .withKI(0.0)
+                      .withKD(0.0)
+                  );
+
+
     public static final int ROLLER_MOTOR_ID = 5;
     public static final int EXPANDING_MOTOR_ID = 6;
     // roller variables

@@ -1,21 +1,8 @@
 package frc.robot.subsystems.shooter;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volts;
-
-import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
-import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
-import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.NeutralModeValue;
-
 import static frc.robot.Constants.ShooterConstants.*;
 
 public class ShooterTalonFX implements ShooterIO {
@@ -26,53 +13,12 @@ public class ShooterTalonFX implements ShooterIO {
     private final MotionMagicVelocityTorqueCurrentFOC
         shooterMotionMagicVelocityTorqueCurrentFOCRequest;
 
-    public ShooterTalonFX() {
-        forwardMotor = new TalonFX(FORWARD_MOTOR_ID);
-        inverseMotor = new TalonFX(INVERSE_MOTOR_ID);
-
-        TalonFXConfiguration shooterConfig =
-            new TalonFXConfiguration()
-                .withCurrentLimits(
-                    new CurrentLimitsConfigs()
-                        .withStatorCurrentLimitEnable(true)
-                        .withStatorCurrentLimit(Amps.of(SHOOTER_SUPPLY_CURRENT_LIMIT))
-                        .withSupplyCurrentLimitEnable(true)
-                        .withSupplyCurrentLimit(Amps.of(SHOOTER_SUPPLY_CURRENT_LIMIT)
-                        )
-            )
-            .withVoltage(
-                new VoltageConfigs()
-                    .withPeakForwardVoltage(Volts.of(SHOOTER_MAX_VOLTAGE))
-                    .withPeakReverseVoltage(Volts.of(-SHOOTER_MAX_VOLTAGE))
-            ).withOpenLoopRamps(
-                new OpenLoopRampsConfigs()
-                    .withDutyCycleOpenLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))
-                    .withTorqueOpenLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))
-                    .withVoltageOpenLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))
-            ).withClosedLoopRamps(
-                new ClosedLoopRampsConfigs()
-                    .withDutyCycleClosedLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))
-                    .withTorqueClosedLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))
-                    .withVoltageClosedLoopRampPeriod(Seconds.of(SHOOTER_RAMP_RATE))       
-            ).withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake));
-        /* shooter mechanism PID and velocity congiurations */
-        Slot0Configs shooterConfigs = shooterConfig.Slot0; //@TODO: NEEDS TO BE TESTED AND TUNED
-        shooterConfigs.kS = 0.25; 
-        shooterConfigs.kV = 0.12; 
-        shooterConfigs.kA = 0.01; 
-        shooterConfigs.kP = 0.11; 
-        shooterConfigs.kI = 0.0; 
-        shooterConfigs.kD = 0.0;
-        // Motion Magic configuration and Velocity settings
-        MotionMagicConfigs shooterMotionMagicConfigs = shooterConfig.MotionMagic;
-        // Acceleration is 400 rp/s
-        shooterMotionMagicConfigs.MotionMagicAcceleration = 
-            400; 
-        // Target Jerk of 4000 rps/s/s
-        shooterMotionMagicConfigs.MotionMagicJerk = 4000; 
+    public ShooterTalonFX(int canID, TalonFXConfiguration config) {
+        forwardMotor = new TalonFX(canID);
+        inverseMotor = new TalonFX(canID);        
         // apply motor configurations 
-        forwardMotor.getConfigurator().apply(shooterConfig);
-        inverseMotor.getConfigurator().apply(shooterConfig);
+        forwardMotor.getConfigurator().apply(config);
+        inverseMotor.getConfigurator().apply(config);
         // create Motion Magic Velocity request for shooter 
         shooterMotionMagicVelocityTorqueCurrentFOCRequest =  new MotionMagicVelocityTorqueCurrentFOC(0);
     }
