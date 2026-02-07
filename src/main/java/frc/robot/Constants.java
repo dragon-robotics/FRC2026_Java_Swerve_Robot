@@ -542,6 +542,7 @@ public class Constants {
     public static final double EXPANDING_RAMP_RATE = 0.3;
     public static final double EXPANDING_RPM = 500.0;
     public static final double EXPANDING_REVERSE_RPM = -500.0;
-    public static final double EXPANDING_SETPOINT = 0.0;
+    public static final double EXPANDING_SETPOINT = 0.0; // place holder value; 
+    public static final double EXPANDING_TOLERANCE = 0.0; // plcaeholder value 
   }
 }

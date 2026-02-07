@@ -6,7 +6,6 @@ import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
@@ -41,7 +40,7 @@ public class HopperTalonFX implements HopperIO {
                 .withVoltage(
                     new VoltageConfigs()
                         .withPeakForwardVoltage(ROLLER_MAX_VOLTAGE)
-                        .withPeakForwardVoltage(-ROLLER_MAX_VOLTAGE)
+                        .withPeakReverseVoltage(-ROLLER_MAX_VOLTAGE)
                 ).withOpenLoopRamps(
                     new OpenLoopRampsConfigs()
                         .withDutyCycleOpenLoopRampPeriod(ROLLER_RAMP_RATE)
@@ -66,7 +65,7 @@ public class HopperTalonFX implements HopperIO {
                         .withVoltage(
                             new VoltageConfigs()
                             .withPeakForwardVoltage(EXPANDING_MAX_VOLTAGE)
-                            .withPeakForwardVoltage(-EXPANDING_MAX_VOLTAGE)
+                            .withPeakReverseVoltage(-EXPANDING_MAX_VOLTAGE)
                         ).withOpenLoopRamps(
                             new OpenLoopRampsConfigs()
                             .withDutyCycleOpenLoopRampPeriod(EXPANDING_RAMP_RATE)
@@ -87,8 +86,8 @@ public class HopperTalonFX implements HopperIO {
                 rollerConfigs.kP = 0.11; 
                 rollerConfigs.kI = 0.0; 
                 rollerConfigs.kD = 0.0; 
-                // expanding motor PID configs
-                Slot1Configs expandingConfigs = expandingConfig.Slot1; //@TODO: to be tested and tuned 
+                // expanding motor PID configs - use Slot0 since MotionMagic defaults to it
+                Slot0Configs expandingConfigs = expandingConfig.Slot0; //@TODO: to be tested and tuned 
                 expandingConfigs.kS = 0.25; 
                 expandingConfigs.kV = 0.12; 
                 expandingConfigs.kA = 0.01; 
@@ -97,10 +96,13 @@ public class HopperTalonFX implements HopperIO {
                 expandingConfigs.kD = 0.0; 
 
                 MotionMagicConfigs hopperMotionMagicConfigs = rollerConfig.MotionMagic;
-
                 hopperMotionMagicConfigs.MotionMagicAcceleration = 200;
-
                 hopperMotionMagicConfigs.MotionMagicJerk = 2000;
+
+                // Motion Magic configs for expanding motor
+                MotionMagicConfigs expandingMotionMagicConfigs = expandingConfig.MotionMagic;
+                expandingMotionMagicConfigs.MotionMagicAcceleration = 200;
+                expandingMotionMagicConfigs.MotionMagicJerk = 2000;
 
                 rollerMotor.getConfigurator().apply(rollerConfig);
                 expandingMotor.getConfigurator().apply(expandingConfig);
@@ -110,10 +112,36 @@ public class HopperTalonFX implements HopperIO {
     }
 
     @Override 
-    public void expandHopper(double setpoint) {
+    public void expandHopper(double setpoint, double rpm) {
         expandingMotor.setControl(
             expandingMotorMotionMagicTorqueCurrentFOC.withPosition(setpoint)
         );
+        rollerMotor.setControl(
+            rollerMotionMagicVelocityTorqueCurrentFOC.withVelocity(rpm)
+        );
     }
-    
+    @Override
+    public void stowHopper() {
+        expandHopper(0.0, 0.0);
+    }
+
+    @Override
+    public void updateInputs(HopperIOInputs hopperInputs) {
+        // Motor connection status
+        hopperInputs.setExpandingMotorConnected(expandingMotor.isConnected());
+        hopperInputs.setRollingMotorConnected(rollerMotor.isConnected());
+        
+        // Expanding motor data
+        hopperInputs.setExpandingMotorPosition(expandingMotor.getPosition().getValueAsDouble());
+        hopperInputs.setExpandingMotorVelocity(expandingMotor.getVelocity().getValueAsDouble());
+        hopperInputs.setExpandingMotorVoltage(expandingMotor.getMotorVoltage().getValueAsDouble());
+        hopperInputs.setExpandingMotorTemprature(expandingMotor.getDeviceTemp().getValueAsDouble());
+        hopperInputs.setExpandingMotorCurrent(expandingMotor.getStatorCurrent().getValueAsDouble());
+        
+        // Roller motor data
+        hopperInputs.setRollerMotorVelocity(rollerMotor.getVelocity().getValueAsDouble());
+        hopperInputs.setRollerMotorVoltage(rollerMotor.getMotorVoltage().getValueAsDouble());
+        hopperInputs.setRollerMotorCurrent(rollerMotor.getStatorCurrent().getValueAsDouble());
+        hopperInputs.setRollerMotorTemprature(rollerMotor.getDeviceTemp().getValueAsDouble());
+    }
 }
