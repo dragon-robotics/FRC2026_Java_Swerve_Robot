@@ -311,8 +311,8 @@ public class Constants {
 
   public static class IntakeSubsystemConstants {
 
-    public static final int INTAKE_ROLLER_MOTOR_ID = 1;
-    public static final int INTAKE_ARM_MOTOR_ID = 2;
+    public static final int INTAKE_ROLLER_MOTOR_ID = 11;
+    public static final int INTAKE_ARM_MOTOR_ID = 12;
 
     /* Intake roller motor configurations */
     public static final TalonFXConfiguration INTAKE_ROLLER_TALONFX_CONFIG =
