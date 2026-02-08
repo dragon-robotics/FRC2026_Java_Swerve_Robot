@@ -55,7 +55,7 @@ public class TunerConstants {
 
   // The stator current at which the wheels start to slip;
   // This needs to be tuned to your individual robot
-  private static final Current kSlipCurrent = Amps.of(120);
+  private static final Current kSlipCurrent = Amps.of(90);
 
   // Initial configs for the drive and steer motors and the azimuth encoder; these cannot be null.
   // Some configs will be overwritten; check the `with*InitialConfigs()` API documentation.
@@ -64,25 +64,25 @@ public class TunerConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(70))
+                  .withStatorCurrentLimit(Amps.of(40))
                   .withSupplyCurrentLimitEnable(true)
                   .withSupplyCurrentLowerLimit(Amps.of(40))
                   .withSupplyCurrentLowerTime(Seconds.of(1))
-                  .withSupplyCurrentLimit(Amps.of(50)))
+                  .withSupplyCurrentLimit(Amps.of(60)))
           .withVoltage(
               new VoltageConfigs()
                   .withPeakForwardVoltage(Volts.of(12))
                   .withPeakReverseVoltage(Volts.of(-12)))
           .withOpenLoopRamps(
               new OpenLoopRampsConfigs()
-                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.25))
-                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.25))
-                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.25)))
+                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.15))
+                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.15))
+                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.15)))
           .withClosedLoopRamps(
               new ClosedLoopRampsConfigs()
-                  .withDutyCycleClosedLoopRampPeriod(Seconds.of(0.1))
-                  .withTorqueClosedLoopRampPeriod(Seconds.of(0.1))
-                  .withVoltageClosedLoopRampPeriod(Seconds.of(0.1)))
+                  .withDutyCycleClosedLoopRampPeriod(Seconds.of(0.05))
+                  .withTorqueClosedLoopRampPeriod(Seconds.of(0.05))
+                  .withVoltageClosedLoopRampPeriod(Seconds.of(0.05)))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
   private static final TalonFXConfiguration steerInitialConfigs =
       new TalonFXConfiguration()
@@ -92,18 +92,23 @@ public class TunerConstants {
                   // relatively low stator current limit to help avoid brownouts without
                   // impacting performance.
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(40))
+                  .withStatorCurrentLimit(Amps.of(15))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(20)))
+                  .withSupplyCurrentLimit(Amps.of(30)))
           .withVoltage(
               new VoltageConfigs()
                   .withPeakForwardVoltage(Volts.of(12))
                   .withPeakReverseVoltage(Volts.of(-12)))
           .withOpenLoopRamps(
               new OpenLoopRampsConfigs()
-                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.25))
-                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.25))
-                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.25)))
+                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.15))
+                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.15))
+                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.15)))
+          .withClosedLoopRamps(
+              new ClosedLoopRampsConfigs()
+                  .withDutyCycleClosedLoopRampPeriod(Seconds.of(0.05))
+                  .withTorqueClosedLoopRampPeriod(Seconds.of(0.05))
+                  .withVoltageClosedLoopRampPeriod(Seconds.of(0.05)))                  
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake));
   private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
   // Configs for the Pigeon 2; leave this null to skip applying Pigeon 2 configs
