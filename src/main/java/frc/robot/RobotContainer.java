@@ -116,7 +116,10 @@ public class RobotContainer {
                     swerveSubsystem::getState));
         break;
       case SIM:
-        intakeSubsystem = new IntakeSubsystem(new IntakeIOSim(), new IntakeIOSim());
+        intakeSubsystem =
+            new IntakeSubsystem(
+                new IntakeIOTalonFX(INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG),
+                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
