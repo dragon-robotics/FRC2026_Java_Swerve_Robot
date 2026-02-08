@@ -2,6 +2,7 @@ package frc.robot.subsystems.intake;
 
 import static frc.robot.Constants.IntakeSubsystemConstants.*;
 
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
@@ -17,7 +18,7 @@ public class IntakeIOTalonFX implements IntakeIO {
   public IntakeIOTalonFX(int canID, TalonFXConfiguration config) {
 
     /* Instantiate the motors */
-    motor = new TalonFX(canID);
+    motor = new TalonFX(canID, CANBus.roboRIO());
 
     /* Clear any existing faults */
     motor.clearStickyFaults();
