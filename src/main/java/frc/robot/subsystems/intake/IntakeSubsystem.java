@@ -6,11 +6,6 @@ package frc.robot.subsystems.intake;
 
 import static frc.robot.Constants.IntakeSubsystemConstants.*;
 
-import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
-import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
-import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
-import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.intake.IntakeIO.IntakeIOInputs;
 
@@ -25,16 +20,13 @@ public class IntakeSubsystem extends SubsystemBase {
     STOWING
   }
 
-  private IntakeState currIntakeState;
-  private IntakeState desiredIntakeState;
+  protected IntakeState currIntakeState;
+  protected IntakeState desiredIntakeState;
 
-  private final IntakeIO intakeRollerIO;
-  private final IntakeIO intakeArmIO;
-  private final IntakeIOInputs intakeRollerInputs;
-  private final IntakeIOInputs intakeArmInputs;
-
-  // Simulation
-  private final SingleJointedArmSim armSim;  
+  protected final IntakeIO intakeRollerIO;
+  protected final IntakeIO intakeArmIO;
+  protected final IntakeIOInputs intakeRollerInputs;
+  protected final IntakeIOInputs intakeArmInputs;
 
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem(IntakeIO intakeRollerIO, IntakeIO intakeArmIO) {
@@ -47,18 +39,6 @@ public class IntakeSubsystem extends SubsystemBase {
     /* Initialize intake states */
     currIntakeState = IntakeState.HOME;
     desiredIntakeState = IntakeState.HOME;
-
-    // Initialize simulation
-    armSim = new SingleJointedArmSim(
-      dcMotor, // Motor type
-      gearRatio,
-      SingleJointedArmSim.estimateMOI(armLength, 5), // Arm moment of inertia
-      armLength, // Arm length (m)
-      (0), // Min angle (rad)
-      (1.5707963267948966), // Max angle (rad)
-      true, // Simulate gravity
-      (0) // Starting position (rad)
-    );    
   }
 
   /* Setters */
@@ -72,15 +52,14 @@ public class IntakeSubsystem extends SubsystemBase {
         currIntakeState = IntakeState.STOWING;
         break;
       case INTAKE:
-        if (currIntakeState == IntakeState.OUTTAKE ||
-            currIntakeState == IntakeState.DEPLOYED) {
+        if (currIntakeState == IntakeState.OUTTAKE || currIntakeState == IntakeState.DEPLOYED) {
           currIntakeState = IntakeState.INTAKE;
         } else {
           currIntakeState = IntakeState.DEPLOYING;
         }
         break;
       case OUTTAKE:
-        if (currIntakeState == IntakeState.INTAKE) {
+        if (currIntakeState == IntakeState.INTAKE || currIntakeState == IntakeState.DEPLOYED) {
           currIntakeState = IntakeState.OUTTAKE;
         } else {
           currIntakeState = IntakeState.DEPLOYING;
@@ -228,7 +207,7 @@ public class IntakeSubsystem extends SubsystemBase {
           currIntakeState = IntakeState.HOME;
         }
         break;
-    }    
+    }
   }
 
   @Override
