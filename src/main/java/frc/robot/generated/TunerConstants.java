@@ -108,7 +108,7 @@ public class TunerConstants {
               new ClosedLoopRampsConfigs()
                   .withDutyCycleClosedLoopRampPeriod(Seconds.of(0.05))
                   .withTorqueClosedLoopRampPeriod(Seconds.of(0.05))
-                  .withVoltageClosedLoopRampPeriod(Seconds.of(0.05)))                  
+                  .withVoltageClosedLoopRampPeriod(Seconds.of(0.05)))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake));
   private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
   // Configs for the Pigeon 2; leave this null to skip applying Pigeon 2 configs
