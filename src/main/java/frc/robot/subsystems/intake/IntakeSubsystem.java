@@ -6,6 +6,11 @@ package frc.robot.subsystems.intake;
 
 import static frc.robot.Constants.IntakeSubsystemConstants.*;
 
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.intake.IntakeIO.IntakeIOInputs;
 
@@ -28,6 +33,9 @@ public class IntakeSubsystem extends SubsystemBase {
   private final IntakeIOInputs intakeRollerInputs;
   private final IntakeIOInputs intakeArmInputs;
 
+  // Simulation
+  private final SingleJointedArmSim armSim;  
+
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem(IntakeIO intakeRollerIO, IntakeIO intakeArmIO) {
 
@@ -39,6 +47,18 @@ public class IntakeSubsystem extends SubsystemBase {
     /* Initialize intake states */
     currIntakeState = IntakeState.HOME;
     desiredIntakeState = IntakeState.HOME;
+
+    // Initialize simulation
+    armSim = new SingleJointedArmSim(
+      dcMotor, // Motor type
+      gearRatio,
+      SingleJointedArmSim.estimateMOI(armLength, 5), // Arm moment of inertia
+      armLength, // Arm length (m)
+      (0), // Min angle (rad)
+      (1.5707963267948966), // Max angle (rad)
+      true, // Simulate gravity
+      (0) // Starting position (rad)
+    );    
   }
 
   /* Setters */
@@ -156,9 +176,7 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeArmInputs.getMotorCurrent();
   }
 
-  @Override
-  public void periodic() {
-
+  private void handleStateTransition() {
     // Handle the state transitions
     switch (currIntakeState) {
       case HOME:
@@ -210,7 +228,13 @@ public class IntakeSubsystem extends SubsystemBase {
           currIntakeState = IntakeState.HOME;
         }
         break;
-    }
+    }    
+  }
+
+  @Override
+  public void periodic() {
+
+    handleStateTransition();
 
     // This method will be called once per scheduler run
     intakeRollerIO.updateInputs(intakeRollerInputs);
