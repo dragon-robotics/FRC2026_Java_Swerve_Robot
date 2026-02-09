@@ -322,7 +322,6 @@ public class Constants {
     public static final double INTAKE_MAX_ANGLE_RADIANS = Units.degreesToRadians(90);
     public static final double INTAKE_STARTING_ANGLE_RADIANS = INTAKE_MAX_ANGLE_RADIANS;
 
-
     /* Intake roller motor configurations */
     public static final TalonFXConfiguration INTAKE_ROLLER_TALONFX_CONFIG =
         new TalonFXConfiguration()
