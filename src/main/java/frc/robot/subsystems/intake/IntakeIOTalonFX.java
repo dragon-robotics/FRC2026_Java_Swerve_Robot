@@ -10,21 +10,29 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 public class IntakeIOTalonFX implements IntakeIO {
 
-  private final TalonFX motor;
+  protected final TalonFX motor;
+  protected final int canID;
+  protected final TalonFXConfiguration config;
+  protected final String motorType;
 
-  private final MotionMagicVelocityTorqueCurrentFOC motorMotionMagicVelocityTorqueCurrentFOCRequest;
-  private final MotionMagicExpoTorqueCurrentFOC motorMotionMagicExpoTorqueCurrentFOCRequest;
+  protected final MotionMagicVelocityTorqueCurrentFOC
+      motorMotionMagicVelocityTorqueCurrentFOCRequest;
+  protected final MotionMagicExpoTorqueCurrentFOC motorMotionMagicExpoTorqueCurrentFOCRequest;
 
-  public IntakeIOTalonFX(int canID, TalonFXConfiguration config) {
+  public IntakeIOTalonFX(int canID, TalonFXConfiguration config, String motorType) {
+
+    this.canID = canID;
+    this.config = config;
+    this.motorType = motorType;
 
     /* Instantiate the motors */
-    motor = new TalonFX(canID, CANBus.roboRIO());
+    motor = new TalonFX(this.canID, CANBus.roboRIO());
 
     /* Clear any existing faults */
     motor.clearStickyFaults();
 
     /* Configure the motors */
-    motor.getConfigurator().apply(config);
+    motor.getConfigurator().apply(this.config);
 
     /* Create Motion Magic Velocity and Motion Magic Expo requests */
     motorMotionMagicVelocityTorqueCurrentFOCRequest = new MotionMagicVelocityTorqueCurrentFOC(0);
