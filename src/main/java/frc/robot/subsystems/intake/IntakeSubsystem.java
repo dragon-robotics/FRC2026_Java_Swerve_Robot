@@ -15,6 +15,7 @@ public class IntakeSubsystem extends SubsystemBase {
     HOME,
     INTAKE,
     OUTTAKE,
+    DEPLOYED,
     DEPLOYING,
     STOWING
   }
@@ -51,7 +52,8 @@ public class IntakeSubsystem extends SubsystemBase {
         currIntakeState = IntakeState.STOWING;
         break;
       case INTAKE:
-        if (currIntakeState == IntakeState.OUTTAKE) {
+        if (currIntakeState == IntakeState.OUTTAKE ||
+            currIntakeState == IntakeState.DEPLOYED) {
           currIntakeState = IntakeState.INTAKE;
         } else {
           currIntakeState = IntakeState.DEPLOYING;
@@ -63,6 +65,9 @@ public class IntakeSubsystem extends SubsystemBase {
         } else {
           currIntakeState = IntakeState.DEPLOYING;
         }
+        break;
+      case DEPLOYED:
+        currIntakeState = IntakeState.DEPLOYING;
         break;
       default:
         break;
@@ -173,6 +178,12 @@ public class IntakeSubsystem extends SubsystemBase {
         deployIntakeArm();
         // Set intake rollers to outtake speed
         runOuttake();
+        break;
+      case DEPLOYED:
+        // Set intake arm to intake setpoint
+        deployIntakeArm();
+        // Set intake rollers off
+        stopIntake();
         break;
       case DEPLOYING:
         // Set intake arm to intake setpoint
