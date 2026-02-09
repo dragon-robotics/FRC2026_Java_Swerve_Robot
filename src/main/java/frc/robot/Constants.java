@@ -314,6 +314,15 @@ public class Constants {
     public static final int INTAKE_ROLLER_MOTOR_ID = 11;
     public static final int INTAKE_ARM_MOTOR_ID = 12;
 
+    // Intake arm physical properties
+    public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(14);
+    public static final double INTAKE_ARM_MASS_KG = 5.0;
+    public static final double INTAKE_ARM_GEAR_RATIO = 25;
+    public static final double INTAKE_MIN_ANGLE_RADIANS = Units.degreesToRadians(0);
+    public static final double INTAKE_MAX_ANGLE_RADIANS = Units.degreesToRadians(90);
+    public static final double INTAKE_STARTING_ANGLE_RADIANS = INTAKE_MAX_ANGLE_RADIANS;
+
+
     /* Intake roller motor configurations */
     public static final TalonFXConfiguration INTAKE_ROLLER_TALONFX_CONFIG =
         new TalonFXConfiguration()
