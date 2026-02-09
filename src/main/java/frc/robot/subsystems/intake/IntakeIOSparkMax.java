@@ -12,22 +12,26 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import frc.robot.subsystems.intake.IntakeIO.IntakeIOInputs;
 
 public class IntakeIOSparkMax implements IntakeIO {
-  private final SparkMax motor;
-  private final int motorCANID;
+  protected final SparkMax motor;
+  protected final int canID;
+  protected final SparkMaxConfig config;
+  protected final String motorType;
 
   private final SparkClosedLoopController motorController;
 
-  public IntakeIOSparkMax(int canID, SparkMaxConfig config) {
-    this.motorCANID = canID;
+  public IntakeIOSparkMax(int canID, SparkMaxConfig config, String motorType) {
+    this.canID = canID;
+    this.config = config;
+    this.motorType = motorType;
 
     /* Instantiate the motors and encoders */
-    motor = new SparkMax(motorCANID, MotorType.kBrushless);
+    motor = new SparkMax(this.canID, MotorType.kBrushless);
     motorController = motor.getClosedLoopController();
 
     /* Clear any existing faults */
     motor.clearFaults();
 
-    motor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+    motor.configure(this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
   }
 
   @Override
@@ -53,7 +57,7 @@ public class IntakeIOSparkMax implements IntakeIO {
   @Override
   public void updateInputs(IntakeIOInputs inputs) {
 
-    inputs.setMotorConnected(motor.getDeviceId() == motorCANID);
+    inputs.setMotorConnected(motor.getDeviceId() == canID);
 
     inputs.setMotorVoltage(motor.getAppliedOutput() * motor.getBusVoltage());
     inputs.setMotorDutyCycle(motor.getAppliedOutput());

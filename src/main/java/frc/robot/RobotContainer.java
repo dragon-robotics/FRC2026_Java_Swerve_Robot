@@ -35,9 +35,10 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.hopper.HopperSubsystem;
-import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.intake.IntakeIOTalonFX;
+import frc.robot.subsystems.intake.IntakeIOTalonFXSim;
 import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.intake.IntakeSubsystemSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
@@ -97,8 +98,9 @@ public class RobotContainer {
       case COMP:
         intakeSubsystem =
             new IntakeSubsystem(
-                new IntakeIOTalonFX(INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG),
-                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG));
+                new IntakeIOTalonFX(
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60"),
+                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60"));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -117,9 +119,11 @@ public class RobotContainer {
         break;
       case SIM:
         intakeSubsystem =
-            new IntakeSubsystem(
-                new IntakeIOTalonFX(INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG),
-                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG));
+            new IntakeSubsystemSim(
+                new IntakeIOTalonFXSim(
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60"),
+                new IntakeIOTalonFXSim(
+                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60"));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -157,8 +161,9 @@ public class RobotContainer {
       case TEST:
         intakeSubsystem =
             new IntakeSubsystem(
-                new IntakeIOTalonFX(INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG),
-                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG));
+                new IntakeIOTalonFX(
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60"),
+                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60"));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -178,8 +183,9 @@ public class RobotContainer {
       default: // Default should be in comp mode //
         intakeSubsystem =
             new IntakeSubsystem(
-                new IntakeIOTalonFX(INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG),
-                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG));
+                new IntakeIOTalonFX(
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60"),
+                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60"));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
