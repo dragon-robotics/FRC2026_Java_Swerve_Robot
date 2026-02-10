@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.SwerveConstants;
@@ -21,6 +22,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.hopper.HopperSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.intake.IntakeSubsystem.IntakeState;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.util.Telemetry;
@@ -265,5 +267,13 @@ public class Superstructure {
 
   public Command seedFieldCentricCmd() {
     return swerve.runOnce(swerve::seedFieldCentric);
+  }
+
+  public Command deployIntakeCommand() {
+    return new InstantCommand(() -> intake.setDesiredState(IntakeState.DEPLOYED), intake);
+  }
+
+  public Command stowIntakeCommand() {
+    return new InstantCommand(() -> intake.setDesiredState(IntakeState.HOME), intake);
   }
 }

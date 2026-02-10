@@ -67,6 +67,9 @@ public class RobotContainer {
 
   /* Intake Commands */
   private Command intakeCommand;
+  private Command outtakeCommand;
+  private Command stowIntakeCommand;
+  private Command deployIntakeCommand;
 
   /* Shooter Commands */
   private Command shootCommand;
@@ -99,8 +102,8 @@ public class RobotContainer {
         intakeSubsystem =
             new IntakeSubsystem(
                 new IntakeIOTalonFX(
-                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60"),
-                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60"));
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60_FOC"),
+                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60_FOC"));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -121,9 +124,9 @@ public class RobotContainer {
         intakeSubsystem =
             new IntakeSubsystemSim(
                 new IntakeIOTalonFXSim(
-                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60"),
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60_FOC"),
                 new IntakeIOTalonFXSim(
-                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60"));
+                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60_FOC"));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -162,8 +165,8 @@ public class RobotContainer {
         intakeSubsystem =
             new IntakeSubsystem(
                 new IntakeIOTalonFX(
-                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60"),
-                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60"));
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60_FOC"),
+                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60_FOC"));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -184,8 +187,8 @@ public class RobotContainer {
         intakeSubsystem =
             new IntakeSubsystem(
                 new IntakeIOTalonFX(
-                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60"),
-                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60"));
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60_FOC"),
+                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60_FOC"));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
@@ -228,6 +231,9 @@ public class RobotContainer {
 
     swerveBrakeCommand = superstructureSubsystem.swerveBrakeCmd();
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
+
+    deployIntakeCommand = superstructureSubsystem.deployIntakeCommand();
+    stowIntakeCommand = superstructureSubsystem.stowIntakeCommand();
 
     autoChooser = AutoBuilder.buildAutoChooser("Tests");
     SmartDashboard.putData("Auto Mode", autoChooser);
@@ -277,6 +283,9 @@ public class RobotContainer {
         .whileTrue(swerveSubsystem.sysIdQuasistatic(Direction.kReverse));
 
     driverController.b().onTrue(Commands.runOnce(() -> SignalLogger.stop()));
+
+    driverController.leftTrigger(0.2).whileTrue(deployIntakeCommand);
+    driverController.rightTrigger(0.2).whileTrue(stowIntakeCommand);
   }
 
   public Command getAutonomousCommand() {
