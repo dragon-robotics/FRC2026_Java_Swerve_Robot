@@ -16,6 +16,7 @@ import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.spark.config.ClosedLoopConfig;
+import com.revrobotics.spark.config.FeedForwardConfig;
 import com.revrobotics.spark.config.MAXMotionConfig;
 import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig;
@@ -315,8 +316,8 @@ public class Constants {
     public static final int INTAKE_ARM_MOTOR_ID = 12;
 
     // Intake arm physical properties
-    public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(14);
-    public static final double INTAKE_ARM_MASS_KG = 5.0;
+    public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(18);
+    public static final double INTAKE_ARM_MASS_KG = Units.lbsToKilograms(7.5);
     public static final double INTAKE_ARM_GEAR_RATIO = 25;
     public static final double INTAKE_MIN_ANGLE_RADIANS = Units.degreesToRadians(0);
     public static final double INTAKE_MAX_ANGLE_RADIANS = Units.degreesToRadians(90);
@@ -343,12 +344,12 @@ public class Constants {
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
             .withSlot0(
                 new Slot0Configs()
-                    .withKS(0.25)
-                    .withKV(0.12)
-                    .withKA(0.01)
-                    .withKP(0.11)
+                    .withKS(0)
+                    .withKV(0.5)
+                    .withKA(0.06)
+                    .withKP(2.02)
                     .withKI(0)
-                    .withKD(0))
+                    .withKD(0.03))
             .withMotionMagic(
                 new MotionMagicConfigs()
                     .withMotionMagicCruiseVelocity(4000)
@@ -404,12 +405,13 @@ public class Constants {
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
             .withSlot0(
                 new Slot0Configs()
-                    .withKS(0.25)
-                    .withKV(0.12)
-                    .withKA(0.01)
-                    .withKP(4.8)
+                    .withKS(0)
+                    .withKV(0.5)
+                    .withKA(0.06)
+                    .withKG(0.39)
+                    .withKP(2.02)
                     .withKI(0)
-                    .withKD(0.1))
+                    .withKD(0.03))
             .withMotionMagic(
                 new MotionMagicConfigs()
                     .withMotionMagicCruiseVelocity(0) // Unlimited cruise velocity
@@ -431,6 +433,12 @@ public class Constants {
                     .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
                     .pid(0.0, 0.0, 0.0, ClosedLoopSlot.kSlot0)
                     .outputRange(-1, 1)
+                    .apply(
+                        new FeedForwardConfig()
+                            .kS(0.0, ClosedLoopSlot.kSlot0)
+                            .kV(0.5, ClosedLoopSlot.kSlot0)
+                            .kA(0.06, ClosedLoopSlot.kSlot0)
+                            .kG(0.39, ClosedLoopSlot.kSlot0))
                     .apply(
                         new MAXMotionConfig()
                             .cruiseVelocity(4000, ClosedLoopSlot.kSlot0)
