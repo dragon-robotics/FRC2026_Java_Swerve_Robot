@@ -2,11 +2,17 @@ package frc.robot.subsystems.intake;
 
 import static frc.robot.Constants.IntakeSubsystemConstants.*;
 
+import java.util.Optional;
+
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 
 public class IntakeIOTalonFX implements IntakeIO {
 
@@ -19,24 +25,48 @@ public class IntakeIOTalonFX implements IntakeIO {
       motorMotionMagicVelocityTorqueCurrentFOCRequest;
   protected final MotionMagicExpoTorqueCurrentFOC motorMotionMagicExpoTorqueCurrentFOCRequest;
 
-  public IntakeIOTalonFX(int canID, TalonFXConfiguration config, String motorType) {
+  private final Optional<CANcoderConfiguration> canCoderConfig;
 
+  public IntakeIOTalonFX(int canID, TalonFXConfiguration config, String motorType) {
+    this(canID, config, motorType, Optional.empty());
+  }
+
+  public IntakeIOTalonFX(
+      int canID, TalonFXConfiguration config, String motorType, Optional<CANcoderConfiguration> canCoderConfig) {
     this.canID = canID;
     this.config = config;
     this.motorType = motorType;
+    this.canCoderConfig = canCoderConfig;
 
-    /* Instantiate the motors */
     motor = new TalonFX(this.canID, CANBus.roboRIO());
-
-    /* Clear any existing faults */
     motor.clearStickyFaults();
-
-    /* Configure the motors */
-    motor.getConfigurator().apply(this.config);
 
     /* Create Motion Magic Velocity and Motion Magic Expo requests */
     motorMotionMagicVelocityTorqueCurrentFOCRequest = new MotionMagicVelocityTorqueCurrentFOC(0);
     motorMotionMagicExpoTorqueCurrentFOCRequest = new MotionMagicExpoTorqueCurrentFOC(0);
+
+    // Apply CANcoder config (absolute offset/direction) if cancoder config is present
+    this.canCoderConfig.ifPresentOrElse(
+      ccCfg -> {
+        CANcoder canCoder = new CANcoder(INTAKE_ARM_CANCODER_ID, CANBus.roboRIO());
+        canCoder.getConfigurator().apply(ccCfg);
+
+        this.config.withFeedback(
+            new FeedbackConfigs()
+                .withFusedCANcoder(canCoder)
+                .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
+                .withSensorToMechanismRatio(1)
+                .withFeedbackRotorOffset(0));
+
+        motor.getConfigurator().apply(this.config);
+        motor.setPosition(0);
+      },
+      () -> {
+        // Handle the case where canCoderConfig is not present (e.g. set up feedback configs without CANcoder)
+        motor.getConfigurator().apply(this.config);
+        motor.setPosition(0);
+      });
   }
 
   @Override
