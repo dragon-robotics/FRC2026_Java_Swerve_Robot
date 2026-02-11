@@ -6,6 +6,7 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static frc.robot.Constants.IntakeSubsystemConstants.*;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
@@ -143,10 +144,17 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
     double currentAngleRad = intakeArmSim.getAngleRads();
     armMech.setAngle(Units.radiansToDegrees(currentAngleRad));
 
+    handleStateTransition();
+
     // Add telemetry data
-    SmartDashboard.putNumber("Intake Arm Angle (deg)", Units.radiansToDegrees(currentAngleRad));
-    SmartDashboard.putNumber(
-        "Intake Arm Velocity (deg/s)", Units.radiansToDegrees(intakeArmSim.getVelocityRadPerSec()));
-    SmartDashboard.putNumber("Intake Arm Current (A)", intakeArmSim.getCurrentDrawAmps());
+    DogLog.log("Intake/Intake State", currIntakeState.toString());
+    DogLog.log("Intake/Intake Arm Angle (deg)", String.valueOf(Units.radiansToDegrees(currentAngleRad)));
+    DogLog.log("Intake/Intake Arm Velocity (deg/s)", String.valueOf(Units.radiansToDegrees(intakeArmSim.getVelocityRadPerSec())));
+    DogLog.log("Intake/Intake Arm Current (A)", String.valueOf(intakeArmSim.getCurrentDrawAmps()));
+
+    // This method will be called once per scheduler run
+    intakeRollerIO.updateInputs(intakeRollerInputs);
+    intakeArmIO.updateInputs(intakeArmInputs);
+
   }
 }
