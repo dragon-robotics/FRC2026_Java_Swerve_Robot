@@ -3,15 +3,20 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
-
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.VoltageConfigs;
+import com.ctre.phoenix6.hardware.core.CoreCANcoder;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.AbsoluteEncoderConfig;
@@ -314,11 +319,12 @@ public class Constants {
 
     public static final int INTAKE_ROLLER_MOTOR_ID = 11;
     public static final int INTAKE_ARM_MOTOR_ID = 12;
+    public static final int INTAKE_ARM_CANCODER_ID = 0;
 
     // Intake arm physical properties
     public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(18);
     public static final double INTAKE_ARM_MASS_KG = Units.lbsToKilograms(7.5);
-    public static final double INTAKE_ARM_GEAR_RATIO = 25;
+    public static final double INTAKE_ARM_GEAR_RATIO = 20;
     public static final double INTAKE_MIN_ANGLE_RADIANS = Units.degreesToRadians(0);
     public static final double INTAKE_MAX_ANGLE_RADIANS = Units.degreesToRadians(90);
     public static final double INTAKE_STARTING_ANGLE_RADIANS = INTAKE_MAX_ANGLE_RADIANS;
@@ -416,7 +422,25 @@ public class Constants {
                 new MotionMagicConfigs()
                     .withMotionMagicCruiseVelocity(0) // Unlimited cruise velocity
                     .withMotionMagicExpo_kV(0.12)
-                    .withMotionMagicExpo_kA(0.1));
+                    .withMotionMagicExpo_kA(0.1))
+            .withFeedback(
+                new FeedbackConfigs()
+                    .withFusedCANcoder(
+                        new CoreCANcoder(INTAKE_ARM_CANCODER_ID))
+                    .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                    .withSensorToMechanismRatio(1)
+                    .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
+                    .withFeedbackRotorOffset(0));
+
+  public static final CANcoderConfiguration INTAKE_ARM_CANCODER_CONFIG =
+      new CANcoderConfiguration()
+          .withMagnetSensor(
+              new MagnetSensorConfigs()
+                  // choose one; common is signed ±0.5 rotations
+                  .withAbsoluteSensorDiscontinuityPoint(0.5)
+                  .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
+                  // set this to your calibrated zero (rotations)
+                  .withMagnetOffset(0.0));
 
     public static final SparkBaseConfig INTAKE_ARM_SPARKMAX_CONFIG =
         new SparkMaxConfig()
@@ -448,9 +472,17 @@ public class Constants {
                                 MAXMotionPositionMode.kMAXMotionTrapezoidal,
                                 ClosedLoopSlot.kSlot0)));
 
+    public static final AbsoluteEncoderConfig INTAKE_ARM_ENCODER_CONFIG =
+        new AbsoluteEncoderConfig()
+            .zeroOffset(0)
+            .inverted(false)
+            .zeroCentered(true);
+
     /* Desired controls for intake arm */
-    public static final double INTAKE_MOTOR_STOWED_POSITION = 0.0; // Setpoint
-    public static final double INTAKE_MOTOR_DEPLOYED_POSITION = 90.0; // Setpoint
+    public static final double INTAKE_ARM_STOWED_POSITION = 0.0; // Setpoint
+    public static final double INTAKE_ARM_STOWED_ANGLE_DEG = Units.degreesToRadians(90); // Setpoint
+    public static final double INTAKE_ARM_DEPLOYED_POSITION = 90.0; // Setpoint
+    public static final double INTAKE_ARM_DEPLOYED_ANGLE_DEG = Units.degreesToRadians(0); // Setpoint
     public static final double INTAKE_ARM_POSITION_TOLERANCE = 5.0; // Setpoint
   }
 
