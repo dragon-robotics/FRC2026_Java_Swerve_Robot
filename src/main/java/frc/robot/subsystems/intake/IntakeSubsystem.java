@@ -6,6 +6,7 @@ package frc.robot.subsystems.intake;
 
 import static frc.robot.Constants.IntakeSubsystemConstants.*;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.intake.IntakeIO.IntakeIOInputs;
 
@@ -102,11 +103,11 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void deployIntakeArm() {
-    intakeArmIO.setMotorPosition(INTAKE_MOTOR_DEPLOYED_POSITION);
+    intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION);
   }
 
   public void stowIntakeArm() {
-    intakeArmIO.setMotorPosition(INTAKE_MOTOR_STOWED_POSITION);
+    intakeArmIO.setMotorPosition(INTAKE_ARM_STOWED_POSITION);
   }
 
   /* Getters */
@@ -129,13 +130,13 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public boolean isIntakeArmAtDeployed() {
     double positionError =
-        Math.abs(INTAKE_MOTOR_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
+        Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtStowed() {
     double positionError =
-        Math.abs(INTAKE_MOTOR_STOWED_POSITION - intakeArmInputs.getMotorPosition());
+        Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
@@ -155,7 +156,7 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeArmInputs.getMotorCurrent();
   }
 
-  private void handleStateTransition() {
+  public void handleStateTransition() {
     // Handle the state transitions
     switch (currIntakeState) {
       case HOME:
@@ -214,6 +215,8 @@ public class IntakeSubsystem extends SubsystemBase {
   public void periodic() {
 
     handleStateTransition();
+
+    DogLog.log("Intake/Intake State", currIntakeState.toString());
 
     // This method will be called once per scheduler run
     intakeRollerIO.updateInputs(intakeRollerInputs);
