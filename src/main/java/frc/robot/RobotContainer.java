@@ -6,11 +6,14 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.GeneralConstants.*;
+import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_CANCODER_CONFIG;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_MOTOR_ID;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_TALONFX_CONFIG;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ROLLER_MOTOR_ID;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ROLLER_TALONFX_CONFIG;
 import static frc.robot.Constants.VisionConstants.APTAG_CAMERA_NAMES;
+
+import java.util.Optional;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -126,7 +129,7 @@ public class RobotContainer {
                 new IntakeIOTalonFXSim(
                     INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60_FOC"),
                 new IntakeIOTalonFXSim(
-                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60_FOC"));
+                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60_FOC", Optional.of(INTAKE_ARM_CANCODER_CONFIG)));
         hopperSubsystem = new HopperSubsystem();
         shooterSubsystem = new ShooterSubsystem();
         climberSubsystem = new ClimberSubsystem();
