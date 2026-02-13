@@ -2,8 +2,6 @@ package frc.robot.subsystems.intake;
 
 import static frc.robot.Constants.IntakeSubsystemConstants.*;
 
-import java.util.Optional;
-
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -13,6 +11,7 @@ import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import java.util.Optional;
 
 public class IntakeIOTalonFX implements IntakeIO {
 
@@ -32,7 +31,10 @@ public class IntakeIOTalonFX implements IntakeIO {
   }
 
   public IntakeIOTalonFX(
-      int canID, TalonFXConfiguration config, String motorType, Optional<CANcoderConfiguration> canCoderConfig) {
+      int canID,
+      TalonFXConfiguration config,
+      String motorType,
+      Optional<CANcoderConfiguration> canCoderConfig) {
     this.canID = canID;
     this.config = config;
     this.motorType = motorType;
@@ -47,27 +49,29 @@ public class IntakeIOTalonFX implements IntakeIO {
 
     // Apply CANcoder config (absolute offset/direction) if cancoder config is present
     this.canCoderConfig.ifPresentOrElse(
-      ccCfg -> {
-        try (CANcoder canCoder = new CANcoder(INTAKE_ARM_CANCODER_ID, CANBus.roboRIO())) {
-          canCoder.getConfigurator().apply(ccCfg);
-          TalonFXConfiguration cfg = this.config.withFeedback(
-              new FeedbackConfigs()
-                  // .withFusedCANcoder(canCoder)
-                  .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
-                  .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
-                  .withSensorToMechanismRatio(1)
-                  .withFeedbackRotorOffset(0));
-          motor.getConfigurator().apply(cfg);
-        } catch (Exception e) {
-          // Handle exceptions related to CANcoder configuration
-          System.err.println("Error configuring CANcoder: " + e.getMessage());
-        }
-      },
-      () -> {
-        // Handle the case where canCoderConfig is not present (e.g. set up feedback configs without CANcoder)
-        motor.getConfigurator().apply(this.config);
-        motor.setPosition(0);
-      });
+        ccCfg -> {
+          try (CANcoder canCoder = new CANcoder(INTAKE_ARM_CANCODER_ID, CANBus.roboRIO())) {
+            canCoder.getConfigurator().apply(ccCfg);
+            TalonFXConfiguration cfg =
+                this.config.withFeedback(
+                    new FeedbackConfigs()
+                        // .withFusedCANcoder(canCoder)
+                        .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
+                        .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
+                        .withSensorToMechanismRatio(1)
+                        .withFeedbackRotorOffset(0));
+            motor.getConfigurator().apply(cfg);
+          } catch (Exception e) {
+            // Handle exceptions related to CANcoder configuration
+            System.err.println("Error configuring CANcoder: " + e.getMessage());
+          }
+        },
+        () -> {
+          // Handle the case where canCoderConfig is not present (e.g. set up feedback configs
+          // without CANcoder)
+          motor.getConfigurator().apply(this.config);
+          motor.setPosition(0);
+        });
   }
 
   @Override

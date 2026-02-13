@@ -148,13 +148,15 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
 
     // Add telemetry data
     DogLog.log("Intake/Intake State", currIntakeState.toString());
-    DogLog.log("Intake/Intake Arm Angle (deg)", String.valueOf(Units.radiansToDegrees(currentAngleRad)));
-    DogLog.log("Intake/Intake Arm Velocity (deg/s)", String.valueOf(Units.radiansToDegrees(intakeArmSim.getVelocityRadPerSec())));
+    DogLog.log(
+        "Intake/Intake Arm Angle (deg)", String.valueOf(Units.radiansToDegrees(currentAngleRad)));
+    DogLog.log(
+        "Intake/Intake Arm Velocity (deg/s)",
+        String.valueOf(Units.radiansToDegrees(intakeArmSim.getVelocityRadPerSec())));
     DogLog.log("Intake/Intake Arm Current (A)", String.valueOf(intakeArmSim.getCurrentDrawAmps()));
 
     // This method will be called once per scheduler run
     intakeRollerIO.updateInputs(intakeRollerInputs);
     intakeArmIO.updateInputs(intakeArmInputs);
-
   }
 }

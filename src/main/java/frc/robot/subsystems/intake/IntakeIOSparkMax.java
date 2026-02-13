@@ -1,16 +1,14 @@
 package frc.robot.subsystems.intake;
 
-import java.util.Optional;
-
-import com.revrobotics.AbsoluteEncoder;
-import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import java.util.Optional;
 
 public class IntakeIOSparkMax implements IntakeIO {
   protected final SparkMax motor;
@@ -25,7 +23,11 @@ public class IntakeIOSparkMax implements IntakeIO {
     this(canID, config, motorType, Optional.empty());
   }
 
-  public IntakeIOSparkMax(int canID, SparkMaxConfig config, String motorType, Optional<AbsoluteEncoderConfig> absEncoderConfig) {
+  public IntakeIOSparkMax(
+      int canID,
+      SparkMaxConfig config,
+      String motorType,
+      Optional<AbsoluteEncoderConfig> absEncoderConfig) {
     this.canID = canID;
     this.config = config;
     this.motorType = motorType;
@@ -39,16 +41,18 @@ public class IntakeIOSparkMax implements IntakeIO {
     motor.clearFaults();
 
     this.absEncoderConfig.ifPresentOrElse(
-      absEncCfg -> {
-        this.config.apply(absEncCfg);
-        motor.configure(this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-        motor.getEncoder().setPosition(0);
-      },
-      () -> {
-        // Handle the case where absEncoderConfig is not present
-        motor.configure(this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-        motor.getEncoder().setPosition(0);
-      });
+        absEncCfg -> {
+          this.config.apply(absEncCfg);
+          motor.configure(
+              this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+          motor.getEncoder().setPosition(0);
+        },
+        () -> {
+          // Handle the case where absEncoderConfig is not present
+          motor.configure(
+              this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+          motor.getEncoder().setPosition(0);
+        });
   }
 
   @Override

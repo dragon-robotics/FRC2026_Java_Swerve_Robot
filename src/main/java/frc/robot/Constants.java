@@ -3,6 +3,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
+
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -427,22 +428,21 @@ public class Constants {
                     .withMotionMagicExpo_kA(0.1))
             .withFeedback(
                 new FeedbackConfigs()
-                    .withFusedCANcoder(
-                        new CoreCANcoder(INTAKE_ARM_CANCODER_ID))
+                    .withFusedCANcoder(new CoreCANcoder(INTAKE_ARM_CANCODER_ID))
                     .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
                     .withSensorToMechanismRatio(1)
                     .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
                     .withFeedbackRotorOffset(0));
 
-  public static final CANcoderConfiguration INTAKE_ARM_CANCODER_CONFIG =
-      new CANcoderConfiguration()
-          .withMagnetSensor(
-              new MagnetSensorConfigs()
-                  // choose one; common is signed ±0.5 rotations
-                  .withAbsoluteSensorDiscontinuityPoint(0.5)
-                  .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
-                  // set this to your calibrated zero (rotations)
-                  .withMagnetOffset(0.0));
+    public static final CANcoderConfiguration INTAKE_ARM_CANCODER_CONFIG =
+        new CANcoderConfiguration()
+            .withMagnetSensor(
+                new MagnetSensorConfigs()
+                    // choose one; common is signed ±0.5 rotations
+                    .withAbsoluteSensorDiscontinuityPoint(0.5)
+                    .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
+                    // set this to your calibrated zero (rotations)
+                    .withMagnetOffset(0.0));
 
     public static final SparkBaseConfig INTAKE_ARM_SPARKMAX_CONFIG =
         new SparkMaxConfig()
@@ -475,16 +475,14 @@ public class Constants {
                                 ClosedLoopSlot.kSlot0)));
 
     public static final AbsoluteEncoderConfig INTAKE_ARM_ENCODER_CONFIG =
-        new AbsoluteEncoderConfig()
-            .zeroOffset(0)
-            .inverted(false)
-            .zeroCentered(true);
+        new AbsoluteEncoderConfig().zeroOffset(0).inverted(false).zeroCentered(true);
 
     /* Desired controls for intake arm */
     public static final double INTAKE_ARM_STOWED_POSITION = 0.25; // Setpoint
     public static final double INTAKE_ARM_STOWED_ANGLE_DEG = Units.degreesToRadians(90); // Setpoint
     public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0; // Setpoint
-    public static final double INTAKE_ARM_DEPLOYED_ANGLE_DEG = Units.degreesToRadians(0); // Setpoint
+    public static final double INTAKE_ARM_DEPLOYED_ANGLE_DEG =
+        Units.degreesToRadians(0); // Setpoint
     public static final double INTAKE_ARM_POSITION_TOLERANCE = 5.0; // Setpoint
   }
 

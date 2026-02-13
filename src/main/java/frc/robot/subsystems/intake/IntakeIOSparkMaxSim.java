@@ -1,11 +1,10 @@
 package frc.robot.subsystems.intake;
 
-import java.util.Optional;
-
 import com.revrobotics.spark.SparkSim;
 import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.system.plant.DCMotor;
+import java.util.Optional;
 
 public class IntakeIOSparkMaxSim extends IntakeIOSparkMax {
 
@@ -16,7 +15,11 @@ public class IntakeIOSparkMaxSim extends IntakeIOSparkMax {
     this(canID, config, motorType, Optional.empty());
   }
 
-  public IntakeIOSparkMaxSim(int canID, SparkMaxConfig config, String motorType, Optional<AbsoluteEncoderConfig> absEncoderConfig) {
+  public IntakeIOSparkMaxSim(
+      int canID,
+      SparkMaxConfig config,
+      String motorType,
+      Optional<AbsoluteEncoderConfig> absEncoderConfig) {
     super(canID, config, motorType, absEncoderConfig);
 
     // Initialize SparkSim with appropriate parameters for the motor type
