@@ -1,5 +1,8 @@
 package frc.robot.subsystems.intake;
 
+import java.util.Optional;
+
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -9,20 +12,27 @@ public class IntakeIOTalonFXSim extends IntakeIOTalonFX {
   private final DCMotor motorType;
 
   public IntakeIOTalonFXSim(int canID, TalonFXConfiguration config, String motorType) {
-    super(canID, config, motorType);
+    this(canID, config, motorType, Optional.empty());
+  }
+
+  public IntakeIOTalonFXSim(int canID, TalonFXConfiguration config, String motorType, Optional<CANcoderConfiguration> canCoderConfig) {
+    super(canID, config, motorType, canCoderConfig);
 
     switch (motorType) {
-      case "NEO":
-        this.motorType = DCMotor.getNEO(1);
+      case "KrakenX60":
+        this.motorType = DCMotor.getKrakenX60(1);
         break;
-      case "NEO550":
-        this.motorType = DCMotor.getNeo550(1);
+      case "KrakenX60_FOC":
+        this.motorType = DCMotor.getKrakenX60Foc(1);
         break;
-      case "Vortex":
-        this.motorType = DCMotor.getNeoVortex(1);
+      case "KrakenX44":
+        this.motorType = DCMotor.getKrakenX44(1);
         break;
+      case "KrakenX44_FOC":
+        this.motorType = DCMotor.getKrakenX44Foc(1);
+        break;        
       default:
-        this.motorType = DCMotor.getNEO(1);
+        this.motorType = DCMotor.getKrakenX60(1);
     }
   }
 
