@@ -48,19 +48,20 @@ public class IntakeIOTalonFX implements IntakeIO {
     // Apply CANcoder config (absolute offset/direction) if cancoder config is present
     this.canCoderConfig.ifPresentOrElse(
       ccCfg -> {
-        CANcoder canCoder = new CANcoder(INTAKE_ARM_CANCODER_ID, CANBus.roboRIO());
-        canCoder.getConfigurator().apply(ccCfg);
-
-        this.config.withFeedback(
-            new FeedbackConfigs()
-                .withFusedCANcoder(canCoder)
-                .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
-                .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
-                .withSensorToMechanismRatio(1)
-                .withFeedbackRotorOffset(0));
-
-        motor.getConfigurator().apply(this.config);
-        motor.setPosition(0);
+        try (CANcoder canCoder = new CANcoder(INTAKE_ARM_CANCODER_ID, CANBus.roboRIO())) {
+          canCoder.getConfigurator().apply(ccCfg);
+          TalonFXConfiguration cfg = this.config.withFeedback(
+              new FeedbackConfigs()
+                  // .withFusedCANcoder(canCoder)
+                  .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
+                  .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
+                  .withSensorToMechanismRatio(1)
+                  .withFeedbackRotorOffset(0));
+          motor.getConfigurator().apply(cfg);
+        } catch (Exception e) {
+          // Handle exceptions related to CANcoder configuration
+          System.err.println("Error configuring CANcoder: " + e.getMessage());
+        }
       },
       () -> {
         // Handle the case where canCoderConfig is not present (e.g. set up feedback configs without CANcoder)
