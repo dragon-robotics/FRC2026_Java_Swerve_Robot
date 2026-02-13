@@ -323,7 +323,7 @@ public class Constants {
 
     // Intake arm physical properties
     public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(18);
-    public static final double INTAKE_ARM_MASS_KG = Units.lbsToKilograms(7.5);
+    public static final double INTAKE_ARM_MASS_KG = Units.lbsToKilograms(10);
     public static final double INTAKE_ARM_GEAR_RATIO = 20;
     public static final double INTAKE_MIN_ANGLE_RADIANS = Units.degreesToRadians(0);
     public static final double INTAKE_MAX_ANGLE_RADIANS = Units.degreesToRadians(90);
@@ -335,7 +335,7 @@ public class Constants {
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(Amps.of(20))
+                    .withStatorCurrentLimit(Amps.of(40))
                     .withSupplyCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40)))
             .withVoltage(
@@ -351,16 +351,17 @@ public class Constants {
             .withSlot0(
                 new Slot0Configs()
                     .withKS(0)
-                    .withKV(0.5)
-                    .withKA(0.06)
-                    .withKP(2.02)
+                    .withKV(0.4)
+                    .withKA(0.17)
+                    .withKG(0.62)
+                    .withKP(0.81)
                     .withKI(0)
-                    .withKD(0.03))
+                    .withKD(0.23))
             .withMotionMagic(
                 new MotionMagicConfigs()
-                    .withMotionMagicCruiseVelocity(4000)
-                    .withMotionMagicAcceleration(2000)
-                    .withMotionMagicJerk(4000));
+                    .withMotionMagicCruiseVelocity(60)
+                    .withMotionMagicAcceleration(100)
+                    .withMotionMagicJerk(100));
 
     public static final SparkBaseConfig INTAKE_ROLLER_SPARKMAX_CONFIG =
         new SparkMaxConfig()
@@ -396,7 +397,7 @@ public class Constants {
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(Amps.of(20))
+                    .withStatorCurrentLimit(Amps.of(60))
                     .withSupplyCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40)))
             .withVoltage(
@@ -412,14 +413,15 @@ public class Constants {
             .withSlot0(
                 new Slot0Configs()
                     .withKS(0)
-                    .withKV(0.5)
-                    .withKA(0.06)
-                    .withKG(0.39)
-                    .withKP(2.02)
+                    .withKV(0.4)
+                    .withKA(0.17)
+                    .withKG(0.62)
+                    .withKP(0.81)
                     .withKI(0)
-                    .withKD(0.03))
+                    .withKD(0.23))
             .withMotionMagic(
                 new MotionMagicConfigs()
+                    .withMotionMagicAcceleration(100)
                     .withMotionMagicCruiseVelocity(0) // Unlimited cruise velocity
                     .withMotionMagicExpo_kV(0.12)
                     .withMotionMagicExpo_kA(0.1))
@@ -479,9 +481,9 @@ public class Constants {
             .zeroCentered(true);
 
     /* Desired controls for intake arm */
-    public static final double INTAKE_ARM_STOWED_POSITION = 0.0; // Setpoint
+    public static final double INTAKE_ARM_STOWED_POSITION = 0.25; // Setpoint
     public static final double INTAKE_ARM_STOWED_ANGLE_DEG = Units.degreesToRadians(90); // Setpoint
-    public static final double INTAKE_ARM_DEPLOYED_POSITION = 90.0; // Setpoint
+    public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0; // Setpoint
     public static final double INTAKE_ARM_DEPLOYED_ANGLE_DEG = Units.degreesToRadians(0); // Setpoint
     public static final double INTAKE_ARM_POSITION_TOLERANCE = 5.0; // Setpoint
   }
