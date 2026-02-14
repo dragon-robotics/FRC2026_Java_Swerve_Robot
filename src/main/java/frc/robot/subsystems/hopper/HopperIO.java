@@ -1,45 +1,40 @@
 package frc.robot.subsystems.hopper;
 
-import frc.robot.subsystems.hopper.HopperIO.HopperIOInputs;
+// import frc.robot.subsystems.hopper.HopperIO.HopperIOInputs;
 import lombok.Getter;
 import lombok.Setter;
 
 public interface HopperIO {
 
-  default void expandHopper(double setpoint) {
-    throw new UnsupportedOperationException("expandHopper not implemented");
+  default void setMotorVoltage(double voltage) {
+    throw new UnsupportedOperationException("setMotorVoltage is not implemented");
   }
 
-  default void stowHopper() {
-    throw new UnsupportedOperationException("stowHopper not implemented");
+  default void setMotorPercentage(double percentage) {
+    throw new UnsupportedOperationException("setMotorPercentage is not implemented");
   }
 
-  /* getters */
-  default void getCurrent() {
-    throw new UnsupportedOperationException("getCurrent not implemented");
+  default void setMotorRPM(double rpm) {
+    throw new UnsupportedOperationException("setMotorRPM is not implemented");
   }
 
-  default void runRollers(double rpm) {
-    throw new UnsupportedOperationException("getCurrent not implemented");
+  default void setMotorPosition(double setpoint) {
+    throw new UnsupportedOperationException("setMotorPosition is not implemented");
   }
 
   public class HopperIOInputs {
-    // are the motors connected
-    @Getter @Setter private boolean expandingMotorConnected;
+    
+    /** Is the motor connected? */
+    @Getter @Setter private boolean motorConnected;
 
-    @Getter @Setter private boolean rollingMotorConnected;
-    // expanding motor data
-    @Getter @Setter private double expandingMotorPosition;
-    @Getter @Setter private double expandingMotorVelocity;
-    @Getter @Setter private double expandingMotorVoltage;
-    @Getter @Setter private double expandingMotorTemprature;
-    @Getter @Setter private double expandingMotorCurrent;
+     /** Motor data */
+    @Getter @Setter private double motorVoltage;
 
-    // hopper roller motor data
-    @Getter @Setter private double rollerMotorVelocity;
-    @Getter @Setter private double rollerMotorVoltage;
-    @Getter @Setter private double rollerMotorCurrent;
-    @Getter @Setter private double rollerMotorTemprature;
+    @Getter @Setter private double motorDutyCycle;
+    @Getter @Setter private double motorCurrent;
+    @Getter @Setter private double motorTemperature;
+    @Getter @Setter private double motorVelocity;
+    @Getter @Setter private double motorPosition;
   }
 
   default void updateInputs(HopperIOInputs hopperInputs) {}
