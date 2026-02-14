@@ -1,10 +1,10 @@
 package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
-import com.ctre.phoenix6.controls.Follower;
 
 public class ShooterIOTalonFX implements ShooterIO {
   protected final TalonFX motor;
@@ -62,5 +62,5 @@ public class ShooterIOTalonFX implements ShooterIO {
     inputs.setMotorCurrent(motor.getStatorCurrent().getValueAsDouble());
     inputs.setMotorTemperature(motor.getDeviceTemp().getValueAsDouble());
     inputs.setMotorVelocity(motor.getVelocity().getValueAsDouble());
-  }  
+  }
 }

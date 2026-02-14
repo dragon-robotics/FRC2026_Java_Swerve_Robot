@@ -2,18 +2,14 @@ package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.sim.TalonFXSimState;
-
 import edu.wpi.first.math.system.plant.DCMotor;
 
-public class ShooterIOTalonFXSim extends ShooterIOTalonFX{
-    
+public class ShooterIOTalonFXSim extends ShooterIOTalonFX {
+
   private final DCMotor motorType;
-    
-  public ShooterIOTalonFXSim(
-      int canID,
-      TalonFXConfiguration config,
-      String motorType) {
-    
+
+  public ShooterIOTalonFXSim(int canID, TalonFXConfiguration config, String motorType) {
+
     super(canID, config);
 
     switch (motorType) {
@@ -35,11 +31,8 @@ public class ShooterIOTalonFXSim extends ShooterIOTalonFX{
   }
 
   public ShooterIOTalonFXSim(
-      int canID,
-      TalonFXConfiguration config,
-      int leadCANID,
-      String motorType) {
-    
+      int canID, TalonFXConfiguration config, int leadCANID, String motorType) {
+
     super(canID, config, leadCANID);
 
     switch (motorType) {
@@ -58,7 +51,7 @@ public class ShooterIOTalonFXSim extends ShooterIOTalonFX{
       default:
         this.motorType = DCMotor.getKrakenX60(1);
     }
-  }  
+  }
 
   public TalonFXSimState getSimState() {
     return motor.getSimState();
@@ -66,5 +59,5 @@ public class ShooterIOTalonFXSim extends ShooterIOTalonFX{
 
   public DCMotor getMotorType() {
     return motorType;
-  }  
+  }
 }

@@ -1,12 +1,10 @@
 package frc.robot.subsystems.shooter;
 
-import java.util.Optional;
-
 import com.revrobotics.spark.SparkSim;
 import com.revrobotics.spark.config.AlternateEncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
-
 import edu.wpi.first.math.system.plant.DCMotor;
+import java.util.Optional;
 
 public class ShooterIOSparkMaxSim extends ShooterIOSparkMax {
 
@@ -18,7 +16,10 @@ public class ShooterIOSparkMaxSim extends ShooterIOSparkMax {
   }
 
   public ShooterIOSparkMaxSim(
-      int canID, SparkMaxConfig config, String motorType, Optional<AlternateEncoderConfig> altEncoderConfig) {
+      int canID,
+      SparkMaxConfig config,
+      String motorType,
+      Optional<AlternateEncoderConfig> altEncoderConfig) {
     super(canID, config, motorType, altEncoderConfig);
     // Initialize SparkSim with appropriate parameters for the motor type
     switch (motorType) {
@@ -44,5 +45,5 @@ public class ShooterIOSparkMaxSim extends ShooterIOSparkMax {
 
   public DCMotor getMotorType() {
     return motorType;
-  }    
+  }
 }
