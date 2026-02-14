@@ -2,17 +2,16 @@ package frc.robot.subsystems.hopper;
 
 import static frc.robot.Constants.HopperConstants.*;
 
+import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.hopper.HopperIO.HopperIOInputs;
 
 public class HopperSubsystem extends SubsystemBase {
 
   public enum HopperState {
-    STOWED,
     INDEXTOSHOOTER,
-    INDEXTOINTAKE,
-    STOWING,
-    DEPLOYING
+    INDEXTOINTAKE
   }
 
   // current state
@@ -21,13 +20,11 @@ public class HopperSubsystem extends SubsystemBase {
   private HopperState desiredHopperState;
   // inputs
 
-  private final HopperIO expandingMotorIO;
   private final HopperIO rollerMotorIO;
   // hardware layer
   private final HopperIOInputs rollerMotorIOInputs;
-  private final HopperIOInputs expandingMotorInputs;
 
-  public HopperSubsystem(HopperIO expandingMotorIO, HopperIO rollerMotorIO) {
+  public HopperSubsystem(HopperIO rollerMotorIO) {
 
     this.expandingMotorIO = expandingMotorIO;
     this.rollerMotorIO = rollerMotorIO;
