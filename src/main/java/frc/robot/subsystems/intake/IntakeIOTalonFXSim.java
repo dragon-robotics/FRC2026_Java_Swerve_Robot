@@ -19,7 +19,7 @@ public class IntakeIOTalonFXSim extends IntakeIOTalonFX {
       TalonFXConfiguration config,
       String motorType,
       Optional<CANcoderConfiguration> canCoderConfig) {
-    super(canID, config, motorType, canCoderConfig);
+    super(canID, config, canCoderConfig);
 
     switch (motorType) {
       case "KrakenX60":
