@@ -11,6 +11,10 @@ import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_MOTOR_ID;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_TALONFX_CONFIG;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ROLLER_MOTOR_ID;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ROLLER_TALONFX_CONFIG;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_LEAD_MOTOR_ID;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_LEAD_TALONFX_CONFIG;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_FOLLOW_MOTOR_ID;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_FOLLOW_TALONFX_CONFIG;
 import static frc.robot.Constants.VisionConstants.APTAG_CAMERA_NAMES;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -40,6 +44,8 @@ import frc.robot.subsystems.intake.IntakeIOTalonFX;
 import frc.robot.subsystems.intake.IntakeIOTalonFXSim;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystemSim;
+import frc.robot.subsystems.shooter.ShooterIOTalonFX;
+import frc.robot.subsystems.shooter.ShooterIOTalonFXSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
@@ -104,11 +110,14 @@ public class RobotContainer {
         intakeSubsystem =
             new IntakeSubsystem(
                 new IntakeIOTalonFX(
-                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60_FOC"),
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG),
                 new IntakeIOTalonFX(
-                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60_FOC"));
+                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG));
         hopperSubsystem = new HopperSubsystem();
-        shooterSubsystem = new ShooterSubsystem();
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new ShooterIOTalonFX(SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG),
+                new ShooterIOTalonFX(SHOOTER_FOLLOW_MOTOR_ID, SHOOTER_FOLLOW_TALONFX_CONFIG, SHOOTER_LEAD_MOTOR_ID));
         climberSubsystem = new ClimberSubsystem();
         visionSubsystem =
             new VisionSubsystem(
@@ -134,7 +143,10 @@ public class RobotContainer {
                     "KrakenX60_FOC",
                     Optional.of(INTAKE_ARM_CANCODER_CONFIG)));
         hopperSubsystem = new HopperSubsystem();
-        shooterSubsystem = new ShooterSubsystem();
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new ShooterIOTalonFXSim(SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "KrakenX60_FOC"),
+                new ShooterIOTalonFXSim(SHOOTER_FOLLOW_MOTOR_ID, SHOOTER_FOLLOW_TALONFX_CONFIG, SHOOTER_LEAD_MOTOR_ID, "KrakenX60_FOC"));
         climberSubsystem = new ClimberSubsystem();
         visionSubsystem =
             new VisionSubsystem(
@@ -171,11 +183,14 @@ public class RobotContainer {
         intakeSubsystem =
             new IntakeSubsystem(
                 new IntakeIOTalonFX(
-                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60_FOC"),
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG),
                 new IntakeIOTalonFX(
-                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60_FOC"));
+                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG));
         hopperSubsystem = new HopperSubsystem();
-        shooterSubsystem = new ShooterSubsystem();
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new ShooterIOTalonFX(SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG),
+                new ShooterIOTalonFX(SHOOTER_FOLLOW_MOTOR_ID, SHOOTER_FOLLOW_TALONFX_CONFIG, SHOOTER_LEAD_MOTOR_ID));
         climberSubsystem = new ClimberSubsystem();
         visionSubsystem =
             new VisionSubsystem(
@@ -194,11 +209,14 @@ public class RobotContainer {
         intakeSubsystem =
             new IntakeSubsystem(
                 new IntakeIOTalonFX(
-                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60_FOC"),
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG),
                 new IntakeIOTalonFX(
-                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "KrakenX60_FOC"));
+                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG));
         hopperSubsystem = new HopperSubsystem();
-        shooterSubsystem = new ShooterSubsystem();
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new ShooterIOTalonFX(SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG),
+                new ShooterIOTalonFX(SHOOTER_FOLLOW_MOTOR_ID, SHOOTER_FOLLOW_TALONFX_CONFIG, SHOOTER_LEAD_MOTOR_ID));
         climberSubsystem = new ClimberSubsystem();
         visionSubsystem =
             new VisionSubsystem(
