@@ -22,8 +22,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private double targetRPM;
 
-   /** Creates a new ShooterSubsystem. */
-
+  /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem(ShooterIO shooterLeadIO, ShooterIO shooterFollowIO) {
     this.shooterLeadIO = shooterLeadIO;
     this.shooterFollowIO = shooterFollowIO;
@@ -72,7 +71,7 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public double getShooterSpeed() {
-    return  shooterLeadInputs.getMotorVelocity();
+    return shooterLeadInputs.getMotorVelocity();
   }
 
   public boolean isShooting() {
@@ -108,15 +107,21 @@ public class ShooterSubsystem extends SubsystemBase {
         stopShooter();
         break;
       case PREPFUEL:
-        if (MathUtil.isNear(SHOOTER_RPM * 0.5, getShooterSpeed(), 50)) { // Use threshold to determine if shooter is up to speed
+        if (MathUtil.isNear(
+            SHOOTER_RPM * 0.5,
+            getShooterSpeed(),
+            50)) { // Use threshold to determine if shooter is up to speed
           currShooterState = desiredShooterState;
         }
         prepShooter();
         break;
       case SHOOT:
-        if (MathUtil.isNear(SHOOTER_RPM, getShooterSpeed(), 50)) { // Use threshold to determine if shooter is up to speed
+        if (MathUtil.isNear(
+            SHOOTER_RPM,
+            getShooterSpeed(),
+            50)) { // Use threshold to determine if shooter is up to speed
           currShooterState = desiredShooterState;
-        }      
+        }
         runShooter();
         break;
     }

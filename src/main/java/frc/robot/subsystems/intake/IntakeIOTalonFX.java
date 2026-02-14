@@ -19,8 +19,7 @@ public class IntakeIOTalonFX implements IntakeIO {
   protected final int canID;
   protected final TalonFXConfiguration config;
 
-  protected final VelocityTorqueCurrentFOC
-      motorVelocityTorqueCurrentFOCRequest;
+  protected final VelocityTorqueCurrentFOC motorVelocityTorqueCurrentFOCRequest;
   protected final MotionMagicExpoTorqueCurrentFOC motorMotionMagicExpoTorqueCurrentFOCRequest;
 
   private final Optional<CANcoderConfiguration> canCoderConfig;
@@ -30,9 +29,7 @@ public class IntakeIOTalonFX implements IntakeIO {
   }
 
   public IntakeIOTalonFX(
-      int canID,
-      TalonFXConfiguration config,
-      Optional<CANcoderConfiguration> canCoderConfig) {
+      int canID, TalonFXConfiguration config, Optional<CANcoderConfiguration> canCoderConfig) {
     this.canID = canID;
     this.config = config;
     this.canCoderConfig = canCoderConfig;
