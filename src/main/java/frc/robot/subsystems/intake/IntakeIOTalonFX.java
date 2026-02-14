@@ -7,7 +7,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
@@ -18,33 +18,30 @@ public class IntakeIOTalonFX implements IntakeIO {
   protected final TalonFX motor;
   protected final int canID;
   protected final TalonFXConfiguration config;
-  protected final String motorType;
 
-  protected final MotionMagicVelocityTorqueCurrentFOC
-      motorMotionMagicVelocityTorqueCurrentFOCRequest;
+  protected final VelocityTorqueCurrentFOC
+      motorVelocityTorqueCurrentFOCRequest;
   protected final MotionMagicExpoTorqueCurrentFOC motorMotionMagicExpoTorqueCurrentFOCRequest;
 
   private final Optional<CANcoderConfiguration> canCoderConfig;
 
-  public IntakeIOTalonFX(int canID, TalonFXConfiguration config, String motorType) {
-    this(canID, config, motorType, Optional.empty());
+  public IntakeIOTalonFX(int canID, TalonFXConfiguration config) {
+    this(canID, config, Optional.empty());
   }
 
   public IntakeIOTalonFX(
       int canID,
       TalonFXConfiguration config,
-      String motorType,
       Optional<CANcoderConfiguration> canCoderConfig) {
     this.canID = canID;
     this.config = config;
-    this.motorType = motorType;
     this.canCoderConfig = canCoderConfig;
 
     motor = new TalonFX(this.canID, CANBus.roboRIO());
     motor.clearStickyFaults();
 
     /* Create Motion Magic Velocity and Motion Magic Expo requests */
-    motorMotionMagicVelocityTorqueCurrentFOCRequest = new MotionMagicVelocityTorqueCurrentFOC(0);
+    motorVelocityTorqueCurrentFOCRequest = new VelocityTorqueCurrentFOC(0);
     motorMotionMagicExpoTorqueCurrentFOCRequest = new MotionMagicExpoTorqueCurrentFOC(0);
 
     // Apply CANcoder config (absolute offset/direction) if cancoder config is present
@@ -86,7 +83,7 @@ public class IntakeIOTalonFX implements IntakeIO {
 
   @Override
   public void setMotorRPM(double rpm) {
-    motor.setControl(motorMotionMagicVelocityTorqueCurrentFOCRequest.withVelocity(rpm / 60));
+    motor.setControl(motorVelocityTorqueCurrentFOCRequest.withVelocity(rpm / 60));
   }
 
   @Override
