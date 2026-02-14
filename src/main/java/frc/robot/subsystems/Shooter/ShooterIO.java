@@ -4,52 +4,31 @@ import lombok.Getter;
 import lombok.Setter;
 
 public interface ShooterIO {
-    default void runShooter(double rpm) {
-        throw new UnsupportedOperationException("runShooter not implemented");
-    }
-    default void stopShooter() {
-        runShooter(0.0);
-    }
-    default void setDesiredState() {
-        throw new UnsupportedOperationException("setDesiredState not implemented");
-    }
 
-    default double getShooterSpeed() {
-        throw new UnsupportedOperationException("getShooterSpeed not implemented");
-    }
+  default void setMotorVoltage(double voltage) {
+    throw new UnsupportedOperationException("setMotorVoltage not implemented");
+  }
 
-    default void getCurrentState() {
-        throw new UnsupportedOperationException("getCurrentState not implemented");
-    }
+  default void setMotorPercentage(double percentage) {
+    throw new UnsupportedOperationException("setMotorPercentage not implemented");
+  }
 
-    default boolean isShooting() {
-        throw new UnsupportedOperationException("isShooting not implemented");
-    }
-    
-    default boolean isShooterStopped() {
-        throw new UnsupportedOperationException("is ShooterStoppped is not implemented");
-    }
+  default void setMotorRPM(double rpm) {
+    throw new UnsupportedOperationException("setMotorRPM not implemented");
+  }
 
+  class ShooterIOInputs {
+    /** Is the motor connected? */
+    @Getter @Setter private boolean motorConnected;
 
-    class ShooterIOInputs {
-        /** are shooter motors connected */
-        @Getter @Setter private boolean forwardMotorConnected;
-        @Getter @Setter private boolean inverseMotorConnected;
-        // shooterSpeed
-        
-        @Getter @Setter private double forwardMotorVelocity;
-        @Getter @Setter private double inverseMotorVelocity;
+    /** Motor data */
+    @Getter @Setter private double motorVoltage;
 
-        // forward motor data
-        @Getter @Setter private double forwardMotorCurrent; 
-        @Getter @Setter private double forwardMotorVoltage;
-        @Getter @Setter private double forwardMotorTemprature; 
-        // inverse motor data
-        @Getter @Setter private double inverseMotorVoltage;
-        @Getter @Setter private double inverseMotorCurrent;
-        @Getter @Setter private double inverseMotorTemprature;
+    @Getter @Setter private double motorDutyCycle;
+    @Getter @Setter private double motorCurrent;
+    @Getter @Setter private double motorTemperature;
+    @Getter @Setter private double motorVelocity;
+  }
 
-    }
-    
-    default void updateInputs(ShooterIOInputs shooterInputs) {}
+  default void updateInputs(ShooterIOInputs shooterInputs) {}
 }
