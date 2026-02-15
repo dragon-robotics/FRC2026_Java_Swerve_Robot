@@ -33,13 +33,6 @@ public interface ClimberIO {
     @Getter @Setter private double leadMotorVoltage;
     @Getter @Setter private double leadMotorCurrent;
     @Getter @Setter private double leadMotorTemperature;
-
-    // Follower motor data
-    @Getter @Setter private double followerMotorPosition;
-    @Getter @Setter private double followerMotorVelocity;
-    @Getter @Setter private double followerMotorVoltage;
-    @Getter @Setter private double followerMotorCurrent;
-    @Getter @Setter private double followerMotorTemperature;
   }
 
   default void updateInputs(ClimberIOInputs climberInputs) {
