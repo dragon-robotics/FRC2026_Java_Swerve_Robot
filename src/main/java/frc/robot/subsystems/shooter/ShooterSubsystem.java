@@ -11,7 +11,8 @@ public class ShooterSubsystem extends SubsystemBase {
   public enum ShooterState {
     STOP,
     PREPFUEL,
-    SHOOT
+    SHOOT,
+    TRANSITION  // Transition state to handle ramping up/down of the shooter speed
   }
 
   private ShooterState desiredShooterState;
@@ -36,16 +37,20 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /* Setters */
   public void setDesiredState(ShooterState state) {
-    switch (state) {
+    this.desiredShooterState = state;
+
+    switch (desiredShooterState) {
       case STOP:
-        desiredShooterState = ShooterState.STOP;
+        currShooterState = ShooterState.TRANSITION;
         break;
       case PREPFUEL:
-        desiredShooterState = ShooterState.PREPFUEL;
+        currShooterState = ShooterState.TRANSITION;
         break;
       case SHOOT:
-        desiredShooterState = ShooterState.SHOOT;
+        currShooterState = ShooterState.TRANSITION;
         break;
+      default:
+        break;        
     }
   }
 
@@ -63,7 +68,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   // runs the shooter at half speed
   public void prepShooter() {
-    shooterLeadIO.setMotorRPM(targetRPM * 0.5);
+    shooterLeadIO.setMotorRPM(targetRPM * 0.3); // Run at 30% of target RPM for prep
   }
 
   public void stopShooter() {
@@ -101,29 +106,37 @@ public class ShooterSubsystem extends SubsystemBase {
     // Handle the state transitions
     switch (currShooterState) {
       case STOP:
-        if (isShooterStopped()) {
-          currShooterState = desiredShooterState;
-        }
         stopShooter();
         break;
       case PREPFUEL:
-        if (MathUtil.isNear(
-            SHOOTER_RPM * 0.5,
-            getShooterSpeed(),
-            50)) { // Use threshold to determine if shooter is up to speed
-          currShooterState = desiredShooterState;
-        }
         prepShooter();
         break;
       case SHOOT:
-        if (MathUtil.isNear(
-            SHOOTER_RPM,
-            getShooterSpeed(),
-            50)) { // Use threshold to determine if shooter is up to speed
-          currShooterState = desiredShooterState;
-        }
         runShooter();
         break;
+      case TRANSITION:
+        switch (desiredShooterState) {
+          case STOP:
+            stopShooter();
+            if(isShooterStopped()) {
+              currShooterState = ShooterState.STOP;
+            }
+            break;
+          case PREPFUEL:
+            prepShooter();
+            if (MathUtil.isNear(targetRPM * 0.3, getShooterSpeed(), 5)) {
+              currShooterState = ShooterState.PREPFUEL;
+            }
+            break;
+          case SHOOT:
+            runShooter();
+            if (MathUtil.isNear(targetRPM, getShooterSpeed(), 5)) {
+              currShooterState = ShooterState.SHOOT;
+            }
+            break;
+          default:
+            break;
+        }
     }
   }
 
