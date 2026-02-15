@@ -11,6 +11,8 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import frc.robot.subsystems.climber.ClimberIO.ClimberIOInputs;
+
 public class ClimberIOSparkMax implements ClimberIO {
     protected final SparkMax motor;
     protected final int canID;
