@@ -7,7 +7,15 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
@@ -19,8 +27,20 @@ public class IntakeIOTalonFX implements IntakeIO {
   protected final int canID;
   protected final TalonFXConfiguration config;
 
-  protected final VelocityTorqueCurrentFOC motorVelocityTorqueCurrentFOCRequest;
+  // Position Controls //
+  protected final PositionVoltage motorPositionVoltageRequest;
+  protected final PositionTorqueCurrentFOC motorPositionTorqueCurrentFOCRequest;
+  protected final MotionMagicVoltage motorMotionMagicVoltageRequest;
+  protected final MotionMagicTorqueCurrentFOC motorMotionMagicTorqueCurrentFOCRequest;
+  protected final MotionMagicExpoVoltage motorMotionMagicExpoVoltageRequest;
   protected final MotionMagicExpoTorqueCurrentFOC motorMotionMagicExpoTorqueCurrentFOCRequest;
+
+  // Velocity Controls //
+  protected final MotionMagicVelocityVoltage motorMotionMagicVelocityVoltageRequest;
+  protected final MotionMagicVelocityTorqueCurrentFOC motorMotionMagicVelocityTorqueCurrentFOCRequest;
+  protected final VelocityVoltage motorVelocityVoltageRequest;
+  protected final VelocityTorqueCurrentFOC motorVelocityTorqueCurrentFOCRequest;
+
 
   private final Optional<CANcoderConfiguration> canCoderConfig;
 
@@ -37,28 +57,38 @@ public class IntakeIOTalonFX implements IntakeIO {
     motor = new TalonFX(this.canID, CANBus.roboRIO());
     motor.clearStickyFaults();
 
-    /* Create Motion Magic Velocity and Motion Magic Expo requests */
-    motorVelocityTorqueCurrentFOCRequest = new VelocityTorqueCurrentFOC(0);
+    /* Create Position and Velocity requests */
+
+    // Position Control Requests
+    motorPositionVoltageRequest = new PositionVoltage(0);
+    motorPositionTorqueCurrentFOCRequest = new PositionTorqueCurrentFOC(0);
+    motorMotionMagicVoltageRequest = new MotionMagicVoltage(0);
+    motorMotionMagicTorqueCurrentFOCRequest = new MotionMagicTorqueCurrentFOC(0);
+    motorMotionMagicExpoVoltageRequest = new MotionMagicExpoVoltage(0);
     motorMotionMagicExpoTorqueCurrentFOCRequest = new MotionMagicExpoTorqueCurrentFOC(0);
+
+    // Velocity Control Requests
+    motorVelocityVoltageRequest = new VelocityVoltage(0);
+    motorVelocityTorqueCurrentFOCRequest = new VelocityTorqueCurrentFOC(0);
+    motorMotionMagicVelocityVoltageRequest = new MotionMagicVelocityVoltage(0);
+    motorMotionMagicVelocityTorqueCurrentFOCRequest = new MotionMagicVelocityTorqueCurrentFOC(0);
 
     // Apply CANcoder config (absolute offset/direction) if cancoder config is present
     this.canCoderConfig.ifPresentOrElse(
         ccCfg -> {
           try (CANcoder canCoder = new CANcoder(INTAKE_ARM_CANCODER_ID, CANBus.roboRIO())) {
             canCoder.getConfigurator().apply(ccCfg);
-            TalonFXConfiguration cfg =
-                this.config.withFeedback(
-                    new FeedbackConfigs()
-                        // .withFusedCANcoder(canCoder)
-                        .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
-                        .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
-                        .withSensorToMechanismRatio(1)
-                        .withFeedbackRotorOffset(0));
-            motor.getConfigurator().apply(cfg);
-          } catch (Exception e) {
-            // Handle exceptions related to CANcoder configuration
-            System.err.println("Error configuring CANcoder: " + e.getMessage());
           }
+
+          TalonFXConfiguration cfg =
+              this.config.withFeedback(
+                  new FeedbackConfigs()
+                      .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
+                      .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
+                      .withSensorToMechanismRatio(1)
+                      .withFeedbackRotorOffset(0));
+
+          motor.getConfigurator().apply(cfg);
         },
         () -> {
           // Handle the case where canCoderConfig is not present (e.g. set up feedback configs
@@ -80,7 +110,7 @@ public class IntakeIOTalonFX implements IntakeIO {
 
   @Override
   public void setMotorRPM(double rpm) {
-    motor.setControl(motorVelocityTorqueCurrentFOCRequest.withVelocity(rpm / 60));
+    motor.setControl(motorMotionMagicVelocityTorqueCurrentFOCRequest.withVelocity(rpm / 60));
   }
 
   @Override
