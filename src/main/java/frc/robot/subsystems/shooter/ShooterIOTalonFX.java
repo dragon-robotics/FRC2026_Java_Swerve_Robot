@@ -2,7 +2,10 @@ package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
@@ -11,7 +14,10 @@ public class ShooterIOTalonFX implements ShooterIO {
   protected final int canID;
   protected final TalonFXConfiguration config;
 
+  protected final VelocityVoltage motorVelocityVoltageRequest;
   protected final VelocityTorqueCurrentFOC motorVelocityTorqueCurrentFOCRequest;
+  protected final MotionMagicVelocityVoltage motorMotionMagicVelocityVoltageRequest;
+  protected final MotionMagicVelocityTorqueCurrentFOC motorMotionMagicVelocityTorqueCurrentFOCRequest;
 
   public ShooterIOTalonFX(int canID, TalonFXConfiguration config) {
     this.canID = canID;
@@ -20,20 +26,16 @@ public class ShooterIOTalonFX implements ShooterIO {
     motor = new TalonFX(canID);
     motor.clearStickyFaults();
 
+    motorVelocityVoltageRequest = new VelocityVoltage(0);
     motorVelocityTorqueCurrentFOCRequest = new VelocityTorqueCurrentFOC(0);
+    motorMotionMagicVelocityVoltageRequest = new MotionMagicVelocityVoltage(0);
+    motorMotionMagicVelocityTorqueCurrentFOCRequest = new MotionMagicVelocityTorqueCurrentFOC(0);
 
     motor.getConfigurator().apply(config);
   }
 
   public ShooterIOTalonFX(int canID, TalonFXConfiguration config, int leadCANID) {
-    this.canID = canID;
-    this.config = config;
-
-    motor = new TalonFX(canID);
-    motor.clearStickyFaults();
-
-    motorVelocityTorqueCurrentFOCRequest = new VelocityTorqueCurrentFOC(0);
-    motor.getConfigurator().apply(config);
+    this(canID, config); // reuse common init
     motor.setControl(new Follower(leadCANID, MotorAlignmentValue.Opposed));
   }
 
