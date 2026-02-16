@@ -83,14 +83,14 @@ public class ClimberIOTalonFX implements ClimberIO {
   @Override
   public void updateInputs(ClimberIOInputs climberInputs) {
     // Motor connection status
-    climberInputs.setLeadMotorConnected(motor.isConnected());
+    climberInputs.setMotorConnected(motor.isConnected());
 
     // Lead motor data
-    climberInputs.setLeadMotorPosition(motor.getPosition().getValueAsDouble());
-    climberInputs.setLeadMotorVelocity(motor.getVelocity().getValueAsDouble());
-    climberInputs.setLeadMotorVoltage(motor.getMotorVoltage().getValueAsDouble());
-    climberInputs.setLeadMotorCurrent(motor.getStatorCurrent().getValueAsDouble());
-    climberInputs.setLeadMotorTemperature(motor.getDeviceTemp().getValueAsDouble());
+    climberInputs.setMotorPosition(motor.getPosition().getValueAsDouble());
+    climberInputs.setMotorVelocity(motor.getVelocity().getValueAsDouble());
+    climberInputs.setMotorVoltage(motor.getMotorVoltage().getValueAsDouble());
+    climberInputs.setMotorCurrent(motor.getStatorCurrent().getValueAsDouble());
+    climberInputs.setMotorTemperature(motor.getDeviceTemp().getValueAsDouble());
 
   }
 }
