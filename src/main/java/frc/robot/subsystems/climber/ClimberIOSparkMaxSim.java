@@ -36,8 +36,16 @@ public class ClimberIOSparkMaxSim extends ClimberIOSparkMax {
                 break;
             default:
                 this.motorType = DCMotor.getNEO(1);
+        }
+        this.motorSim = new SparkSim(this.motor, this.motorType);
     }
-    this.motorSim = new SparkSim(this.motor, this.motorType);
-}
+
+    public SparkSim getMotorSim() {
+        return motorSim;
+    }
+
+    public DCMotor getMotorType() {
+        return motorType;
+    }
     
 }

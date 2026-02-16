@@ -14,11 +14,11 @@ public class ClimberSubsystem extends SubsystemBase {
     DEPLOYED
   }
 
-  private ClimberState currentClimberState;
-  private ClimberState desiredClimberState;
+  protected ClimberState currentClimberState;
+  protected ClimberState desiredClimberState;
 
-  private ClimberIO climberMotorIO;
-  private ClimberIOInputs climberMotorInputs;
+  protected ClimberIO climberMotorIO;
+  protected ClimberIOInputs climberMotorInputs;
 
   public ClimberSubsystem(ClimberIO climbMotorIO) {
     this.climberMotorIO = climbMotorIO;
