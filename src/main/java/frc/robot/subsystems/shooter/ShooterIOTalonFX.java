@@ -17,7 +17,8 @@ public class ShooterIOTalonFX implements ShooterIO {
   protected final VelocityVoltage motorVelocityVoltageRequest;
   protected final VelocityTorqueCurrentFOC motorVelocityTorqueCurrentFOCRequest;
   protected final MotionMagicVelocityVoltage motorMotionMagicVelocityVoltageRequest;
-  protected final MotionMagicVelocityTorqueCurrentFOC motorMotionMagicVelocityTorqueCurrentFOCRequest;
+  protected final MotionMagicVelocityTorqueCurrentFOC
+      motorMotionMagicVelocityTorqueCurrentFOCRequest;
 
   public ShooterIOTalonFX(int canID, TalonFXConfiguration config) {
     this.canID = canID;
