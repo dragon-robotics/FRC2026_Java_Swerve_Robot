@@ -19,6 +19,7 @@ import com.ctre.phoenix6.hardware.core.CoreCANcoder;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.AbsoluteEncoderConfig;
@@ -52,7 +53,7 @@ public class Constants {
 
     // Robot mode
     public static final RobotMode CURRENT_MODE =
-        RobotBase.isReal() ? RobotMode.COMP : RobotMode.SIM;
+        RobotBase.isReal() ? RobotMode.TEST : RobotMode.SIM;
 
     public static enum RobotMode {
       /** Running on test mode */
@@ -401,7 +402,7 @@ public class Constants {
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(Amps.of(60))
+                    .withStatorCurrentLimit(Amps.of(80))
                     .withSupplyCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40)))
             .withVoltage(
@@ -410,32 +411,34 @@ public class Constants {
                     .withPeakReverseVoltage(Volts.of(-10)))
             .withOpenLoopRamps(
                 new OpenLoopRampsConfigs()
-                    .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.2))
-                    .withTorqueOpenLoopRampPeriod(Seconds.of(0.2))
-                    .withVoltageOpenLoopRampPeriod(Seconds.of(0.2)))
+                    .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.1))
+                    .withTorqueOpenLoopRampPeriod(Seconds.of(0.1))
+                    .withVoltageOpenLoopRampPeriod(Seconds.of(0.1)))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
             .withSlot0(
                 new Slot0Configs()
-                    .withKS(0)
-                    .withKV(0.4)
-                    .withKA(0.17)
-                    .withKG(0.62)
-                    .withKP(0.81)
+                    .withKS(1.75)
+                    .withKV(0.0)
+                    .withKA(0.0)
+                    .withKG(0.0)
+                    .withKP(2)
                     .withKI(0)
-                    .withKD(0.23))
+                    .withKD(2)
+                    .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
             .withMotionMagic(
                 new MotionMagicConfigs()
-                    .withMotionMagicAcceleration(100)
-                    .withMotionMagicCruiseVelocity(0) // Unlimited cruise velocity
-                    .withMotionMagicExpo_kV(0.12)
-                    .withMotionMagicExpo_kA(0.1))
+                    .withMotionMagicCruiseVelocity(0)
+                    .withMotionMagicAcceleration(200)
+                    .withMotionMagicJerk(200)
+                    .withMotionMagicExpo_kV(0.02)
+                    .withMotionMagicExpo_kA(0.02))
             .withFeedback(
                 new FeedbackConfigs()
                     .withFusedCANcoder(new CoreCANcoder(INTAKE_ARM_CANCODER_ID))
                     .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
                     .withSensorToMechanismRatio(1)
                     .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
-                    .withFeedbackRotorOffset(0));
+                    .withFeedbackRotorOffset(0.172852));
 
     public static final CANcoderConfiguration INTAKE_ARM_CANCODER_CONFIG =
         new CANcoderConfiguration()
