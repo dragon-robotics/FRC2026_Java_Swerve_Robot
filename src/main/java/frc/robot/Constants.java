@@ -4,6 +4,9 @@ import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -31,6 +34,7 @@ import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
@@ -818,6 +822,13 @@ public class Constants {
         public static final double CLIMBER_L1_SETPOINT = 50.0; // placeholder value
         // Tolerance for position checking
         public static final double POSITION_TOLERANCE = 0.5;
+
+                // Climber hook physical properties
+        public static final double CLIMBER_LENGTH_METERS = Units.inchesToMeters(24);   // Hook length
+        public static final double CLIMBER_MASS_KG = Units.lbsToKilograms(12);       // place holder value 
+        public static final double CLIMBER_MIN_ANGLE_RADIANS = Units.degreesToRadians(-30); 
+        public static final double CLIMBER_MAX_ANGLE_RADIANS = Units.degreesToRadians(120);  
+        public static final double CLIMBER_STARTING_ANGLE_RADIANS = CLIMBER_MIN_ANGLE_RADIANS;
     }
 
     public static class OperatorConstants {
