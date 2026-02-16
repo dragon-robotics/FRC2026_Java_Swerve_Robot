@@ -12,7 +12,7 @@ public class ShooterSubsystem extends SubsystemBase {
     STOP,
     PREPFUEL,
     SHOOT,
-    TRANSITION  // Transition state to handle ramping up/down of the shooter speed
+    TRANSITION // Transition state to handle ramping up/down of the shooter speed
   }
 
   private ShooterState desiredShooterState;
@@ -50,7 +50,7 @@ public class ShooterSubsystem extends SubsystemBase {
         currShooterState = ShooterState.TRANSITION;
         break;
       default:
-        break;        
+        break;
     }
   }
 
@@ -118,7 +118,7 @@ public class ShooterSubsystem extends SubsystemBase {
         switch (desiredShooterState) {
           case STOP:
             stopShooter();
-            if(isShooterStopped()) {
+            if (isShooterStopped()) {
               currShooterState = ShooterState.STOP;
             }
             break;

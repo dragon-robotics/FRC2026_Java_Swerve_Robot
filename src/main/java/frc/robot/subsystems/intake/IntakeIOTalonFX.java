@@ -37,10 +37,10 @@ public class IntakeIOTalonFX implements IntakeIO {
 
   // Velocity Controls //
   protected final MotionMagicVelocityVoltage motorMotionMagicVelocityVoltageRequest;
-  protected final MotionMagicVelocityTorqueCurrentFOC motorMotionMagicVelocityTorqueCurrentFOCRequest;
+  protected final MotionMagicVelocityTorqueCurrentFOC
+      motorMotionMagicVelocityTorqueCurrentFOCRequest;
   protected final VelocityVoltage motorVelocityVoltageRequest;
   protected final VelocityTorqueCurrentFOC motorVelocityTorqueCurrentFOCRequest;
-
 
   private final Optional<CANcoderConfiguration> canCoderConfig;
 
