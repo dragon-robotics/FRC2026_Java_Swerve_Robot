@@ -2,6 +2,7 @@ package frc.robot.subsystems.climber;
 
 import static frc.robot.Constants.ClimberConstants.*;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.climber.ClimberIO.ClimberIOInputs;
 
@@ -71,41 +72,47 @@ public class ClimberSubsystem extends SubsystemBase {
   public ClimberState getDesiredState() {
     return desiredClimberState;
   }
+  public void handleStateTransition() {
+    // State machine logic
+      switch (currentClimberState) {
+        case STOWED:
+          // Climber is stowed, do nothing
+          // Check if we need to deploy
+          if (desiredClimberState == ClimberState.DEPLOYED) {
+            currentClimberState = ClimberState.DEPLOYING;
+          }
+          break;
+
+        case STOWING:
+          // Actively moving to stowed position
+          stowClimber();
+          currentClimberState = ClimberState.STOWED;
+          break;
+
+        case DEPLOYING:
+          // Actively moving to deployed position
+          deployClimber();
+            currentClimberState = ClimberState.DEPLOYED;
+          break;
+
+        case DEPLOYED:
+          // Climber is deployed, hold position
+          // Check if we need to stow
+          if (desiredClimberState == ClimberState.STOWED) {
+            currentClimberState = ClimberState.STOWING;
+          }
+          break;
+        default:
+          break;
+    }
+  }
 
   @Override
   public void periodic() {
-    climberMotorIO.updateInputs(climberMotorInputs);
-     // State machine logic
-    switch (currentClimberState) {
-      case STOWED:
-        // Climber is stowed, do nothing
-        // Check if we need to deploy
-        if (desiredClimberState == ClimberState.DEPLOYED) {
-          currentClimberState = ClimberState.DEPLOYING;
-        }
-        break;
+      handleStateTransition();
+      DogLog.log("CLimber/Climber State", currentClimberState.toString());
 
-      case STOWING:
-        // Actively moving to stowed position
-        stowClimber();
-        currentClimberState = ClimberState.STOWED;
-        break;
+      climberMotorIO.updateInputs(climberMotorInputs);
 
-      case DEPLOYING:
-        // Actively moving to deployed position
-        deployClimber();
-          currentClimberState = ClimberState.DEPLOYED;
-        break;
-
-      case DEPLOYED:
-        // Climber is deployed, hold position
-        // Check if we need to stow
-        if (desiredClimberState == ClimberState.STOWED) {
-          currentClimberState = ClimberState.STOWING;
-        }
-        break;
-      default:
-        break;
-    }
     }
   }
