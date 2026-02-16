@@ -1,6 +1,5 @@
 package frc.robot.subsystems.climber;
 
-import frc.robot.subsystems.climber.ClimberIO.ClimberIOInputs;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,15 +23,14 @@ public interface ClimberIO {
 
   class ClimberIOInputs {
     // Motor connection status
-    @Getter @Setter private boolean leadMotorConnected;
-    @Getter @Setter private boolean followerMotorConnected;
+    @Getter @Setter private boolean motorConnected;
 
     // Lead motor data
-    @Getter @Setter private double leadMotorPosition;
-    @Getter @Setter private double leadMotorVelocity;
-    @Getter @Setter private double leadMotorVoltage;
-    @Getter @Setter private double leadMotorCurrent;
-    @Getter @Setter private double leadMotorTemperature;
+    @Getter @Setter private double motorPosition;
+    @Getter @Setter private double motorVelocity;
+    @Getter @Setter private double motorVoltage;
+    @Getter @Setter private double motorCurrent;
+    @Getter @Setter private double motorTemperature;
   }
 
   default void updateInputs(ClimberIOInputs climberInputs) {

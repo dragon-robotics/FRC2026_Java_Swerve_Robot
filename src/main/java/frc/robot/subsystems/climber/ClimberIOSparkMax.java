@@ -79,14 +79,14 @@ public class ClimberIOSparkMax implements ClimberIO {
     @Override
     public void updateInputs(ClimberIOInputs climberInputs) {
         // Motor connection status
-        climberInputs.setLeadMotorConnected(motor.getDeviceId() == canID);
+        climberInputs.setMotorConnected(motor.getDeviceId() == canID);
 
         // Lead motor data
-        climberInputs.setLeadMotorPosition(motor.getEncoder().getPosition());
-        climberInputs.setLeadMotorVelocity(motor.getEncoder().getVelocity());
-        climberInputs.setLeadMotorVoltage(motor.getAppliedOutput() * motor.getBusVoltage());
-        climberInputs.setLeadMotorCurrent(motor.getOutputCurrent());
-        climberInputs.setLeadMotorTemperature(motor.getMotorTemperature());
+        climberInputs.setMotorPosition(motor.getEncoder().getPosition());
+        climberInputs.setMotorVelocity(motor.getEncoder().getVelocity());
+        climberInputs.setMotorVoltage(motor.getAppliedOutput() * motor.getBusVoltage());
+        climberInputs.setMotorCurrent(motor.getOutputCurrent());
+        climberInputs.setMotorTemperature(motor.getMotorTemperature());
     }
 
 }
