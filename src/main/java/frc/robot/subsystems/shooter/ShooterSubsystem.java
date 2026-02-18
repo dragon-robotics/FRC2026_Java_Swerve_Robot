@@ -18,13 +18,22 @@ public class ShooterSubsystem extends SubsystemBase {
   private ShooterState desiredShooterState;
   private ShooterState currShooterState;
 
+  private ShooterIO shooterHoodIO;
+  private ShooterIO shooterKickerIO;
   private ShooterIO shooterLeadIO, shooterFollowIO;
   private ShooterIOInputs shooterLeadInputs, shooterFollowInputs;
 
   private double targetRPM;
+  private double hoodAngle;
 
   /** Creates a new ShooterSubsystem. */
-  public ShooterSubsystem(ShooterIO shooterLeadIO, ShooterIO shooterFollowIO) {
+  public ShooterSubsystem(
+      ShooterIO shooterHoodIO,
+      ShooterIO shooterKickerIO,
+      ShooterIO shooterLeadIO,
+      ShooterIO shooterFollowIO) {
+    this.shooterHoodIO = shooterHoodIO;
+    this.shooterKickerIO = shooterKickerIO;
     this.shooterLeadIO = shooterLeadIO;
     this.shooterFollowIO = shooterFollowIO;
     this.shooterLeadInputs = new ShooterIOInputs();
@@ -33,6 +42,10 @@ public class ShooterSubsystem extends SubsystemBase {
     // initialize shooter states
     this.desiredShooterState = ShooterState.STOP;
     this.currShooterState = ShooterState.STOP;
+
+    // Initialize target RPM and hood angle to default values
+    this.targetRPM = 0;
+    this.hoodAngle = 0;
   }
 
   /* Setters */
@@ -73,6 +86,17 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void stopShooter() {
     shooterLeadIO.setMotorRPM(0);
+    shooterKickerIO.setMotorRPM(0);
+  }
+
+  public void setHoodAngle() {
+    shooterHoodIO.setMotorPosition(hoodAngle);
+  }
+
+  public void setSetpointForDistance(double distanceToTarget) {
+    ShooterSetpoint setpoint = getSetpointForDistance(distanceToTarget);
+    targetRPM = setpoint.shooterRPM();
+    hoodAngle = setpoint.hoodAngleDeg();
   }
 
   public double getShooterSpeed() {
@@ -85,17 +109,6 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public boolean isShooterStopped() {
     return Math.abs(getShooterSpeed()) < 1.0; // Use threshold instead of exact comparison
-  }
-
-  public boolean calculateTargetRPM(double distanceToTarget) {
-    // Implement a method to calculate target RPM based on distance to target
-    // This is a placeholder implementation and should be replaced with actual logic
-    if (distanceToTarget < 1.0) {
-      targetRPM = SHOOTER_RPM * 0.5; // Closer targets require less RPM
-    } else {
-      targetRPM = SHOOTER_RPM; // Farther targets require full RPM
-    }
-    return targetRPM > 0;
   }
 
   public double getTargetRPM() {
@@ -142,6 +155,9 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+
+    // Set Hood Angle every loop to ensure it reaches the desired position
+    setHoodAngle();
 
     // This method will be called once per scheduler run
     handleStateTransition();
