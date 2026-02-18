@@ -17,6 +17,10 @@ public interface ShooterIO {
     throw new UnsupportedOperationException("setMotorRPM not implemented");
   }
 
+  default void setMotorPosition(double position) {
+    throw new UnsupportedOperationException("setMotorPosition not implemented");
+  }
+
   class ShooterIOInputs {
     /** Is the motor connected? */
     @Getter @Setter private boolean motorConnected;
@@ -28,6 +32,7 @@ public interface ShooterIO {
     @Getter @Setter private double motorCurrent;
     @Getter @Setter private double motorTemperature;
     @Getter @Setter private double motorVelocity;
+    @Getter @Setter private double motorPosition;
   }
 
   default void updateInputs(ShooterIOInputs shooterInputs) {}
