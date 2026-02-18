@@ -340,7 +340,7 @@ public class Constants {
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(Amps.of(40))
+                    .withStatorCurrentLimit(Amps.of(80))
                     .withSupplyCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40)))
             .withVoltage(
@@ -356,17 +356,19 @@ public class Constants {
             .withSlot0(
                 new Slot0Configs()
                     .withKS(0)
-                    .withKV(0.4)
-                    .withKA(0.17)
-                    .withKG(0.62)
-                    .withKP(0.81)
+                    .withKV(0)
+                    .withKA(0)
+                    .withKG(0)
+                    .withKP(0)
                     .withKI(0)
-                    .withKD(0.23))
+                    .withKD(0))
             .withMotionMagic(
                 new MotionMagicConfigs()
-                    .withMotionMagicCruiseVelocity(60)
+                    .withMotionMagicCruiseVelocity(0)
                     .withMotionMagicAcceleration(100)
-                    .withMotionMagicJerk(100));
+                    .withMotionMagicJerk(100)
+                    .withMotionMagicExpo_kV(0.1)
+                    .withMotionMagicExpo_kA(0.1));
 
     public static final SparkBaseConfig INTAKE_ROLLER_SPARKMAX_CONFIG =
         new SparkMaxConfig()
@@ -468,9 +470,9 @@ public class Constants {
                     .apply(
                         new FeedForwardConfig()
                             .kS(0.0, ClosedLoopSlot.kSlot0)
-                            .kV(0.5, ClosedLoopSlot.kSlot0)
-                            .kA(0.06, ClosedLoopSlot.kSlot0)
-                            .kG(0.39, ClosedLoopSlot.kSlot0))
+                            .kV(0.0, ClosedLoopSlot.kSlot0)
+                            .kA(0.0, ClosedLoopSlot.kSlot0)
+                            .kG(0.0, ClosedLoopSlot.kSlot0))
                     .apply(
                         new MAXMotionConfig()
                             .cruiseVelocity(4000, ClosedLoopSlot.kSlot0)
@@ -525,9 +527,9 @@ public class Constants {
             .withSlot0(
                 new Slot0Configs()
                     .withKS(0.0)
-                    .withKV(0.12)
-                    .withKA(0.00)
-                    .withKP(0.11)
+                    .withKV(0.0)
+                    .withKA(0.0)
+                    .withKP(0.0)
                     .withKI(0.0)
                     .withKD(0.0));
 
@@ -565,10 +567,10 @@ public class Constants {
                 new MotionMagicConfigs().withMotionMagicAcceleration(200).withMotionMagicJerk(2000))
             .withSlot0(
                 new Slot0Configs()
-                    .withKS(0.25)
-                    .withKV(0.12)
-                    .withKA(0.01)
-                    .withKP(0.11)
+                    .withKS(0.0)
+                    .withKV(0.0)
+                    .withKA(0.0)
+                    .withKP(0.0)
                     .withKI(0.0)
                     .withKD(0.0));
 
@@ -599,10 +601,10 @@ public class Constants {
                 new MotionMagicConfigs().withMotionMagicAcceleration(200).withMotionMagicJerk(2000))
             .withSlot0(
                 new Slot0Configs()
-                    .withKS(0.25)
-                    .withKV(0.12)
-                    .withKA(0.01)
-                    .withKP(0.11)
+                    .withKS(0.0)
+                    .withKV(0.0)
+                    .withKA(0.0)
+                    .withKP(0.0)
                     .withKI(0.0)
                     .withKD(0.0));
 
@@ -653,17 +655,17 @@ public class Constants {
             .withSlot0(
                 // Climber PID configs - @TODO: NEEDS TO BE TESTED AND TUNED
                 new Slot0Configs()
-                    .withKS(0.25)
-                    .withKV(12)
-                    .withKA(0.01)
-                    .withKP(0.11)
+                    .withKS(0.0)
+                    .withKV(0.0)
+                    .withKA(0.0)
+                    .withKP(0.0)
                     .withKI(0.0)
                     .withKD(0.0))
             .withMotionMagic(
                 new MotionMagicConfigs()
                     // Motion Magic configuration for position control
                     .withMotionMagicAcceleration(100)
-                    .withMotionMagicJerk(1000));
+                    .withMotionMagicJerk(100));
 
     // Motor IDs
     public static final int LEAD_MOTOR_ID = 7;
