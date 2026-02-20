@@ -10,16 +10,18 @@ public class IntakeIOTalonFXSim extends IntakeIOTalonFX {
 
   private final DCMotor motorType;
 
-  public IntakeIOTalonFXSim(int canID, TalonFXConfiguration config, String motorType) {
-    this(canID, config, motorType, Optional.empty());
+  public IntakeIOTalonFXSim(int canID, TalonFXConfiguration config, String motorType, String motorName) {
+    this(canID, config, motorType, motorName, Optional.empty());
   }
 
   public IntakeIOTalonFXSim(
       int canID,
       TalonFXConfiguration config,
       String motorType,
+      String motorName,
       Optional<CANcoderConfiguration> canCoderConfig) {
-    super(canID, config, canCoderConfig);
+    super(canID, config, motorName, canCoderConfig);
+    
 
     switch (motorType) {
       case "KrakenX60":

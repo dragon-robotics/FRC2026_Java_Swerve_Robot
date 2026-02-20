@@ -26,6 +26,8 @@ public class IntakeIOTalonFX implements IntakeIO {
   protected final TalonFX motor;
   protected final int canID;
   protected final TalonFXConfiguration config;
+  protected final String motorName;
+  protected final Optional<CANcoderConfiguration> canCoderConfig;
 
   // Position Controls //
   protected final PositionVoltage motorPositionVoltageRequest;
@@ -42,17 +44,16 @@ public class IntakeIOTalonFX implements IntakeIO {
   protected final VelocityVoltage motorVelocityVoltageRequest;
   protected final VelocityTorqueCurrentFOC motorVelocityTorqueCurrentFOCRequest;
 
-  private final Optional<CANcoderConfiguration> canCoderConfig;
-
-  public IntakeIOTalonFX(int canID, TalonFXConfiguration config) {
-    this(canID, config, Optional.empty());
+  public IntakeIOTalonFX(int canID, TalonFXConfiguration config, String motorName) {
+    this(canID, config, motorName, Optional.empty());
   }
 
   public IntakeIOTalonFX(
-      int canID, TalonFXConfiguration config, Optional<CANcoderConfiguration> canCoderConfig) {
+      int canID, TalonFXConfiguration config, String motorName, Optional<CANcoderConfiguration> canCoderConfig) {
     this.canID = canID;
     this.config = config;
     this.canCoderConfig = canCoderConfig;
+    this.motorName = motorName;
 
     motor = new TalonFX(this.canID, CANBus.roboRIO());
     motor.clearStickyFaults();
@@ -75,20 +76,21 @@ public class IntakeIOTalonFX implements IntakeIO {
 
     // Apply CANcoder config (absolute offset/direction) if cancoder config is present
     this.canCoderConfig.ifPresentOrElse(
-        ccCfg -> {
-          try (CANcoder canCoder = new CANcoder(INTAKE_ARM_CANCODER_ID, CANBus.roboRIO())) {
-            canCoder.getConfigurator().apply(ccCfg);
-          }
+        canCoderCfg -> {
 
-          TalonFXConfiguration cfg =
-              this.config.withFeedback(
-                  new FeedbackConfigs()
-                      .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
-                      .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
-                      .withSensorToMechanismRatio(1)
-                      .withFeedbackRotorOffset(0));
+          int canCoderID = motorName.equals("Intake Arm") ? INTAKE_ARM_CANCODER_ID : INTAKE_ROLLER_CANCODER_ID;
+          CANcoder canCoder = new CANcoder(canCoderID, CANBus.roboRIO());
+          canCoder.getConfigurator().apply(canCoderCfg);
 
-          motor.getConfigurator().apply(cfg);
+          FeedbackConfigs feedbackCfg =
+              new FeedbackConfigs()
+                  .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                  .withFusedCANcoder(canCoder)
+                  .withFeedbackRotorOffset(motorName.equals("Intake Arm") ? 0.1728 : 0) // Set the CANcoder position to match the arm's zero position on boot
+                  .withRotorToSensorRatio(motorName.equals("Intake Arm") ? INTAKE_ARM_GEAR_RATIO : 1)
+                  .withSensorToMechanismRatio(1);
+          
+          motor.getConfigurator().apply(config.withFeedback(feedbackCfg));
         },
         () -> {
           // Handle the case where canCoderConfig is not present (e.g. set up feedback configs
