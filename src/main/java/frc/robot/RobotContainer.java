@@ -100,7 +100,8 @@ public class RobotContainer {
       case COMP:
         intakeSubsystem =
             new IntakeSubsystem(
-                new IntakeIOTalonFX(INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
+                new IntakeIOTalonFX(
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
                 new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         // hopperSubsystem = new HopperSubsystem();
         // shooterSubsystem =
@@ -127,7 +128,10 @@ public class RobotContainer {
         intakeSubsystem =
             new IntakeSubsystemSim(
                 new IntakeIOTalonFXSim(
-                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "KrakenX60_FOC", "Intake Roller"),
+                    INTAKE_ROLLER_MOTOR_ID,
+                    INTAKE_ROLLER_TALONFX_CONFIG,
+                    "KrakenX60_FOC",
+                    "Intake Roller"),
                 new IntakeIOTalonFXSim(
                     INTAKE_ARM_MOTOR_ID,
                     INTAKE_ARM_TALONFX_CONFIG,
@@ -207,7 +211,8 @@ public class RobotContainer {
       default: // Default should be in comp mode //
         intakeSubsystem =
             new IntakeSubsystem(
-                new IntakeIOTalonFX(INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
+                new IntakeIOTalonFX(
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
                 new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         // hopperSubsystem = new HopperSubsystem();
         // shooterSubsystem =

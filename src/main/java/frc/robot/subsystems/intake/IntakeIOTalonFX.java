@@ -49,7 +49,10 @@ public class IntakeIOTalonFX implements IntakeIO {
   }
 
   public IntakeIOTalonFX(
-      int canID, TalonFXConfiguration config, String motorName, Optional<CANcoderConfiguration> canCoderConfig) {
+      int canID,
+      TalonFXConfiguration config,
+      String motorName,
+      Optional<CANcoderConfiguration> canCoderConfig) {
     this.canID = canID;
     this.config = config;
     this.canCoderConfig = canCoderConfig;
@@ -77,8 +80,8 @@ public class IntakeIOTalonFX implements IntakeIO {
     // Apply CANcoder config (absolute offset/direction) if cancoder config is present
     this.canCoderConfig.ifPresentOrElse(
         canCoderCfg -> {
-
-          int canCoderID = motorName.equals("Intake Arm") ? INTAKE_ARM_CANCODER_ID : INTAKE_ROLLER_CANCODER_ID;
+          int canCoderID =
+              motorName.equals("Intake Arm") ? INTAKE_ARM_CANCODER_ID : INTAKE_ROLLER_CANCODER_ID;
           CANcoder canCoder = new CANcoder(canCoderID, CANBus.roboRIO());
           canCoder.getConfigurator().apply(canCoderCfg);
 
@@ -86,10 +89,14 @@ public class IntakeIOTalonFX implements IntakeIO {
               new FeedbackConfigs()
                   .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
                   .withFusedCANcoder(canCoder)
-                  .withFeedbackRotorOffset(motorName.equals("Intake Arm") ? 0.1728 : 0) // Set the CANcoder position to match the arm's zero position on boot
-                  .withRotorToSensorRatio(motorName.equals("Intake Arm") ? INTAKE_ARM_GEAR_RATIO : 1)
+                  .withFeedbackRotorOffset(
+                      motorName.equals("Intake Arm")
+                          ? 0.1728
+                          : 0) // Set the CANcoder position to match the arm's zero position on boot
+                  .withRotorToSensorRatio(
+                      motorName.equals("Intake Arm") ? INTAKE_ARM_GEAR_RATIO : 1)
                   .withSensorToMechanismRatio(1);
-          
+
           motor.getConfigurator().apply(config.withFeedback(feedbackCfg));
         },
         () -> {

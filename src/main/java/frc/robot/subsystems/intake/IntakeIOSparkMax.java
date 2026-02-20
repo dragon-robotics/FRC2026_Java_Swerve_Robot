@@ -28,11 +28,22 @@ public class IntakeIOSparkMax implements IntakeIO {
   private final EncoderMode encoderMode;
 
   public IntakeIOSparkMax(int canID, SparkMaxConfig config, String motorType, String motorName) {
-    this(canID, config, motorType, motorName, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
+    this(
+        canID,
+        config,
+        motorType,
+        motorName,
+        EncoderMode.PRIMARY,
+        Optional.empty(),
+        Optional.empty());
   }
 
   public IntakeIOSparkMax(
-      int canID, SparkMaxConfig config, String motorType, String motorName, AbsoluteEncoderConfig absEncoderConfig) {
+      int canID,
+      SparkMaxConfig config,
+      String motorType,
+      String motorName,
+      AbsoluteEncoderConfig absEncoderConfig) {
     this(
         canID,
         config,
@@ -44,7 +55,11 @@ public class IntakeIOSparkMax implements IntakeIO {
   }
 
   public IntakeIOSparkMax(
-      int canID, SparkMaxConfig config, String motorType, String motorName, AlternateEncoderConfig altEncoderConfig) {
+      int canID,
+      SparkMaxConfig config,
+      String motorType,
+      String motorName,
+      AlternateEncoderConfig altEncoderConfig) {
     this(
         canID,
         config,
