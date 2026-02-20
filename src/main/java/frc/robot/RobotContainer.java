@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.GeneralConstants.*;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_CANCODER_CONFIG;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_MOTOR_ID;

@@ -6,7 +6,6 @@ import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.Timer;
-import frc.robot.Constants.VisionConstants;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,12 +23,6 @@ public class VisionIOPhotonVision implements VisionIO {
   protected final PhotonPoseEstimator poseEstimator;
 
   protected final Supplier<SwerveDriveState> swerveDriveStateSupplier;
-
-  // In constructor or as static finals
-  private static final double YAW_THRESHOLD =
-      VisionConstants.CAMERA_FOV_HORIZONTAL_DEGREES / 2.0 * 0.8;
-  private static final double PITCH_THRESHOLD =
-      VisionConstants.CAMERA_FOV_VERTICAL_DEGREES / 2.0 * 0.8;
 
   /**
    * Creates a new VisionIOPV.
