@@ -27,27 +27,29 @@ public class IntakeIOSparkMax implements IntakeIO {
   private final SparkClosedLoopController motorController;
   private final EncoderMode encoderMode;
 
-  public IntakeIOSparkMax(int canID, SparkMaxConfig config, String motorType) {
-    this(canID, config, motorType, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
+  public IntakeIOSparkMax(int canID, SparkMaxConfig config, String motorType, String motorName) {
+    this(canID, config, motorType, motorName, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
   }
 
   public IntakeIOSparkMax(
-      int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
+      int canID, SparkMaxConfig config, String motorType, String motorName, AbsoluteEncoderConfig absEncoderConfig) {
     this(
         canID,
         config,
         motorType,
+        motorName,
         EncoderMode.ABSOLUTE,
         Optional.of(absEncoderConfig),
         Optional.empty());
   }
 
   public IntakeIOSparkMax(
-      int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
+      int canID, SparkMaxConfig config, String motorType, String motorName, AlternateEncoderConfig altEncoderConfig) {
     this(
         canID,
         config,
         motorType,
+        motorName,
         EncoderMode.ALTERNATE,
         Optional.empty(),
         Optional.of(altEncoderConfig));
@@ -57,6 +59,7 @@ public class IntakeIOSparkMax implements IntakeIO {
       int canID,
       SparkMaxConfig config,
       String motorType,
+      String motorName,
       EncoderMode encoderMode,
       Optional<AbsoluteEncoderConfig> absEncoderConfig,
       Optional<AlternateEncoderConfig> altEncoderConfig) {
