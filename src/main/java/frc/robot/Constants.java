@@ -326,7 +326,8 @@ public class Constants {
 
     public static final int INTAKE_ROLLER_MOTOR_ID = 11;
     public static final int INTAKE_ARM_MOTOR_ID = 12;
-    public static final int INTAKE_ARM_CANCODER_ID = 0;
+    public static final int INTAKE_ROLLER_CANCODER_ID = 0;
+    public static final int INTAKE_ARM_CANCODER_ID = 1;
 
     // Intake arm physical properties
     public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(18);
