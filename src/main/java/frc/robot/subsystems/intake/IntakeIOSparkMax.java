@@ -7,31 +7,49 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.AbsoluteEncoderConfig;
+import com.revrobotics.spark.config.AlternateEncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import java.util.Optional;
 
 public class IntakeIOSparkMax implements IntakeIO {
+
+  protected enum EncoderMode {
+    PRIMARY,
+    ABSOLUTE,
+    ALTERNATE
+  }
+
   protected final SparkMax motor;
   protected final int canID;
   protected final SparkMaxConfig config;
   protected final String motorType;
 
   private final SparkClosedLoopController motorController;
-  private final Optional<AbsoluteEncoderConfig> absEncoderConfig;
+  private final EncoderMode encoderMode;
 
   public IntakeIOSparkMax(int canID, SparkMaxConfig config, String motorType) {
-    this(canID, config, motorType, Optional.empty());
+    this(canID, config, motorType, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
+  }
+
+  public IntakeIOSparkMax(int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
+    this(canID, config, motorType, EncoderMode.ABSOLUTE, Optional.of(absEncoderConfig), Optional.empty());
+  }
+
+  public IntakeIOSparkMax(int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
+    this(canID, config, motorType, EncoderMode.ALTERNATE, Optional.empty(), Optional.of(altEncoderConfig));
   }
 
   public IntakeIOSparkMax(
       int canID,
       SparkMaxConfig config,
       String motorType,
-      Optional<AbsoluteEncoderConfig> absEncoderConfig) {
+      EncoderMode encoderMode,
+      Optional<AbsoluteEncoderConfig> absEncoderConfig,
+      Optional<AlternateEncoderConfig> altEncoderConfig) {
     this.canID = canID;
     this.config = config;
     this.motorType = motorType;
-    this.absEncoderConfig = absEncoderConfig;
+    this.encoderMode = encoderMode;
 
     /* Instantiate the motors and encoders */
     motor = new SparkMax(this.canID, MotorType.kBrushless);
@@ -40,19 +58,12 @@ public class IntakeIOSparkMax implements IntakeIO {
     /* Clear any existing faults */
     motor.clearFaults();
 
-    this.absEncoderConfig.ifPresentOrElse(
-        absEncCfg -> {
-          this.config.apply(absEncCfg);
-          motor.configure(
-              this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-          motor.getEncoder().setPosition(0);
-        },
-        () -> {
-          // Handle the case where absEncoderConfig is not present
-          motor.configure(
-              this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-          motor.getEncoder().setPosition(0);
-        });
+    absEncoderConfig.ifPresent(this.config::apply);
+    altEncoderConfig.ifPresent(this.config::apply);
+
+    motor.configure(
+        this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+    motor.getEncoder().setPosition(0);
   }
 
   @Override
@@ -85,6 +96,11 @@ public class IntakeIOSparkMax implements IntakeIO {
     inputs.setMotorCurrent(motor.getOutputCurrent());
     inputs.setMotorTemperature(motor.getMotorTemperature());
     inputs.setMotorVelocity(motor.getEncoder().getVelocity());
-    inputs.setMotorPosition(motor.getAbsoluteEncoder().getPosition());
+
+    switch (encoderMode) {
+      case ABSOLUTE -> inputs.setMotorPosition(motor.getAbsoluteEncoder().getPosition());
+      case ALTERNATE -> inputs.setMotorPosition(motor.getAlternateEncoder().getPosition());
+      case PRIMARY -> inputs.setMotorPosition(motor.getEncoder().getPosition());
+    }
   }
 }

@@ -1,6 +1,7 @@
 package frc.robot.subsystems.shooter;
 
 import com.revrobotics.spark.SparkSim;
+import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.spark.config.AlternateEncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -12,15 +13,25 @@ public class ShooterIOSparkMaxSim extends ShooterIOSparkMax {
   private final DCMotor motorType;
 
   public ShooterIOSparkMaxSim(int canID, SparkMaxConfig config, String motorType) {
-    this(canID, config, motorType, Optional.empty());
+    this(canID, config, motorType, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
+  }
+
+  public ShooterIOSparkMaxSim(int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
+    this(canID, config, motorType, EncoderMode.ABSOLUTE, Optional.of(absEncoderConfig), Optional.empty());
+  }
+
+  public ShooterIOSparkMaxSim(int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
+    this(canID, config, motorType, EncoderMode.ALTERNATE, Optional.empty(), Optional.of(altEncoderConfig));
   }
 
   public ShooterIOSparkMaxSim(
       int canID,
       SparkMaxConfig config,
       String motorType,
+      EncoderMode encoderMode,
+      Optional<AbsoluteEncoderConfig> absEncoderConfig,
       Optional<AlternateEncoderConfig> altEncoderConfig) {
-    super(canID, config, motorType, altEncoderConfig);
+    super(canID, config, motorType, encoderMode, absEncoderConfig, altEncoderConfig);
     // Initialize SparkSim with appropriate parameters for the motor type
     switch (motorType) {
       case "NEO":

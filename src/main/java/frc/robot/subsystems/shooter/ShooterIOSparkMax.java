@@ -1,14 +1,23 @@
 package frc.robot.subsystems.shooter;
 
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.spark.config.AlternateEncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import java.util.Optional;
 
 public class ShooterIOSparkMax implements ShooterIO {
+
+  protected enum EncoderMode {
+    PRIMARY,
+    ABSOLUTE,
+    ALTERNATE
+  }
 
   protected final SparkMax motor;
   protected final int canID;
@@ -16,44 +25,47 @@ public class ShooterIOSparkMax implements ShooterIO {
   protected final String motorType;
 
   private final SparkClosedLoopController motorController;
-  private final Optional<AlternateEncoderConfig> altEncoderConfig;
+  private final EncoderMode encoderMode;
 
   public ShooterIOSparkMax(int canID, SparkMaxConfig config, String motorType) {
-    this(canID, config, motorType, Optional.empty());
+    this(canID, config, motorType, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
   }
+
+  public ShooterIOSparkMax(int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
+    this(canID, config, motorType, EncoderMode.ABSOLUTE, Optional.of(absEncoderConfig), Optional.empty());
+  }
+
+  public ShooterIOSparkMax(int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
+    this(canID, config, motorType, EncoderMode.ALTERNATE, Optional.empty(), Optional.of(altEncoderConfig));
+  }
+
 
   public ShooterIOSparkMax(
       int canID,
       SparkMaxConfig config,
       String motorType,
+      EncoderMode encoderMode,
+      Optional<AbsoluteEncoderConfig> absEncoderConfig,
       Optional<AlternateEncoderConfig> altEncoderConfig) {
     this.canID = canID;
     this.config = config;
     this.motorType = motorType;
-    this.altEncoderConfig = altEncoderConfig;
+    this.encoderMode = encoderMode;
 
     motor = new SparkMax(canID, MotorType.kBrushless);
     motorController = motor.getClosedLoopController();
 
     motor.clearFaults();
 
-    this.altEncoderConfig.ifPresentOrElse(
-        altEncCfg -> {
-          this.config.apply(altEncCfg);
-          motor.configure(
-              this.config,
-              com.revrobotics.ResetMode.kNoResetSafeParameters,
-              com.revrobotics.PersistMode.kPersistParameters);
-          motor.getEncoder().setPosition(0);
-        },
-        () -> {
-          // Handle the case where altEncoderConfig is not present
-          motor.configure(
-              this.config,
-              com.revrobotics.ResetMode.kNoResetSafeParameters,
-              com.revrobotics.PersistMode.kPersistParameters);
-          motor.getEncoder().setPosition(0);
-        });
+    /* Clear any existing faults */
+    motor.clearFaults();
+
+    absEncoderConfig.ifPresent(this.config::apply);
+    altEncoderConfig.ifPresent(this.config::apply);
+
+    motor.configure(
+        this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+    motor.getEncoder().setPosition(0);
   }
 
   @Override
@@ -72,6 +84,11 @@ public class ShooterIOSparkMax implements ShooterIO {
   }
 
   @Override
+  public void setMotorPosition(double setpoint) {
+    motorController.setSetpoint(setpoint, ControlType.kMAXMotionPositionControl);
+  }  
+
+  @Override
   public void updateInputs(ShooterIOInputs inputs) {
 
     inputs.setMotorConnected(motor.getDeviceId() == canID);
@@ -81,5 +98,11 @@ public class ShooterIOSparkMax implements ShooterIO {
     inputs.setMotorCurrent(motor.getOutputCurrent());
     inputs.setMotorTemperature(motor.getMotorTemperature());
     inputs.setMotorVelocity(motor.getEncoder().getVelocity());
+
+    switch (encoderMode) {
+      case ABSOLUTE -> inputs.setMotorPosition(motor.getAbsoluteEncoder().getPosition());
+      case ALTERNATE -> inputs.setMotorPosition(motor.getAlternateEncoder().getPosition());
+      case PRIMARY -> inputs.setMotorPosition(motor.getEncoder().getPosition());
+    }    
   }
 }
