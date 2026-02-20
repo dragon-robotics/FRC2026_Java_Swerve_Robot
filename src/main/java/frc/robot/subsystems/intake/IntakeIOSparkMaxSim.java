@@ -2,6 +2,7 @@ package frc.robot.subsystems.intake;
 
 import com.revrobotics.spark.SparkSim;
 import com.revrobotics.spark.config.AbsoluteEncoderConfig;
+import com.revrobotics.spark.config.AlternateEncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.system.plant.DCMotor;
 import java.util.Optional;
@@ -12,15 +13,25 @@ public class IntakeIOSparkMaxSim extends IntakeIOSparkMax {
   private final DCMotor motorType;
 
   public IntakeIOSparkMaxSim(int canID, SparkMaxConfig config, String motorType) {
-    this(canID, config, motorType, Optional.empty());
+    this(canID, config, motorType, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
   }
+
+  public IntakeIOSparkMaxSim(int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
+    this(canID, config, motorType, EncoderMode.ABSOLUTE, Optional.of(absEncoderConfig), Optional.empty());
+  }
+
+  public IntakeIOSparkMaxSim(int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
+    this(canID, config, motorType, EncoderMode.ALTERNATE, Optional.empty(), Optional.of(altEncoderConfig));
+  }  
 
   public IntakeIOSparkMaxSim(
       int canID,
       SparkMaxConfig config,
       String motorType,
-      Optional<AbsoluteEncoderConfig> absEncoderConfig) {
-    super(canID, config, motorType, absEncoderConfig);
+      EncoderMode encoderMode,
+      Optional<AbsoluteEncoderConfig> absEncoderConfig,
+      Optional<AlternateEncoderConfig> altEncoderConfig) {
+    super(canID, config, motorType, encoderMode, absEncoderConfig, altEncoderConfig);
 
     // Initialize SparkSim with appropriate parameters for the motor type
     switch (motorType) {
