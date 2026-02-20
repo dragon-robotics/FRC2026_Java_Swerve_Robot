@@ -38,7 +38,7 @@ public class IntakeIOTalonFXTunable extends IntakeIOTalonFX {
       TalonFXConfiguration config,
       String motorName,
       Optional<CANcoderConfiguration> canCoderConfig) {
-    super(canID, config, canCoderConfig);
+    super(canID, config, motorName, canCoderConfig);
 
     String baseKey = "Intake/Tuning/TalonFX/" + motorName + "/";
 
