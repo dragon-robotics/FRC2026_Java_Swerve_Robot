@@ -16,12 +16,26 @@ public class ShooterIOSparkMaxSim extends ShooterIOSparkMax {
     this(canID, config, motorType, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
   }
 
-  public ShooterIOSparkMaxSim(int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
-    this(canID, config, motorType, EncoderMode.ABSOLUTE, Optional.of(absEncoderConfig), Optional.empty());
+  public ShooterIOSparkMaxSim(
+      int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
+    this(
+        canID,
+        config,
+        motorType,
+        EncoderMode.ABSOLUTE,
+        Optional.of(absEncoderConfig),
+        Optional.empty());
   }
 
-  public ShooterIOSparkMaxSim(int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
-    this(canID, config, motorType, EncoderMode.ALTERNATE, Optional.empty(), Optional.of(altEncoderConfig));
+  public ShooterIOSparkMaxSim(
+      int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
+    this(
+        canID,
+        config,
+        motorType,
+        EncoderMode.ALTERNATE,
+        Optional.empty(),
+        Optional.of(altEncoderConfig));
   }
 
   public ShooterIOSparkMaxSim(

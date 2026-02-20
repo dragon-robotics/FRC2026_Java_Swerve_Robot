@@ -31,12 +31,26 @@ public class IntakeIOSparkMax implements IntakeIO {
     this(canID, config, motorType, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
   }
 
-  public IntakeIOSparkMax(int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
-    this(canID, config, motorType, EncoderMode.ABSOLUTE, Optional.of(absEncoderConfig), Optional.empty());
+  public IntakeIOSparkMax(
+      int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
+    this(
+        canID,
+        config,
+        motorType,
+        EncoderMode.ABSOLUTE,
+        Optional.of(absEncoderConfig),
+        Optional.empty());
   }
 
-  public IntakeIOSparkMax(int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
-    this(canID, config, motorType, EncoderMode.ALTERNATE, Optional.empty(), Optional.of(altEncoderConfig));
+  public IntakeIOSparkMax(
+      int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
+    this(
+        canID,
+        config,
+        motorType,
+        EncoderMode.ALTERNATE,
+        Optional.empty(),
+        Optional.of(altEncoderConfig));
   }
 
   public IntakeIOSparkMax(
@@ -61,8 +75,7 @@ public class IntakeIOSparkMax implements IntakeIO {
     absEncoderConfig.ifPresent(this.config::apply);
     altEncoderConfig.ifPresent(this.config::apply);
 
-    motor.configure(
-        this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+    motor.configure(this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
     motor.getEncoder().setPosition(0);
   }
 

@@ -31,14 +31,27 @@ public class ShooterIOSparkMax implements ShooterIO {
     this(canID, config, motorType, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
   }
 
-  public ShooterIOSparkMax(int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
-    this(canID, config, motorType, EncoderMode.ABSOLUTE, Optional.of(absEncoderConfig), Optional.empty());
+  public ShooterIOSparkMax(
+      int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
+    this(
+        canID,
+        config,
+        motorType,
+        EncoderMode.ABSOLUTE,
+        Optional.of(absEncoderConfig),
+        Optional.empty());
   }
 
-  public ShooterIOSparkMax(int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
-    this(canID, config, motorType, EncoderMode.ALTERNATE, Optional.empty(), Optional.of(altEncoderConfig));
+  public ShooterIOSparkMax(
+      int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
+    this(
+        canID,
+        config,
+        motorType,
+        EncoderMode.ALTERNATE,
+        Optional.empty(),
+        Optional.of(altEncoderConfig));
   }
-
 
   public ShooterIOSparkMax(
       int canID,
@@ -63,8 +76,7 @@ public class ShooterIOSparkMax implements ShooterIO {
     absEncoderConfig.ifPresent(this.config::apply);
     altEncoderConfig.ifPresent(this.config::apply);
 
-    motor.configure(
-        this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+    motor.configure(this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
     motor.getEncoder().setPosition(0);
   }
 
@@ -86,7 +98,7 @@ public class ShooterIOSparkMax implements ShooterIO {
   @Override
   public void setMotorPosition(double setpoint) {
     motorController.setSetpoint(setpoint, ControlType.kMAXMotionPositionControl);
-  }  
+  }
 
   @Override
   public void updateInputs(ShooterIOInputs inputs) {
@@ -103,6 +115,6 @@ public class ShooterIOSparkMax implements ShooterIO {
       case ABSOLUTE -> inputs.setMotorPosition(motor.getAbsoluteEncoder().getPosition());
       case ALTERNATE -> inputs.setMotorPosition(motor.getAlternateEncoder().getPosition());
       case PRIMARY -> inputs.setMotorPosition(motor.getEncoder().getPosition());
-    }    
+    }
   }
 }
