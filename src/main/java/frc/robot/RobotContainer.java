@@ -10,9 +10,19 @@ import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_MOTOR_ID;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_TALONFX_CONFIG;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ROLLER_MOTOR_ID;
 import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ROLLER_TALONFX_CONFIG;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_FOLLOW_MOTOR_ID;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_FOLLOW_TALONFX_CONFIG;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_HOOD_MOTOR_ID;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_HOOD_TALONFX_CONFIG;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_KICKER_MOTOR_ID;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_KICKER_TALONFX_CONFIG;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_LEAD_MOTOR_ID;
+import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_LEAD_TALONFX_CONFIG;
 import static frc.robot.Constants.VisionConstants.APTAG_CAMERA_NAMES;
 
 import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
@@ -38,6 +48,9 @@ import frc.robot.subsystems.intake.IntakeIOTalonFXSim;
 import frc.robot.subsystems.intake.IntakeIOTalonFXTunable;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystemSim;
+import frc.robot.subsystems.shooter.ShooterIOTalonFX;
+import frc.robot.subsystems.shooter.ShooterIOTalonFXSim;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.subsystems.vision.VisionSubsystem;
@@ -48,9 +61,9 @@ public class RobotContainer {
   /* Robot Subsystems */
   public final CommandSwerveDrivetrain swerveSubsystem;
   public final IntakeSubsystem intakeSubsystem;
-  //   public final HopperSubsystem hopperSubsystem;
-  //   public final ShooterSubsystem shooterSubsystem;
-  //   public final ClimberSubsystem climberSubsystem;
+  // public final HopperSubsystem hopperSubsystem;
+  public final ShooterSubsystem shooterSubsystem;
+  // public final ClimberSubsystem climberSubsystem;
   public final VisionSubsystem visionSubsystem;
   public final Superstructure superstructureSubsystem;
 
@@ -104,21 +117,28 @@ public class RobotContainer {
                     INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
                 new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         // hopperSubsystem = new HopperSubsystem();
-        // shooterSubsystem =
-        //     new ShooterSubsystem(
-        //         new ShooterIOTalonFX(SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG),
-        //         new ShooterIOTalonFX(
-        //             SHOOTER_FOLLOW_MOTOR_ID, SHOOTER_FOLLOW_TALONFX_CONFIG,
-        // SHOOTER_LEAD_MOTOR_ID));
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new ShooterIOTalonFX(
+                    SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
+                new ShooterIOTalonFX(
+                    SHOOTER_FOLLOW_MOTOR_ID,
+                    SHOOTER_FOLLOW_TALONFX_CONFIG,
+                    "Shooter Follow",
+                    new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
+                new ShooterIOTalonFX(
+                    SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
+                new ShooterIOTalonFX(
+                    SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
         visionSubsystem =
             new VisionSubsystem(
                 swerveSubsystem,
                 swerveSubsystem::addVisionMeasurement,
                 // new VisionIOPhotonVision(
-                //     APTAG_CAMERA_NAMES[0],
-                //     VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
-                //     swerveSubsystem::getState),
+                // APTAG_CAMERA_NAMES[0],
+                // VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
+                // swerveSubsystem::getState),
                 new VisionIOPhotonVision(
                     APTAG_CAMERA_NAMES[1],
                     VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
@@ -139,15 +159,29 @@ public class RobotContainer {
                     "Intake Arm",
                     Optional.of(INTAKE_ARM_CANCODER_CONFIG)));
         // hopperSubsystem = new HopperSubsystem();
-        // shooterSubsystem =
-        //     new ShooterSubsystem(
-        //         new ShooterIOTalonFXSim(
-        //             SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "KrakenX60_FOC"),
-        //         new ShooterIOTalonFXSim(
-        //             SHOOTER_FOLLOW_MOTOR_ID,
-        //             SHOOTER_FOLLOW_TALONFX_CONFIG,
-        //             SHOOTER_LEAD_MOTOR_ID,
-        //             "KrakenX60_FOC"));
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new ShooterIOTalonFXSim(
+                    SHOOTER_LEAD_MOTOR_ID,
+                    SHOOTER_LEAD_TALONFX_CONFIG,
+                    "KrakenX60_FOC",
+                    "Shooter Lead"),
+                new ShooterIOTalonFXSim(
+                    SHOOTER_FOLLOW_MOTOR_ID,
+                    SHOOTER_FOLLOW_TALONFX_CONFIG,
+                    "KrakenX60_FOC",
+                    "Shooter Follow",
+                    new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
+                new ShooterIOTalonFXSim(
+                    SHOOTER_KICKER_MOTOR_ID,
+                    SHOOTER_KICKER_TALONFX_CONFIG,
+                    "KrakenX60_FOC",
+                    "Shooter Kicker"),
+                new ShooterIOTalonFXSim(
+                    SHOOTER_HOOD_MOTOR_ID,
+                    SHOOTER_HOOD_TALONFX_CONFIG,
+                    "KrakenX44",
+                    "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
         visionSubsystem =
             new VisionSubsystem(
@@ -188,21 +222,28 @@ public class RobotContainer {
                 new IntakeIOTalonFXTunable(
                     INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         // hopperSubsystem = new HopperSubsystem();
-        // shooterSubsystem =
-        //     new ShooterSubsystem(
-        //         new ShooterIOTalonFX(SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG),
-        //         new ShooterIOTalonFX(
-        //             SHOOTER_FOLLOW_MOTOR_ID, SHOOTER_FOLLOW_TALONFX_CONFIG,
-        // SHOOTER_LEAD_MOTOR_ID));
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new ShooterIOTalonFX(
+                    SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
+                new ShooterIOTalonFX(
+                    SHOOTER_FOLLOW_MOTOR_ID,
+                    SHOOTER_FOLLOW_TALONFX_CONFIG,
+                    "Shooter Follow",
+                    new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
+                new ShooterIOTalonFX(
+                    SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
+                new ShooterIOTalonFX(
+                    SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
         visionSubsystem =
             new VisionSubsystem(
                 swerveSubsystem,
                 swerveSubsystem::addVisionMeasurement,
                 // new VisionIOPhotonVision(
-                //     APTAG_CAMERA_NAMES[0],
-                //     VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
-                //     swerveSubsystem::getState),
+                // APTAG_CAMERA_NAMES[0],
+                // VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
+                // swerveSubsystem::getState),
                 new VisionIOPhotonVision(
                     APTAG_CAMERA_NAMES[1],
                     VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
@@ -215,12 +256,19 @@ public class RobotContainer {
                     INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
                 new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         // hopperSubsystem = new HopperSubsystem();
-        // shooterSubsystem =
-        //     new ShooterSubsystem(
-        //         new ShooterIOTalonFX(SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG),
-        //         new ShooterIOTalonFX(
-        //             SHOOTER_FOLLOW_MOTOR_ID, SHOOTER_FOLLOW_TALONFX_CONFIG,
-        // SHOOTER_LEAD_MOTOR_ID));
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new ShooterIOTalonFX(
+                    SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
+                new ShooterIOTalonFX(
+                    SHOOTER_FOLLOW_MOTOR_ID,
+                    SHOOTER_FOLLOW_TALONFX_CONFIG,
+                    "Shooter Follow",
+                    new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
+                new ShooterIOTalonFX(
+                    SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
+                new ShooterIOTalonFX(
+                    SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
         visionSubsystem =
             new VisionSubsystem(
@@ -244,8 +292,7 @@ public class RobotContainer {
             intakeSubsystem,
             // hopperSubsystem,
             null,
-            // shooterSubsystem,
-            null,
+            shooterSubsystem,
             // climberSubsystem,
             null,
             visionSubsystem,
