@@ -553,10 +553,10 @@ public class Constants {
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
             .withSlot0(
                 new Slot0Configs()
-                    .withKS(0.0)
-                    .withKV(0.0)
+                    .withKS(4.325)
+                    .withKV(0.013)
                     .withKA(0.0)
-                    .withKP(0.0)
+                    .withKP(1.5)
                     .withKI(0.0)
                     .withKD(0.0));
 
@@ -676,11 +676,11 @@ public class Constants {
                     .withKS(0.0)
                     .withKV(0.0)
                     .withKA(0.0)
-                    .withKG(0.0)
+                    .withKG(0.4)
                     .withGravityType(GravityTypeValue.Elevator_Static)
-                    .withKP(0.0)
+                    .withKP(8.0)
                     .withKI(0.0)
-                    .withKD(0.0)
+                    .withKD(0.1)
                     .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign));
 
     public static final CANcoderConfiguration SHOOTER_HOOD_CANCODER_CONFIG =
