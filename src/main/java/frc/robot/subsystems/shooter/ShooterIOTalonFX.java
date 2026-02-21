@@ -7,7 +7,6 @@ import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
 public class ShooterIOTalonFX implements ShooterIO {
   protected final TalonFX motor;
@@ -20,7 +19,13 @@ public class ShooterIOTalonFX implements ShooterIO {
   protected final MotionMagicVelocityTorqueCurrentFOC
       motorMotionMagicVelocityTorqueCurrentFOCRequest;
 
-  public ShooterIOTalonFX(int canID, TalonFXConfiguration config) {
+  public ShooterIOTalonFX(
+      int canID, TalonFXConfiguration config, String motorName, Follower followCfg) {
+    this(canID, config, motorName); // reuse common init
+    motor.setControl(followCfg);
+  }
+
+  public ShooterIOTalonFX(int canID, TalonFXConfiguration config, String motorName) {
     this.canID = canID;
     this.config = config;
 
@@ -33,11 +38,6 @@ public class ShooterIOTalonFX implements ShooterIO {
     motorMotionMagicVelocityTorqueCurrentFOCRequest = new MotionMagicVelocityTorqueCurrentFOC(0);
 
     motor.getConfigurator().apply(config);
-  }
-
-  public ShooterIOTalonFX(int canID, TalonFXConfiguration config, int leadCANID) {
-    this(canID, config); // reuse common init
-    motor.setControl(new Follower(leadCANID, MotorAlignmentValue.Opposed));
   }
 
   @Override
