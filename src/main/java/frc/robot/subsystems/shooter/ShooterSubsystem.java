@@ -5,6 +5,7 @@ import static frc.robot.Constants.ShooterSubsystemConstants.*;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.ShooterSubsystemConstants.ShooterSetpoint;
 import frc.robot.subsystems.shooter.ShooterIO.ShooterIOInputs;
 
 public class ShooterSubsystem extends SubsystemBase {
@@ -28,14 +29,14 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem(
-      ShooterIO shooterHoodIO,
-      ShooterIO shooterKickerIO,
       ShooterIO shooterLeadIO,
-      ShooterIO shooterFollowIO) {
-    this.shooterHoodIO = shooterHoodIO;
-    this.shooterKickerIO = shooterKickerIO;
+      ShooterIO shooterFollowIO,
+      ShooterIO shooterKickerIO,
+      ShooterIO shooterHoodIO) {
     this.shooterLeadIO = shooterLeadIO;
     this.shooterFollowIO = shooterFollowIO;
+    this.shooterKickerIO = shooterKickerIO;
+    this.shooterHoodIO = shooterHoodIO;
     this.shooterLeadInputs = new ShooterIOInputs();
     this.shooterFollowInputs = new ShooterIOInputs();
 
@@ -86,6 +87,18 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void stopShooter() {
     shooterLeadIO.setMotorRPM(0);
+    shooterKickerIO.setMotorRPM(0);
+  }
+
+  public void runKicker() {
+    shooterKickerIO.setMotorRPM(SHOOTER_KICKER_RPM);
+  }
+
+  public void prepKicker() {
+    shooterKickerIO.setMotorRPM(SHOOTER_KICKER_RPM * 0.3); // Run at 30% of kicker RPM for prep
+  }
+
+  public void stopKicker() {
     shooterKickerIO.setMotorRPM(0);
   }
 
