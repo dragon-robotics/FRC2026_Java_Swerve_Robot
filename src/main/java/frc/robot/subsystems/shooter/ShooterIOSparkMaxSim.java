@@ -12,27 +12,45 @@ public class ShooterIOSparkMaxSim extends ShooterIOSparkMax {
   private final SparkSim motorSim;
   private final DCMotor motorType;
 
-  public ShooterIOSparkMaxSim(int canID, SparkMaxConfig config, String motorType) {
-    this(canID, config, motorType, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
-  }
-
   public ShooterIOSparkMaxSim(
-      int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
+      int canID, SparkMaxConfig config, String motorType, String motorName) {
     this(
         canID,
         config,
         motorType,
+        motorName,
+        EncoderMode.PRIMARY,
+        Optional.empty(),
+        Optional.empty());
+  }
+
+  public ShooterIOSparkMaxSim(
+      int canID,
+      SparkMaxConfig config,
+      String motorType,
+      String motorName,
+      AbsoluteEncoderConfig absEncoderConfig) {
+    this(
+        canID,
+        config,
+        motorType,
+        motorName,
         EncoderMode.ABSOLUTE,
         Optional.of(absEncoderConfig),
         Optional.empty());
   }
 
   public ShooterIOSparkMaxSim(
-      int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
+      int canID,
+      SparkMaxConfig config,
+      String motorType,
+      String motorName,
+      AlternateEncoderConfig altEncoderConfig) {
     this(
         canID,
         config,
         motorType,
+        motorName,
         EncoderMode.ALTERNATE,
         Optional.empty(),
         Optional.of(altEncoderConfig));
@@ -42,10 +60,11 @@ public class ShooterIOSparkMaxSim extends ShooterIOSparkMax {
       int canID,
       SparkMaxConfig config,
       String motorType,
+      String motorName,
       EncoderMode encoderMode,
       Optional<AbsoluteEncoderConfig> absEncoderConfig,
       Optional<AlternateEncoderConfig> altEncoderConfig) {
-    super(canID, config, motorType, encoderMode, absEncoderConfig, altEncoderConfig);
+    super(canID, config, motorType, motorName, encoderMode, absEncoderConfig, altEncoderConfig);
     // Initialize SparkSim with appropriate parameters for the motor type
     switch (motorType) {
       case "NEO":

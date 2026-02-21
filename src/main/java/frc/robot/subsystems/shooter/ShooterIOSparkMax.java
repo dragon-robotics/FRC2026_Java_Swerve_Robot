@@ -23,31 +23,49 @@ public class ShooterIOSparkMax implements ShooterIO {
   protected final int canID;
   protected final SparkMaxConfig config;
   protected final String motorType;
+  protected final String motorName;
 
   private final SparkClosedLoopController motorController;
   private final EncoderMode encoderMode;
 
-  public ShooterIOSparkMax(int canID, SparkMaxConfig config, String motorType) {
-    this(canID, config, motorType, EncoderMode.PRIMARY, Optional.empty(), Optional.empty());
-  }
-
-  public ShooterIOSparkMax(
-      int canID, SparkMaxConfig config, String motorType, AbsoluteEncoderConfig absEncoderConfig) {
+  public ShooterIOSparkMax(int canID, SparkMaxConfig config, String motorType, String motorName) {
     this(
         canID,
         config,
         motorType,
+        motorName,
+        EncoderMode.PRIMARY,
+        Optional.empty(),
+        Optional.empty());
+  }
+
+  public ShooterIOSparkMax(
+      int canID,
+      SparkMaxConfig config,
+      String motorType,
+      String motorName,
+      AbsoluteEncoderConfig absEncoderConfig) {
+    this(
+        canID,
+        config,
+        motorType,
+        motorName,
         EncoderMode.ABSOLUTE,
         Optional.of(absEncoderConfig),
         Optional.empty());
   }
 
   public ShooterIOSparkMax(
-      int canID, SparkMaxConfig config, String motorType, AlternateEncoderConfig altEncoderConfig) {
+      int canID,
+      SparkMaxConfig config,
+      String motorType,
+      String motorName,
+      AlternateEncoderConfig altEncoderConfig) {
     this(
         canID,
         config,
         motorType,
+        motorName,
         EncoderMode.ALTERNATE,
         Optional.empty(),
         Optional.of(altEncoderConfig));
@@ -57,12 +75,14 @@ public class ShooterIOSparkMax implements ShooterIO {
       int canID,
       SparkMaxConfig config,
       String motorType,
+      String motorName,
       EncoderMode encoderMode,
       Optional<AbsoluteEncoderConfig> absEncoderConfig,
       Optional<AlternateEncoderConfig> altEncoderConfig) {
     this.canID = canID;
     this.config = config;
     this.motorType = motorType;
+    this.motorName = motorName;
     this.encoderMode = encoderMode;
 
     motor = new SparkMax(canID, MotorType.kBrushless);

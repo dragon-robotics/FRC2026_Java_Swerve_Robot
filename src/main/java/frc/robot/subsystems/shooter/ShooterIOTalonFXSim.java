@@ -1,6 +1,7 @@
 package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 import edu.wpi.first.math.system.plant.DCMotor;
 
@@ -8,9 +9,10 @@ public class ShooterIOTalonFXSim extends ShooterIOTalonFX {
 
   private final DCMotor motorType;
 
-  public ShooterIOTalonFXSim(int canID, TalonFXConfiguration config, String motorType) {
+  public ShooterIOTalonFXSim(
+      int canID, TalonFXConfiguration config, String motorType, String motorName) {
 
-    super(canID, config);
+    super(canID, config, motorName);
 
     switch (motorType) {
       case "KrakenX60":
@@ -31,9 +33,13 @@ public class ShooterIOTalonFXSim extends ShooterIOTalonFX {
   }
 
   public ShooterIOTalonFXSim(
-      int canID, TalonFXConfiguration config, int leadCANID, String motorType) {
+      int canID,
+      TalonFXConfiguration config,
+      String motorType,
+      String motorName,
+      Follower followCfg) {
 
-    super(canID, config, leadCANID);
+    super(canID, config, motorName, followCfg);
 
     switch (motorType) {
       case "KrakenX60":
