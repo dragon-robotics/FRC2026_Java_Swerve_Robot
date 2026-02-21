@@ -343,9 +343,9 @@ public class Constants {
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(Amps.of(80))
+                    .withStatorCurrentLimit(Amps.of(40))
                     .withSupplyCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(Amps.of(40)))
+                    .withSupplyCurrentLimit(Amps.of(20)))
             .withVoltage(
                 new VoltageConfigs()
                     .withPeakForwardVoltage(Volts.of(10))
@@ -407,7 +407,7 @@ public class Constants {
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(Amps.of(80))
+                    .withStatorCurrentLimit(Amps.of(60))
                     .withSupplyCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(Amps.of(40)))
             .withVoltage(
@@ -515,7 +515,7 @@ public class Constants {
       }
     }
 
-    // Example 3 zones (tune these values)
+    // Example 3 zones (TODO: Tune these values in real world testing)
     public static final List<ShooterZone> SHOOTER_ZONES =
         List.of(
             new ShooterZone(0.0, 2.0, new ShooterSetpoint(3000.0, 0.12)), // close
@@ -550,11 +550,6 @@ public class Constants {
                     .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.1))
                     .withTorqueOpenLoopRampPeriod(Seconds.of(0.1))
                     .withVoltageOpenLoopRampPeriod(Seconds.of(0.1)))
-            .withClosedLoopRamps(
-                new ClosedLoopRampsConfigs()
-                    .withDutyCycleClosedLoopRampPeriod(Seconds.of(0.1))
-                    .withTorqueClosedLoopRampPeriod(Seconds.of(0.1))
-                    .withVoltageClosedLoopRampPeriod(Seconds.of(0.1)))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
             .withSlot0(
                 new Slot0Configs()
@@ -570,7 +565,7 @@ public class Constants {
             .apply(
                 new SparkMaxConfig()
                     .voltageCompensation(10)
-                    .smartCurrentLimit(40, 20)
+                    .smartCurrentLimit(60, 20)
                     .secondaryCurrentLimit(80)
                     .openLoopRampRate(0.1)
                     .idleMode(IdleMode.kCoast))
@@ -587,20 +582,42 @@ public class Constants {
 
     public static final TalonFXConfiguration SHOOTER_FOLLOW_TALONFX_CONFIG =
         new TalonFXConfiguration()
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withStatorCurrentLimitEnable(true)
+                    .withStatorCurrentLimit(Amps.of(80))
+                    .withSupplyCurrentLimitEnable(true)
+                    .withSupplyCurrentLimit(Amps.of(40))
+                    .withSupplyCurrentLowerLimit(20)
+                    .withSupplyCurrentLowerTime(1))
+            .withVoltage(
+                new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
+            .withOpenLoopRamps(
+                new OpenLoopRampsConfigs()
+                    .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.1))
+                    .withTorqueOpenLoopRampPeriod(Seconds.of(0.1))
+                    .withVoltageOpenLoopRampPeriod(Seconds.of(0.1)))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
 
     public static final SparkBaseConfig SHOOTER_FOLLOW_SPARKMAX_CONFIG =
         new SparkMaxConfig()
-            .apply(new SparkMaxConfig().idleMode(IdleMode.kCoast).follow(SHOOTER_LEAD_MOTOR_ID));
+            .apply(
+                new SparkMaxConfig()
+                    .voltageCompensation(10)
+                    .smartCurrentLimit(60, 20)
+                    .secondaryCurrentLimit(80)
+                    .openLoopRampRate(0.1)
+                    .idleMode(IdleMode.kCoast)
+                    .follow(SHOOTER_LEAD_MOTOR_ID));
 
     public static final TalonFXConfiguration SHOOTER_KICKER_TALONFX_CONFIG =
         new TalonFXConfiguration()
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(Amps.of(80))
+                    .withStatorCurrentLimit(Amps.of(40))
                     .withSupplyCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(Amps.of(40)))
+                    .withSupplyCurrentLimit(Amps.of(20)))
             .withVoltage(
                 new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
             .withOpenLoopRamps(
@@ -643,9 +660,9 @@ public class Constants {
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(Amps.of(30))
+                    .withStatorCurrentLimit(Amps.of(20))
                     .withSupplyCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(Amps.of(15)))
+                    .withSupplyCurrentLimit(Amps.of(10)))
             .withVoltage(
                 new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
             .withOpenLoopRamps(
@@ -660,7 +677,7 @@ public class Constants {
                     .withKV(0.0)
                     .withKA(0.0)
                     .withKG(0.0)
-                    .withGravityType(GravityTypeValue.Arm_Cosine)
+                    .withGravityType(GravityTypeValue.Elevator_Static)
                     .withKP(0.0)
                     .withKI(0.0)
                     .withKD(0.0)
