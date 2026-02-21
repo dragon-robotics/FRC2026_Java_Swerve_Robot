@@ -32,6 +32,12 @@ import java.util.function.DoubleSupplier;
 
 public class Superstructure {
 
+  public enum SuperState {
+    DRIVE,
+    INTAKE,
+    SHOOT
+  }
+
   private final CommandSwerveDrivetrain swerve;
   private final IntakeSubsystem intake;
   private final HopperSubsystem hopper;
