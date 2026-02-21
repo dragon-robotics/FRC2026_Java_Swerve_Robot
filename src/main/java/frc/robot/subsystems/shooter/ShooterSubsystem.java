@@ -16,16 +16,16 @@ public class ShooterSubsystem extends SubsystemBase {
     TRANSITION // Transition state to handle ramping up/down of the shooter speed
   }
 
-  private ShooterState desiredShooterState;
-  private ShooterState currShooterState;
+  protected ShooterState desiredShooterState;
+  protected ShooterState currShooterState;
 
-  private ShooterIO shooterHoodIO;
-  private ShooterIO shooterKickerIO;
-  private ShooterIO shooterLeadIO, shooterFollowIO;
-  private ShooterIOInputs shooterLeadInputs, shooterFollowInputs;
+  protected final ShooterIO shooterHoodIO;
+  protected final ShooterIO shooterKickerIO;
+  protected final ShooterIO shooterLeadIO, shooterFollowIO;
+  protected final ShooterIOInputs shooterLeadInputs, shooterFollowInputs;
 
-  private double targetRPM;
-  private double hoodAngle;
+  protected double targetRPM;
+  protected double hoodAngle;
 
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem(
