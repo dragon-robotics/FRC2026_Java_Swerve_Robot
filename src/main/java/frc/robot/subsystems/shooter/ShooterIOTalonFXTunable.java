@@ -28,7 +28,7 @@ public class ShooterIOTalonFXTunable extends ShooterIOTalonFX {
           "VelocityTorqueCurrentFOC");
 
   public ShooterIOTalonFXTunable(int canID, TalonFXConfiguration config, String motorName) {
-    super(canID, config);
+    super(canID, config, motorName);
 
     String baseKey = "Shooter/Tuning/TalonFX/" + motorName + "/";
 
