@@ -5,46 +5,34 @@ import lombok.Setter;
 
 public interface ClimberIO {
 
-  default void setElevatorSetpoint(double setPoint) {
-    throw new UnsupportedOperationException("setElevatorSetpoint not implemented");
+  default void setMotorVoltage(double voltage) {
+    throw new UnsupportedOperationException("setMotorVoltage not implemented");
   }
 
-  /* getters */
-  default boolean isElevatorStowed(double homeSetPoint, double tolerance) {
-    throw new UnsupportedOperationException("isElevatorStowed not implemented");
+  default void setMotorPercentage(double percentage) {
+    throw new UnsupportedOperationException("setMotorPercentage not implemented");
   }
 
-  default boolean hasClimbed() {
-    throw new UnsupportedOperationException("hasClimbed not implemented");
+  default void setMotorRPM(double rpm) {
+    throw new UnsupportedOperationException("setMotorRPM not implemented");
   }
 
-  default boolean getCurrentSpike() {
-    throw new UnsupportedOperationException("getCurrentLimit not implemented");
-  }
-
-  default double getElevatorPosition() {
-    throw new UnsupportedOperationException("getElevatorPosition not implemented");
+  default void setMotorPosition(double setpoint) {
+    throw new UnsupportedOperationException("setMotorPosition is not implemented");
   }
 
   class ClimberIOInputs {
     // Motor connection status
-    @Getter @Setter private boolean leadMotorConnected;
-    @Getter @Setter private boolean followerMotorConnected;
+    @Getter @Setter private boolean motorConnected;
 
     // Lead motor data
-    @Getter @Setter private double leadMotorPosition;
-    @Getter @Setter private double leadMotorVelocity;
-    @Getter @Setter private double leadMotorVoltage;
-    @Getter @Setter private double leadMotorCurrent;
-    @Getter @Setter private double leadMotorTemperature;
-
-    // Follower motor data
-    @Getter @Setter private double followerMotorPosition;
-    @Getter @Setter private double followerMotorVelocity;
-    @Getter @Setter private double followerMotorVoltage;
-    @Getter @Setter private double followerMotorCurrent;
-    @Getter @Setter private double followerMotorTemperature;
+    @Getter @Setter private double motorPosition;
+    @Getter @Setter private double motorVelocity;
+    @Getter @Setter private double motorVoltage;
+    @Getter @Setter private double motorCurrent;
+    @Getter @Setter private double motorTemperature;
   }
 
-  default void updateInputs(ClimberIOInputs climberInputs) {}
+  default void updateInputs(ClimberIOInputs climberInputs) {
+  }
 }

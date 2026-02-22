@@ -2,27 +2,28 @@ package frc.robot.subsystems.climber;
 
 import static frc.robot.Constants.ClimberConstants.*;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.climber.ClimberIO.ClimberIOInputs;
 
 public class ClimberSubsystem extends SubsystemBase {
 
   public enum ClimberState {
-    STOWED,
-    L1,
-    TRANSISTION_L1,
+    STOWED, 
     STOWING,
+    DEPLOYING, 
+    DEPLOYED
   }
 
-  private ClimberState currentClimberState;
-  private ClimberState desiredClimberState;
+  protected ClimberState currentClimberState;
+  protected ClimberState desiredClimberState;
 
-  private ClimberIO climberIO;
-  private ClimberIOInputs climberInputs;
+  protected ClimberIO climberMotorIO;
+  protected ClimberIOInputs climberMotorInputs;
 
-  public ClimberSubsystem(ClimberIO climberIO) {
-    this.climberIO = climberIO;
-    this.climberInputs = new ClimberIOInputs();
+  public ClimberSubsystem(ClimberIO climbMotorIO) {
+    this.climberMotorIO = climbMotorIO;
+    this.climberMotorInputs = new ClimberIOInputs();
 
     // initailize climber states
     this.desiredClimberState = ClimberState.STOWED;
@@ -34,20 +35,35 @@ public class ClimberSubsystem extends SubsystemBase {
 
     switch (desiredClimberState) {
       case STOWED:
-        currentClimberState = ClimberState.STOWING;
+        desiredClimberState = ClimberState.STOWED;
         break;
-      case L1:
-        currentClimberState = ClimberState.TRANSISTION_L1;
+      case STOWING:
+        desiredClimberState = ClimberState.STOWING;
+
         break;
+      case DEPLOYING: 
       default:
+
+        desiredClimberState = ClimberState.DEPLOYING;
         break;
+
     }
   }
 
-  public void setElevatorSetpoint(double setPoint) {
-    climberIO.setElevatorSetpoint(setPoint);
+
+  /* Climber Actions */
+  public void deployClimber() {
+    climberMotorIO.setMotorPosition(CLIMBER_L1_SETPOINT);
   }
 
+  public void stowClimber() {
+    climberMotorIO.setMotorPosition(CLIMBER_HOME_SETPOINT);
+  }
+
+  public void stopClimber() {
+    climberMotorIO.setMotorVoltage(0.0);
+  }
+  
   /* getters */
   public ClimberState getCurrentState() {
     return currentClimberState;
@@ -56,46 +72,47 @@ public class ClimberSubsystem extends SubsystemBase {
   public ClimberState getDesiredState() {
     return desiredClimberState;
   }
+  public void handleStateTransition() {
+    // State machine logic
+      switch (currentClimberState) {
+        case STOWED:
+          // Climber is stowed, do nothing
+          // Check if we need to deploy
+          if (desiredClimberState == ClimberState.DEPLOYED) {
+            currentClimberState = ClimberState.DEPLOYING;
+          }
+          break;
 
-  public double getElevatorPosition() {
-    return climberIO.getElevatorPosition();
-  }
+        case STOWING:
+          // Actively moving to stowed position
+          stowClimber();
+          currentClimberState = ClimberState.STOWED;
+          break;
 
-  private boolean isAtPosition(double setPoint, double tolerance) {
-    return Math.abs(getElevatorPosition() - setPoint) < tolerance;
-  }
+        case DEPLOYING:
+          // Actively moving to deployed position
+          deployClimber();
+            currentClimberState = ClimberState.DEPLOYED;
+          break;
 
-  public boolean hasClimbed(double setPoint, double tolerance) {
-    return Math.abs(setPoint - getElevatorPosition()) < tolerance;
-  }
-
-  public boolean isHome(double homeSetPoint, double tolerance) {
-    return climberIO.isElevatorStowed(homeSetPoint, tolerance);
+        case DEPLOYED:
+          // Climber is deployed, hold position
+          // Check if we need to stow
+          if (desiredClimberState == ClimberState.STOWED) {
+            currentClimberState = ClimberState.STOWING;
+          }
+          break;
+        default:
+          break;
+    }
   }
 
   @Override
   public void periodic() {
-    climberIO.updateInputs(climberInputs);
-    switch (currentClimberState) {
-      case STOWED:
-        break;
-      case STOWING:
-        setElevatorSetpoint(CLIMBER_RETRACTED_SETPOINT);
-        if (isAtPosition(CLIMBER_RETRACTED_SETPOINT, POSITION_TOLERANCE)) {
-          currentClimberState = ClimberState.STOWED;
-        }
-        break;
-      case TRANSISTION_L1:
-        setElevatorSetpoint(CLIMBER_L1_SETPOINT);
-        if (isAtPosition(CLIMBER_HOME_SETPOINT, POSITION_TOLERANCE)) {
-          currentClimberState = ClimberState.L1;
-        }
-        break;
-      case L1:
-        if (desiredClimberState == ClimberState.STOWED) {
-          currentClimberState = ClimberState.STOWING;
-        }
-        break;
+      handleStateTransition();
+      DogLog.log("CLimber/Climber State", currentClimberState.toString());
+
+      climberMotorIO.updateInputs(climberMotorInputs);
+
     }
   }
-}
