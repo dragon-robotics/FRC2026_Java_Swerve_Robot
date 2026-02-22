@@ -4,31 +4,36 @@ import lombok.Getter;
 import lombok.Setter;
 
 public interface ShooterIO {
-  default void setShooterMotorVoltage(double voltage) {
-    throw new UnsupportedOperationException("setShooterMotorVoltage is not implemented");
+
+  default void setMotorVoltage(double voltage) {
+    throw new UnsupportedOperationException("setMotorVoltage not implemented");
   }
 
-  default void setShooterMotorPercentage(double percentage) {
-    throw new UnsupportedOperationException("setShooterMotorPercentage is not implemented");
+  default void setMotorPercentage(double percentage) {
+    throw new UnsupportedOperationException("setMotorPercentage not implemented");
   }
 
-  default void setShooterMotorRPM(double rpm) {
-    throw new UnsupportedOperationException("setShooterMotorRPM is not implemented");
+  default void setMotorRPM(double rpm) {
+    throw new UnsupportedOperationException("setMotorRPM not implemented");
+  }
+
+  default void setMotorPosition(double position) {
+    throw new UnsupportedOperationException("setMotorPosition not implemented");
   }
 
   class ShooterIOInputs {
+    /** Is the motor connected? */
+    @Getter @Setter private boolean motorConnected;
 
-    /** Are the shooter motors connected? */
-    @Getter @Setter private boolean shooterMotorConnected;
+    /** Motor data */
+    @Getter @Setter private double motorVoltage;
 
-    /** Shooter motor data */
-    @Getter @Setter private double shooterMotorVoltage;
-
-    @Getter @Setter private double shooterMotorDutyCycle;
-    @Getter @Setter private double shooterMotorCurrent;
-    @Getter @Setter private double shooterMotorTemperature;
-    @Getter @Setter private double shooterMotorVelocity;
+    @Getter @Setter private double motorDutyCycle;
+    @Getter @Setter private double motorCurrent;
+    @Getter @Setter private double motorTemperature;
+    @Getter @Setter private double motorVelocity;
+    @Getter @Setter private double motorPosition;
   }
 
-  default void updateInputs(ShooterIOInputs inputs) {}
+  default void updateInputs(ShooterIOInputs shooterInputs) {}
 }

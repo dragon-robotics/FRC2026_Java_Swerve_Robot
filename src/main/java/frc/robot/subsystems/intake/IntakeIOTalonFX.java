@@ -7,7 +7,15 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
@@ -18,53 +26,78 @@ public class IntakeIOTalonFX implements IntakeIO {
   protected final TalonFX motor;
   protected final int canID;
   protected final TalonFXConfiguration config;
-  protected final String motorType;
+  protected final String motorName;
+  protected final Optional<CANcoderConfiguration> canCoderConfig;
 
-  protected final MotionMagicVelocityTorqueCurrentFOC
-      motorMotionMagicVelocityTorqueCurrentFOCRequest;
+  // Position Controls //
+  protected final PositionVoltage motorPositionVoltageRequest;
+  protected final PositionTorqueCurrentFOC motorPositionTorqueCurrentFOCRequest;
+  protected final MotionMagicVoltage motorMotionMagicVoltageRequest;
+  protected final MotionMagicTorqueCurrentFOC motorMotionMagicTorqueCurrentFOCRequest;
+  protected final MotionMagicExpoVoltage motorMotionMagicExpoVoltageRequest;
   protected final MotionMagicExpoTorqueCurrentFOC motorMotionMagicExpoTorqueCurrentFOCRequest;
 
-  private final Optional<CANcoderConfiguration> canCoderConfig;
+  // Velocity Controls //
+  protected final MotionMagicVelocityVoltage motorMotionMagicVelocityVoltageRequest;
+  protected final MotionMagicVelocityTorqueCurrentFOC
+      motorMotionMagicVelocityTorqueCurrentFOCRequest;
+  protected final VelocityVoltage motorVelocityVoltageRequest;
+  protected final VelocityTorqueCurrentFOC motorVelocityTorqueCurrentFOCRequest;
 
-  public IntakeIOTalonFX(int canID, TalonFXConfiguration config, String motorType) {
-    this(canID, config, motorType, Optional.empty());
+  public IntakeIOTalonFX(int canID, TalonFXConfiguration config, String motorName) {
+    this(canID, config, motorName, Optional.empty());
   }
 
   public IntakeIOTalonFX(
       int canID,
       TalonFXConfiguration config,
-      String motorType,
+      String motorName,
       Optional<CANcoderConfiguration> canCoderConfig) {
     this.canID = canID;
     this.config = config;
-    this.motorType = motorType;
     this.canCoderConfig = canCoderConfig;
+    this.motorName = motorName;
 
     motor = new TalonFX(this.canID, CANBus.roboRIO());
     motor.clearStickyFaults();
 
-    /* Create Motion Magic Velocity and Motion Magic Expo requests */
-    motorMotionMagicVelocityTorqueCurrentFOCRequest = new MotionMagicVelocityTorqueCurrentFOC(0);
+    /* Create Position and Velocity requests */
+
+    // Position Control Requests
+    motorPositionVoltageRequest = new PositionVoltage(0);
+    motorPositionTorqueCurrentFOCRequest = new PositionTorqueCurrentFOC(0);
+    motorMotionMagicVoltageRequest = new MotionMagicVoltage(0);
+    motorMotionMagicTorqueCurrentFOCRequest = new MotionMagicTorqueCurrentFOC(0);
+    motorMotionMagicExpoVoltageRequest = new MotionMagicExpoVoltage(0);
     motorMotionMagicExpoTorqueCurrentFOCRequest = new MotionMagicExpoTorqueCurrentFOC(0);
+
+    // Velocity Control Requests
+    motorVelocityVoltageRequest = new VelocityVoltage(0);
+    motorVelocityTorqueCurrentFOCRequest = new VelocityTorqueCurrentFOC(0);
+    motorMotionMagicVelocityVoltageRequest = new MotionMagicVelocityVoltage(0);
+    motorMotionMagicVelocityTorqueCurrentFOCRequest = new MotionMagicVelocityTorqueCurrentFOC(0);
 
     // Apply CANcoder config (absolute offset/direction) if cancoder config is present
     this.canCoderConfig.ifPresentOrElse(
-        ccCfg -> {
-          try (CANcoder canCoder = new CANcoder(INTAKE_ARM_CANCODER_ID, CANBus.roboRIO())) {
-            canCoder.getConfigurator().apply(ccCfg);
-            TalonFXConfiguration cfg =
-                this.config.withFeedback(
-                    new FeedbackConfigs()
-                        // .withFusedCANcoder(canCoder)
-                        .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
-                        .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
-                        .withSensorToMechanismRatio(1)
-                        .withFeedbackRotorOffset(0));
-            motor.getConfigurator().apply(cfg);
-          } catch (Exception e) {
-            // Handle exceptions related to CANcoder configuration
-            System.err.println("Error configuring CANcoder: " + e.getMessage());
-          }
+        canCoderCfg -> {
+          int canCoderID =
+              motorName.equals("Intake Arm") ? INTAKE_ARM_CANCODER_ID : INTAKE_ROLLER_CANCODER_ID;
+          CANcoder canCoder = new CANcoder(canCoderID, CANBus.roboRIO());
+          canCoder.getConfigurator().apply(canCoderCfg);
+
+          FeedbackConfigs feedbackCfg =
+              new FeedbackConfigs()
+                  .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                  .withFusedCANcoder(canCoder)
+                  .withFeedbackRotorOffset(
+                      motorName.equals("Intake Arm")
+                          ? 0.1728
+                          : 0) // Set the CANcoder position to match the arm's zero position on boot
+                  .withRotorToSensorRatio(
+                      motorName.equals("Intake Arm") ? INTAKE_ARM_GEAR_RATIO : 1)
+                  .withSensorToMechanismRatio(1);
+
+          motor.getConfigurator().apply(config.withFeedback(feedbackCfg));
         },
         () -> {
           // Handle the case where canCoderConfig is not present (e.g. set up feedback configs

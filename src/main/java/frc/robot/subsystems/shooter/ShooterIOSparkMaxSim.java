@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intake;
+package frc.robot.subsystems.shooter;
 
 import com.revrobotics.spark.SparkSim;
 import com.revrobotics.spark.config.AbsoluteEncoderConfig;
@@ -7,12 +7,13 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.system.plant.DCMotor;
 import java.util.Optional;
 
-public class IntakeIOSparkMaxSim extends IntakeIOSparkMax {
+public class ShooterIOSparkMaxSim extends ShooterIOSparkMax {
 
   private final SparkSim motorSim;
   private final DCMotor motorType;
 
-  public IntakeIOSparkMaxSim(int canID, SparkMaxConfig config, String motorType, String motorName) {
+  public ShooterIOSparkMaxSim(
+      int canID, SparkMaxConfig config, String motorType, String motorName) {
     this(
         canID,
         config,
@@ -23,7 +24,7 @@ public class IntakeIOSparkMaxSim extends IntakeIOSparkMax {
         Optional.empty());
   }
 
-  public IntakeIOSparkMaxSim(
+  public ShooterIOSparkMaxSim(
       int canID,
       SparkMaxConfig config,
       String motorType,
@@ -39,7 +40,7 @@ public class IntakeIOSparkMaxSim extends IntakeIOSparkMax {
         Optional.empty());
   }
 
-  public IntakeIOSparkMaxSim(
+  public ShooterIOSparkMaxSim(
       int canID,
       SparkMaxConfig config,
       String motorType,
@@ -55,7 +56,7 @@ public class IntakeIOSparkMaxSim extends IntakeIOSparkMax {
         Optional.of(altEncoderConfig));
   }
 
-  public IntakeIOSparkMaxSim(
+  public ShooterIOSparkMaxSim(
       int canID,
       SparkMaxConfig config,
       String motorType,

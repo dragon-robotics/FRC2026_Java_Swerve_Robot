@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intake;
+package frc.robot.subsystems.shooter;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
@@ -11,7 +11,7 @@ import com.revrobotics.spark.config.AlternateEncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import java.util.Optional;
 
-public class IntakeIOSparkMax implements IntakeIO {
+public class ShooterIOSparkMax implements ShooterIO {
 
   protected enum EncoderMode {
     PRIMARY,
@@ -23,11 +23,12 @@ public class IntakeIOSparkMax implements IntakeIO {
   protected final int canID;
   protected final SparkMaxConfig config;
   protected final String motorType;
+  protected final String motorName;
 
   private final SparkClosedLoopController motorController;
   private final EncoderMode encoderMode;
 
-  public IntakeIOSparkMax(int canID, SparkMaxConfig config, String motorType, String motorName) {
+  public ShooterIOSparkMax(int canID, SparkMaxConfig config, String motorType, String motorName) {
     this(
         canID,
         config,
@@ -38,7 +39,7 @@ public class IntakeIOSparkMax implements IntakeIO {
         Optional.empty());
   }
 
-  public IntakeIOSparkMax(
+  public ShooterIOSparkMax(
       int canID,
       SparkMaxConfig config,
       String motorType,
@@ -54,7 +55,7 @@ public class IntakeIOSparkMax implements IntakeIO {
         Optional.empty());
   }
 
-  public IntakeIOSparkMax(
+  public ShooterIOSparkMax(
       int canID,
       SparkMaxConfig config,
       String motorType,
@@ -70,7 +71,7 @@ public class IntakeIOSparkMax implements IntakeIO {
         Optional.of(altEncoderConfig));
   }
 
-  public IntakeIOSparkMax(
+  public ShooterIOSparkMax(
       int canID,
       SparkMaxConfig config,
       String motorType,
@@ -81,11 +82,13 @@ public class IntakeIOSparkMax implements IntakeIO {
     this.canID = canID;
     this.config = config;
     this.motorType = motorType;
+    this.motorName = motorName;
     this.encoderMode = encoderMode;
 
-    /* Instantiate the motors and encoders */
-    motor = new SparkMax(this.canID, MotorType.kBrushless);
+    motor = new SparkMax(canID, MotorType.kBrushless);
     motorController = motor.getClosedLoopController();
+
+    motor.clearFaults();
 
     /* Clear any existing faults */
     motor.clearFaults();
@@ -118,7 +121,7 @@ public class IntakeIOSparkMax implements IntakeIO {
   }
 
   @Override
-  public void updateInputs(IntakeIOInputs inputs) {
+  public void updateInputs(ShooterIOInputs inputs) {
 
     inputs.setMotorConnected(motor.getDeviceId() == canID);
 
