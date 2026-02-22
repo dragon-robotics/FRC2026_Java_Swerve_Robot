@@ -2,6 +2,7 @@ package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
@@ -12,6 +13,8 @@ public class ShooterIOTalonFX implements ShooterIO {
   protected final TalonFX motor;
   protected final int canID;
   protected final TalonFXConfiguration config;
+
+  protected final MotionMagicExpoVoltage motorMotionMagicExpoVoltageRequest;
 
   protected final VelocityVoltage motorVelocityVoltageRequest;
   protected final VelocityTorqueCurrentFOC motorVelocityTorqueCurrentFOCRequest;
@@ -31,6 +34,8 @@ public class ShooterIOTalonFX implements ShooterIO {
 
     motor = new TalonFX(canID);
     motor.clearStickyFaults();
+
+    motorMotionMagicExpoVoltageRequest = new MotionMagicExpoVoltage(0);
 
     motorVelocityVoltageRequest = new VelocityVoltage(0);
     motorVelocityTorqueCurrentFOCRequest = new VelocityTorqueCurrentFOC(0);
@@ -53,6 +58,11 @@ public class ShooterIOTalonFX implements ShooterIO {
   @Override
   public void setMotorRPM(double rpm) {
     motor.setControl(motorVelocityTorqueCurrentFOCRequest.withVelocity(rpm / 60));
+  }
+
+  @Override
+  public void setMotorPosition(double position) {
+    motor.setControl(motorMotionMagicExpoVoltageRequest.withPosition(position));
   }
 
   @Override
