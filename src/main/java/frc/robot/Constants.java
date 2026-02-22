@@ -499,8 +499,8 @@ public class Constants {
 
   public static class ShooterSubsystemConstants {
 
-    public static final int SHOOTER_KICKER_MOTOR_ID = 13;
-    public static final int SHOOTER_HOOD_MOTOR_ID = 14;
+    public static final int SHOOTER_KICKER_MOTOR_ID = 14;
+    public static final int SHOOTER_HOOD_MOTOR_ID = 13;
     public static final int SHOOTER_LEAD_MOTOR_ID = 15;
     public static final int SHOOTER_FOLLOW_MOTOR_ID = 16;
 
