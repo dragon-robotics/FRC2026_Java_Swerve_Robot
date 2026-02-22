@@ -1,26 +1,5 @@
 package frc.robot.subsystems.shooter;
 
-import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.Rotations;
-import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_GEAR_RATIO;
-
-import dev.doglog.DogLog;
-import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.simulation.BatterySim;
-import edu.wpi.first.wpilibj.simulation.FlywheelSim;
-import edu.wpi.first.wpilibj.simulation.RoboRioSim;
-import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
-import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.util.Color;
-import edu.wpi.first.wpilibj.util.Color8Bit;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Mechanism;
-import frc.robot.subsystems.intake.IntakeIOSparkMaxSim;
-import frc.robot.subsystems.intake.IntakeIOTalonFXSim;
-
 public class ShooterSubsystemSim {}
 
 // public class ShooterSubsystemSim extends ShooterSubsystem {
@@ -64,7 +43,8 @@ public class ShooterSubsystemSim {}
 //     arm = mech.getRoot("pivotPoint", 0.25, 0.5)
 //       .append(new MechanismLigament2d("arm", .2, 0, 0, new Color8Bit(Color.kAliceBlue)));
 //     side1 = arm
-//       .append(new MechanismLigament2d("side1", 0.15307, 112.5, 6, new Color8Bit(Color.kAliceBlue)));
+//       .append(new MechanismLigament2d("side1", 0.15307, 112.5, 6, new
+// Color8Bit(Color.kAliceBlue)));
 //     side2 = side1
 //       .append(new MechanismLigament2d("side2", 0.15307, 45, 6, new Color8Bit(Color.kAliceBlue)));
 //     side3 = side2
@@ -78,7 +58,7 @@ public class ShooterSubsystemSim {}
 //     side7 = side6
 //       .append(new MechanismLigament2d("side7", 0.15307, 45, 6, new Color8Bit(Color.kAliceBlue)));
 //     side8 = side7
-//       .append(new MechanismLigament2d("side8", 0.15307, 45, 6, new Color8Bit(Color.kAliceBlue)));    
+//       .append(new MechanismLigament2d("side8", 0.15307, 45, 6, new Color8Bit(Color.kAliceBlue)));
 
 //     DCMotor shooterMotorType =
 //         shooterLeadIO instanceof ShooterIOTalonFXSim
@@ -104,7 +84,8 @@ public class ShooterSubsystemSim {}
 //     // armSim.getVelocityRadPerSec()));
 //     // armSim.setInput(getVoltage());
 //     // Sets input voltage based on whether it is talon fx or not
-//     // Use motor voltage for TalonFX simulation input, otherwise get the motor voltage from inputs
+//     // Use motor voltage for TalonFX simulation input, otherwise get the motor voltage from
+// inputs
 //     if (shooterLeadIO instanceof ShooterIOTalonFXSim talonIO) {
 //       flywheelSim.setInput(talonIO.getSimState().getMotorVoltage());
 //     } else {
@@ -143,12 +124,13 @@ public class ShooterSubsystemSim {}
 //     // Add telemetry data
 //     DogLog.log("Shooter/Shooter State", currIntakeState.toString());
 //     DogLog.log(
-//         "Shooter/Shooter Velocity (RPM)", String.valueOf(Units.radiansToDegrees(currentAngleRad)));
+//         "Shooter/Shooter Velocity (RPM)",
+// String.valueOf(Units.radiansToDegrees(currentAngleRad)));
 //     DogLog.log("Shooter/Shooter Current (A)", String.valueOf(flywheelSim.getCurrentDrawAmps()));
 
 //     // This method will be called once per scheduler run
 //     intakeRollerIO.updateInputs(intakeRollerInputs);
 //     shooterLeadIO.updateInputs(intakeArmInputs);
-//   }  
+//   }
 
 // }
