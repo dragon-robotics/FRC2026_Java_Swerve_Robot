@@ -20,7 +20,6 @@ import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_LEAD_MOTOR_I
 import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_LEAD_TALONFX_CONFIG;
 import static frc.robot.Constants.VisionConstants.APTAG_CAMERA_NAMES;
 
-import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -33,10 +32,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.Constants.VisionConstants;

@@ -19,11 +19,11 @@ public interface HopperIO {
   }
 
   public class HopperIOInputs {
-    
+
     /** Is the motor connected? */
     @Getter @Setter private boolean motorConnected;
 
-     /** Motor data */
+    /** Motor data */
     @Getter @Setter private double motorVoltage;
 
     @Getter @Setter private double motorDutyCycle;
