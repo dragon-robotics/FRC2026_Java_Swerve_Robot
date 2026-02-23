@@ -728,7 +728,16 @@ public class Constants {
 
   public static class HopperConstants {
 
-    TalonFXConfiguration rollerConfig =
+    public static final int ROLLER_MOTOR_ID = 17;
+    // roller variables
+    public static final double ROLLER_STATOR_CURRENT_LIMIT = 20.0;
+    public static final double ROLLER_SUPPLY_CURRENT_LIMIT = 40.0;
+    public static final double ROLLER_MAX_VOLTAGE = 10.0;
+    public static final double ROLLER_RAMP_RATE = 0.5;
+    public static final double ROLLER_RPM = 1000.0;
+    public static final double ROLLER_REVERSE_RPM = -1000.0;
+
+    public static final TalonFXConfiguration HOPPER_ROLLER_TALONFX_CONFIG =
         new TalonFXConfiguration()
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
@@ -752,7 +761,8 @@ public class Constants {
                     .withVoltageClosedLoopRampPeriod(ROLLER_RAMP_RATE))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
             .withMotionMagic(
-                new MotionMagicConfigs().withMotionMagicAcceleration(200).withMotionMagicJerk(2000))
+                new MotionMagicConfigs()
+                .withMotionMagicAcceleration(200).withMotionMagicJerk(2000))
             .withSlot0(
                 new Slot0Configs()
                     .withKS(0.0)
@@ -761,15 +771,6 @@ public class Constants {
                     .withKP(0.0)
                     .withKI(0.0)
                     .withKD(0.0));
-
-    public static final int ROLLER_MOTOR_ID = 5;
-    // roller variables
-    public static final double ROLLER_STATOR_CURRENT_LIMIT = 20.0;
-    public static final double ROLLER_SUPPLY_CURRENT_LIMIT = 40.0;
-    public static final double ROLLER_MAX_VOLTAGE = 10.0;
-    public static final double ROLLER_RAMP_RATE = 0.5;
-    public static final double ROLLER_RPM = 1000.0;
-    public static final double ROLLER_REVERSE_RPM = -1000.0;
   }
 
   public static class ClimberConstants {
