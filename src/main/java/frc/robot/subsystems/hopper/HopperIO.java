@@ -18,10 +18,6 @@ public interface HopperIO {
     throw new UnsupportedOperationException("setMotorRPM is not implemented");
   }
 
-  default void setMotorPosition(double setpoint) {
-    throw new UnsupportedOperationException("setMotorPosition is not implemented");
-  }
-
   public class HopperIOInputs {
     
     /** Is the motor connected? */
