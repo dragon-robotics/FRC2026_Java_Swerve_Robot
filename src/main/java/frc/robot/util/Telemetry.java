@@ -11,7 +11,7 @@ public class Telemetry {
    * @param maxSpeed Maximum speed in meters per second
    */
   public Telemetry(double maxSpeed) {
-    SignalLogger.start();
+    // SignalLogger.start();
   }
 
   /** Accept the swerve drive state and telemeterize it to SmartDashboard and SignalLogger. */

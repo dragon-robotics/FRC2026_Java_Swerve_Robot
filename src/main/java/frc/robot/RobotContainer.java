@@ -343,26 +343,26 @@ public class RobotContainer {
     // Reset the field-centric heading on start button press.
     driverController.start().onTrue(seedFieldCentricCommand);
 
-    // Run SysId routines when holding back/start and X/Y.
-    // Note that each routine should be run exactly once in a single log.
-    driverController
-        .back()
-        .and(driverController.y())
-        .whileTrue(swerveSubsystem.sysIdDynamic(Direction.kForward));
-    driverController
-        .back()
-        .and(driverController.x())
-        .whileTrue(swerveSubsystem.sysIdDynamic(Direction.kReverse));
-    driverController
-        .start()
-        .and(driverController.y())
-        .whileTrue(swerveSubsystem.sysIdQuasistatic(Direction.kForward));
-    driverController
-        .start()
-        .and(driverController.x())
-        .whileTrue(swerveSubsystem.sysIdQuasistatic(Direction.kReverse));
+    // // Run SysId routines when holding back/start and X/Y.
+    // // Note that each routine should be run exactly once in a single log.
+    // driverController
+    //     .back()
+    //     .and(driverController.y())
+    //     .whileTrue(swerveSubsystem.sysIdDynamic(Direction.kForward));
+    // driverController
+    //     .back()
+    //     .and(driverController.x())
+    //     .whileTrue(swerveSubsystem.sysIdDynamic(Direction.kReverse));
+    // driverController
+    //     .start()
+    //     .and(driverController.y())
+    //     .whileTrue(swerveSubsystem.sysIdQuasistatic(Direction.kForward));
+    // driverController
+    //     .start()
+    //     .and(driverController.x())
+    //     .whileTrue(swerveSubsystem.sysIdQuasistatic(Direction.kReverse));
 
-    driverController.b().onTrue(Commands.runOnce(() -> SignalLogger.stop()));
+    // driverController.b().onTrue(Commands.runOnce(() -> SignalLogger.stop()));
 
     driverController.leftTrigger(0.2).whileTrue(deployIntakeCommand);
     driverController.rightTrigger(0.2).whileTrue(stowIntakeCommand);
