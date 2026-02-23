@@ -615,9 +615,11 @@ public class Constants {
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimitEnable(true)
-                    .withStatorCurrentLimit(Amps.of(40))
+                    .withStatorCurrentLimit(Amps.of(80))
                     .withSupplyCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(Amps.of(20)))
+                    .withSupplyCurrentLimit(Amps.of(60))
+                    .withSupplyCurrentLowerLimit(Amps.of(40))
+                    .withSupplyCurrentLowerTime(1))
             .withVoltage(
                 new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
             .withOpenLoopRamps(
@@ -628,10 +630,10 @@ public class Constants {
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
             .withSlot0(
                 new Slot0Configs()
-                    .withKS(0.0)
-                    .withKV(0.0)
+                    .withKS(14.4)
+                    .withKV(0.11)
                     .withKA(0.0)
-                    .withKP(0.0)
+                    .withKP(1.5)
                     .withKI(0.0)
                     .withKD(0.0));
 
