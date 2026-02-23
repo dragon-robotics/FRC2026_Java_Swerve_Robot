@@ -81,7 +81,6 @@ public class RobotContainer {
   private Command intakeCommand;
   private Command outtakeCommand;
   private Command stowIntakeCommand;
-  private Command deployIntakeCommand;
 
   /* Shooter Commands */
   private Command shootCommand;
@@ -89,6 +88,12 @@ public class RobotContainer {
   /* Climber Commands */
   private Command deployClimberCommand;
   private Command climbCommand;
+
+  /* Manual override commands */
+  private Command deployIntakeCommand;
+  private Command unjamCommand;
+  private Command reverseShooterCommand;
+  private Command reverseHopperCommand;
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
