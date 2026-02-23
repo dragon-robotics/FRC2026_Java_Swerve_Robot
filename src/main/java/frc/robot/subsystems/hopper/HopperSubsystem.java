@@ -44,10 +44,10 @@ public class HopperSubsystem extends SubsystemBase {
         currHopperState = HopperState.STOP;
         break;
       case INDEXTOINTAKE:
-          currHopperState = HopperState.INDEXTOINTAKE;
+        currHopperState = HopperState.INDEXTOINTAKE;
         break;
       case INDEXTOSHOOTER:
-          currHopperState = HopperState.INDEXTOSHOOTER;
+        currHopperState = HopperState.INDEXTOSHOOTER;
         break;
       default:
         break;
@@ -79,7 +79,7 @@ public class HopperSubsystem extends SubsystemBase {
   }
 
   public void handleStateTransition() {
-    
+
     /* Handle the state transitions */
     switch (currHopperState) {
       case STOP:
@@ -101,12 +101,12 @@ public class HopperSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    
+
     /* This method will be called once per scheduler run */
     handleStateTransition();
 
     DogLog.log("Hopper/Hopper State", currHopperState.toString());
-    
+
     rollerMotorIO.updateInputs(rollerMotorIOInputs);
   }
 }

@@ -761,8 +761,7 @@ public class Constants {
                     .withVoltageClosedLoopRampPeriod(ROLLER_RAMP_RATE))
             .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
             .withMotionMagic(
-                new MotionMagicConfigs()
-                .withMotionMagicAcceleration(200).withMotionMagicJerk(2000))
+                new MotionMagicConfigs().withMotionMagicAcceleration(200).withMotionMagicJerk(2000))
             .withSlot0(
                 new Slot0Configs()
                     .withKS(0.0)
