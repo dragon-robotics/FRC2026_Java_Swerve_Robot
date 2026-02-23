@@ -763,7 +763,6 @@ public class Constants {
                     .withKD(0.0));
 
     public static final int ROLLER_MOTOR_ID = 5;
-    public static final int EXPANDING_MOTOR_ID = 6;
     // roller variables
     public static final double ROLLER_STATOR_CURRENT_LIMIT = 20.0;
     public static final double ROLLER_SUPPLY_CURRENT_LIMIT = 40.0;
@@ -771,15 +770,6 @@ public class Constants {
     public static final double ROLLER_RAMP_RATE = 0.5;
     public static final double ROLLER_RPM = 1000.0;
     public static final double ROLLER_REVERSE_RPM = -1000.0;
-    // expanding motor variables
-    public static final double EXPANDING_STATOR_CURRENT_LIMIT = 20.0;
-    public static final double EXPANDING_SUPPLY_CURRENT_LIMIT = 40.0;
-    public static final double EXPANDING_MAX_VOLTAGE = 10.0;
-    public static final double EXPANDING_RAMP_RATE = 0.3;
-    public static final double EXPANDING_RPM = 500.0;
-    public static final double EXPANDING_REVERSE_RPM = -500.0;
-    public static final double EXPANDING_SETPOINT = 0.0; // place holder value;
-    public static final double EXPANDING_TOLERANCE = 0.0; // plcaeholder value
   }
 
   public static class ClimberConstants {

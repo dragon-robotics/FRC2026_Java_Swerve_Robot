@@ -44,14 +44,10 @@ public class HopperSubsystem extends SubsystemBase {
         currHopperState = HopperState.STOP;
         break;
       case INDEXTOINTAKE:
-        if (currHopperState == HopperState.INDEXTOSHOOTER) {
           currHopperState = HopperState.INDEXTOINTAKE;
-        }
         break;
       case INDEXTOSHOOTER:
-        if (currHopperState == HopperState.INDEXTOINTAKE) {
           currHopperState = HopperState.INDEXTOSHOOTER;
-        }
         break;
       default:
         break;
