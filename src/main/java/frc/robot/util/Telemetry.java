@@ -5,7 +5,6 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Timer;
 
 public class Telemetry {
   /**
@@ -29,28 +28,21 @@ public class Telemetry {
     DogLog.log("OdometryFrequency", 1.0 / state.OdometryPeriod);
 
     DogLog.log(
-      "FinalIntakePose",
-      new Pose3d[] {
-        new Pose3d(
-            0.2949,
-            0,
-            0.20099,
-            // new Rotation3d(0.0, Math.sin(Timer.getTimestamp()) - 1, 0.0),
-            new Rotation3d(0.0, Units.degreesToRadians(-125), 0.0)
-        )
-      }
-    );
+        "FinalIntakePose",
+        new Pose3d[] {
+          new Pose3d(
+              0.2949,
+              0,
+              0.20099,
+              // new Rotation3d(0.0, Math.sin(Timer.getTimestamp()) - 1, 0.0),
+              new Rotation3d(0.0, Units.degreesToRadians(-125), 0.0))
+        });
     DogLog.log(
-      "FinalExtendingHopperPose",
-      new Pose3d[] {
-        new Pose3d(
-          // 0.05 + (((Math.sin(Timer.getTimestamp()) + 1) / 2) * Units.inchesToMeters(12.562)),
-          0.05,
-          0.06375,
-          0.3, new Rotation3d(0.0, 0.0, 0.0)
-        )
-      }
-    );
-
+        "FinalExtendingHopperPose",
+        new Pose3d[] {
+          new Pose3d(
+              // 0.05 + (((Math.sin(Timer.getTimestamp()) + 1) / 2) * Units.inchesToMeters(12.562)),
+              0.05, 0.06375, 0.3, new Rotation3d(0.0, 0.0, 0.0))
+        });
   }
 }
