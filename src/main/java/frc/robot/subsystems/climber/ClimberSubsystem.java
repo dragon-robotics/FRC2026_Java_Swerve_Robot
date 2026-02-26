@@ -33,20 +33,16 @@ public class ClimberSubsystem extends SubsystemBase {
   public void setDesiredState(ClimberState state) {
     this.desiredClimberState = state;
 
+    // Set current state to transition state based on desired state
     switch (desiredClimberState) {
       case STOWED:
-        desiredClimberState = ClimberState.STOWED;
+        currentClimberState = ClimberState.STOWING;
         break;
-      case STOWING:
-        desiredClimberState = ClimberState.STOWING;
-
+      case DEPLOYED:
+        currentClimberState = ClimberState.DEPLOYING;
         break;
-      case DEPLOYING: 
       default:
-
-        desiredClimberState = ClimberState.DEPLOYING;
         break;
-
     }
   }
 
