@@ -8,18 +8,23 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+
 
 public class ClimberIOTalonFX implements ClimberIO {
 
   protected final TalonFX motor;
   protected final int canID;
   protected final TalonFXConfiguration config;
-  private final Optional<CANcoderConfiguration> canCoderConfig;
-  private final MotionMagicExpoVoltage  motorMotionMagicTorqueCurrentFOC;
+  protected final Optional<CANcoderConfiguration> canCoderConfig;
+  protected final MotionMagicExpoVoltage motorMotionMagicTorqueCurrentFOC;
+  protected final MotionMagicVelocityVoltage motorMotionMagicVelocityVoltageRequest;
+
 
   public ClimberIOTalonFX(int canID, TalonFXConfiguration config) {
     this.canID = canID;
@@ -29,6 +34,7 @@ public class ClimberIOTalonFX implements ClimberIO {
     this.motor = new TalonFX(this.canID, CANBus.roboRIO());
     this.motor.clearStickyFaults();
     this.motorMotionMagicTorqueCurrentFOC = new MotionMagicExpoVoltage (0);
+    this.motorMotionMagicVelocityVoltageRequest = new MotionMagicVelocityVoltage(0);
   }
 
   public ClimberIOTalonFX(int canID, TalonFXConfiguration config,
@@ -39,7 +45,8 @@ public class ClimberIOTalonFX implements ClimberIO {
 
     motor = new TalonFX(this.canID, CANBus.roboRIO());
     motor.clearStickyFaults();
-    motorMotionMagicTorqueCurrentFOC = new MotionMagicExpoVoltage (0);
+    motorMotionMagicTorqueCurrentFOC = new MotionMagicExpoVoltage(0);
+    motorMotionMagicVelocityVoltageRequest = new MotionMagicVelocityVoltage(0);
     this.canCoderConfig.ifPresentOrElse(
         ccCfg -> {
           try (CANcoder canCoder = new CANcoder(CLIMBER_CANCODER_ID, CANBus.roboRIO())) {
@@ -80,6 +87,12 @@ public class ClimberIOTalonFX implements ClimberIO {
   public void setMotorPosition(double setPoint) {
     motor.setControl(motorMotionMagicTorqueCurrentFOC.withPosition(setPoint));
   }
+
+  @Override 
+  public void setMotorRPM(double rpm) {
+    motor.setControl(motorMotionMagicVelocityVoltageRequest.withVelocity(rpm / 60));
+  } 
+  
 
   @Override
   public void updateInputs(ClimberIOInputs climberInputs) {
