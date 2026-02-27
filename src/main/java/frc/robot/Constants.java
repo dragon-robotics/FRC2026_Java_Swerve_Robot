@@ -318,6 +318,7 @@ public class Constants {
         public static final int INTAKE_ROLLER_MOTOR_ID = 11;
         public static final int INTAKE_ARM_MOTOR_ID = 12;
         public static final int INTAKE_ARM_CANCODER_ID = 0;
+        public static final int INTAKE_ROLLER_CANCODER_ID = 1;
 
         // Intake arm physical properties
         public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(18);
@@ -490,6 +491,8 @@ public class Constants {
     public static final int SHOOTER_KICKER_MOTOR_ID = 14;
     public static final int SHOOTER_LEAD_MOTOR_ID = 15;
     public static final int SHOOTER_FOLLOW_MOTOR_ID = 16;
+
+    public static final int SHOOTER_CANCODER_ID = 2;
 
     public static final double SHOOTER_KICKER_RPM = 3000.0;
 
@@ -760,7 +763,7 @@ public class Constants {
   }
 
   public static class ClimberConstants {
-    TalonFXConfiguration climberConfig =
+    TalonFXConfiguration CLIMBER_TALONFX_CONFIG =
         new TalonFXConfiguration()
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
@@ -819,6 +822,7 @@ public class Constants {
         public static final double CLIMBER_LENGTH_METERS = Units.inchesToMeters(24);   // Hook length
         public static final double CLIMBER_MASS_KG = Units.lbsToKilograms(12);       // Place holder value 
         public static final double CLIMBER_HOME_ANGLE = Units.degreesToRadians(0); // Place holder value  
+        public static final double CLIMBER_MIN_ANGLE_RADIANS = Units.degreesToRadians(0);  // Place holder value
         public static final double CLIMBER_MAX_ANGLE_RADIANS = Units.degreesToRadians(45);  // Place holder value
         public static final double CLIMBER_STARTING_ANGLE_RADIANS = CLIMBER_HOME_ANGLE;
     }
