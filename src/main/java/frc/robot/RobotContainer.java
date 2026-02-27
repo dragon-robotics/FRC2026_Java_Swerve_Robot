@@ -5,19 +5,19 @@
 package frc.robot;
 
 import static frc.robot.util.constants.GeneralConstants.*;
-import static frc.robot.util.constants.IntakeSubsystemConstants.INTAKE_ARM_CANCODER_CONFIG;
-import static frc.robot.util.constants.IntakeSubsystemConstants.INTAKE_ARM_MOTOR_ID;
-import static frc.robot.util.constants.IntakeSubsystemConstants.INTAKE_ARM_TALONFX_CONFIG;
-import static frc.robot.util.constants.IntakeSubsystemConstants.INTAKE_ROLLER_MOTOR_ID;
-import static frc.robot.util.constants.IntakeSubsystemConstants.INTAKE_ROLLER_TALONFX_CONFIG;
-import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_FOLLOW_MOTOR_ID;
-import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_FOLLOW_TALONFX_CONFIG;
-import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_HOOD_MOTOR_ID;
-import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_HOOD_TALONFX_CONFIG;
-import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_KICKER_MOTOR_ID;
-import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_KICKER_TALONFX_CONFIG;
-import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_LEAD_MOTOR_ID;
-import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_LEAD_TALONFX_CONFIG;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_CANCODER_CONFIG;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_MOTOR_ID;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_TALONFX_CONFIG;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_MOTOR_ID;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TALONFX_CONFIG;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_MOTOR_ID;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_TALONFX_CONFIG;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_MOTOR_ID;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_TALONFX_CONFIG;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_MOTOR_ID;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_TALONFX_CONFIG;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_LEAD_MOTOR_ID;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_LEAD_TALONFX_CONFIG;
 import static frc.robot.util.constants.VisionConstants.APTAG_CAMERA_NAMES;
 
 import com.ctre.phoenix6.controls.Follower;

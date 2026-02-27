@@ -4,7 +4,7 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static frc.robot.util.constants.IntakeSubsystemConstants.*;
+import static frc.robot.util.constants.IntakeConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.math.util.Units;

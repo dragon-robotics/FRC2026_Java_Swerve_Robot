@@ -1,6 +1,6 @@
 package frc.robot.subsystems.intake;
 
-import static frc.robot.util.constants.IntakeSubsystemConstants.*;
+import static frc.robot.util.constants.IntakeConstants.*;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
