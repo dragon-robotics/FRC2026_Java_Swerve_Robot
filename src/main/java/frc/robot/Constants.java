@@ -817,10 +817,10 @@ public class Constants {
 
                 // Climber hook physical properties
         public static final double CLIMBER_LENGTH_METERS = Units.inchesToMeters(24);   // Hook length
-        public static final double CLIMBER_MASS_KG = Units.lbsToKilograms(12);       // place holder value 
-        public static final double CLIMBER_MIN_ANGLE_RADIANS = Units.degreesToRadians(-30); 
-        public static final double CLIMBER_MAX_ANGLE_RADIANS = Units.degreesToRadians(120);  
-        public static final double CLIMBER_STARTING_ANGLE_RADIANS = CLIMBER_MIN_ANGLE_RADIANS;
+        public static final double CLIMBER_MASS_KG = Units.lbsToKilograms(12);       // Place holder value 
+        public static final double CLIMBER_HOME_ANGLE = Units.degreesToRadians(0); // Place holder value  
+        public static final double CLIMBER_MAX_ANGLE_RADIANS = Units.degreesToRadians(45);  // Place holder value
+        public static final double CLIMBER_STARTING_ANGLE_RADIANS = CLIMBER_HOME_ANGLE;
     }
 
     public static class OperatorConstants {

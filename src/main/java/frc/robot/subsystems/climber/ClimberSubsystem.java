@@ -72,36 +72,37 @@ public class ClimberSubsystem extends SubsystemBase {
     // State machine logic
       switch (currentClimberState) {
         case STOWED:
-          // Climber is stowed, do nothing
-          // Check if we need to deploy
-          if (desiredClimberState == ClimberState.DEPLOYED) {
-            currentClimberState = ClimberState.DEPLOYING;
-          }
+          // Continuosly stow the climber
+          stowClimber();
           break;
 
         case STOWING:
           // Actively moving to stowed position
+          // check if the arm is stowed/deployed before switching
           stowClimber();
-          currentClimberState = ClimberState.STOWED;
+          if (Math.abs(climberMotorInputs.getMotorPosition() - CLIMBER_HOME_ANGLE) < 1.0) {
+            currentClimberState = ClimberState.STOWED;
+          } 
           break;
 
         case DEPLOYING:
           // Actively moving to deployed position
           deployClimber();
+          // check if we are in deployed position
+          if (Math.abs(climberMotorInputs.getMotorPosition() - CLIMBER_L1_SETPOINT) < 1.0) {
             currentClimberState = ClimberState.DEPLOYED;
+          }
           break;
 
         case DEPLOYED:
           // Climber is deployed, hold position
-          // Check if we need to stow
-          if (desiredClimberState == ClimberState.STOWED) {
-            currentClimberState = ClimberState.STOWING;
-          }
+          deployClimber();
           break;
         default:
           break;
     }
   }
+
 
   @Override
   public void periodic() {
