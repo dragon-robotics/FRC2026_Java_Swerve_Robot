@@ -1,12 +1,12 @@
 package frc.robot.subsystems.shooter;
 
-import static frc.robot.Constants.ShooterSubsystemConstants.*;
+import static frc.robot.util.constants.ShooterSubsystemConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.ShooterSubsystemConstants.ShooterSetpoint;
 import frc.robot.subsystems.shooter.ShooterIO.ShooterIOInputs;
+import frc.robot.util.constants.ShooterSubsystemConstants.ShooterSetpoint;
 
 public class ShooterSubsystem extends SubsystemBase {
   public enum ShooterState {

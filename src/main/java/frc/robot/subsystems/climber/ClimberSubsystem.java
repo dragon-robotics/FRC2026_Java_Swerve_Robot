@@ -1,6 +1,6 @@
 package frc.robot.subsystems.climber;
 
-import static frc.robot.Constants.ClimberConstants.*;
+import static frc.robot.util.constants.ClimberConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -9,9 +9,9 @@ import frc.robot.subsystems.climber.ClimberIO.ClimberIOInputs;
 public class ClimberSubsystem extends SubsystemBase {
 
   public enum ClimberState {
-    STOWED, 
+    STOWED,
     STOWING,
-    DEPLOYING, 
+    DEPLOYING,
     DEPLOYED
   }
 
@@ -46,7 +46,6 @@ public class ClimberSubsystem extends SubsystemBase {
     }
   }
 
-
   /* Climber Actions */
   public void deployClimber() {
     climberMotorIO.setMotorPosition(CLIMBER_L1_SETPOINT);
@@ -59,7 +58,7 @@ public class ClimberSubsystem extends SubsystemBase {
   public void stopClimber() {
     climberMotorIO.setMotorVoltage(0.0);
   }
-  
+
   /* getters */
   public ClimberState getCurrentState() {
     return currentClimberState;
@@ -68,48 +67,47 @@ public class ClimberSubsystem extends SubsystemBase {
   public ClimberState getDesiredState() {
     return desiredClimberState;
   }
+
   public void handleStateTransition() {
     // State machine logic
-      switch (currentClimberState) {
-        case STOWED:
-          // Continuosly stow the climber
-          stowClimber();
-          break;
+    switch (currentClimberState) {
+      case STOWED:
+        // Continuosly stow the climber
+        stowClimber();
+        break;
 
-        case STOWING:
-          // Actively moving to stowed position
-          // check if the arm is stowed/deployed before switching
-          stowClimber();
-          if (Math.abs(climberMotorInputs.getMotorPosition() - CLIMBER_HOME_ANGLE) < 1.0) {
-            currentClimberState = ClimberState.STOWED;
-          } 
-          break;
+      case STOWING:
+        // Actively moving to stowed position
+        // check if the arm is stowed/deployed before switching
+        stowClimber();
+        if (Math.abs(climberMotorInputs.getMotorPosition() - CLIMBER_HOME_ANGLE) < 1.0) {
+          currentClimberState = ClimberState.STOWED;
+        }
+        break;
 
-        case DEPLOYING:
-          // Actively moving to deployed position
-          deployClimber();
-          // check if we are in deployed position
-          if (Math.abs(climberMotorInputs.getMotorPosition() - CLIMBER_L1_SETPOINT) < 1.0) {
-            currentClimberState = ClimberState.DEPLOYED;
-          }
-          break;
+      case DEPLOYING:
+        // Actively moving to deployed position
+        deployClimber();
+        // check if we are in deployed position
+        if (Math.abs(climberMotorInputs.getMotorPosition() - CLIMBER_L1_SETPOINT) < 1.0) {
+          currentClimberState = ClimberState.DEPLOYED;
+        }
+        break;
 
-        case DEPLOYED:
-          // Climber is deployed, hold position
-          deployClimber();
-          break;
-        default:
-          break;
+      case DEPLOYED:
+        // Climber is deployed, hold position
+        deployClimber();
+        break;
+      default:
+        break;
     }
   }
-
 
   @Override
   public void periodic() {
-      handleStateTransition();
-      DogLog.log("CLimber/Climber State", currentClimberState.toString());
+    handleStateTransition();
+    DogLog.log("CLimber/Climber State", currentClimberState.toString());
 
-      climberMotorIO.updateInputs(climberMotorInputs);
-
-    }
+    climberMotorIO.updateInputs(climberMotorInputs);
   }
+}

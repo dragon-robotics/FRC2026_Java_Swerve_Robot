@@ -1,6 +1,6 @@
 package frc.robot.subsystems.hopper;
 
-import static frc.robot.Constants.HopperConstants.*;
+import static frc.robot.util.constants.HopperConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;

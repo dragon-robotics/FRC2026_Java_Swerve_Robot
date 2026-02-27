@@ -4,7 +4,7 @@
 
 package frc.robot.subsystems.intake;
 
-import static frc.robot.Constants.IntakeSubsystemConstants.*;
+import static frc.robot.util.constants.IntakeSubsystemConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;

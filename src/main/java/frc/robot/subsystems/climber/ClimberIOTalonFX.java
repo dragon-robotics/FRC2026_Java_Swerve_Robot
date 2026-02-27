@@ -1,20 +1,18 @@
 package frc.robot.subsystems.climber;
 
-import static frc.robot.Constants.ClimberConstants.CLIMBER_CANCODER_ID;
-import static frc.robot.Constants.ClimberConstants.CLIMBER_GEAR_RATIO;
-import java.util.Optional;
+import static frc.robot.util.constants.ClimberConstants.CLIMBER_CANCODER_ID;
+import static frc.robot.util.constants.ClimberConstants.CLIMBER_GEAR_RATIO;
+
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
-import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
-
+import java.util.Optional;
 
 public class ClimberIOTalonFX implements ClimberIO {
 
@@ -25,7 +23,6 @@ public class ClimberIOTalonFX implements ClimberIO {
   protected final MotionMagicExpoVoltage motorMotionMagicTorqueCurrentFOC;
   protected final MotionMagicVelocityVoltage motorMotionMagicVelocityVoltageRequest;
 
-
   public ClimberIOTalonFX(int canID, TalonFXConfiguration config) {
     this.canID = canID;
     this.config = config;
@@ -33,12 +30,12 @@ public class ClimberIOTalonFX implements ClimberIO {
 
     this.motor = new TalonFX(this.canID, CANBus.roboRIO());
     this.motor.clearStickyFaults();
-    this.motorMotionMagicTorqueCurrentFOC = new MotionMagicExpoVoltage (0);
+    this.motorMotionMagicTorqueCurrentFOC = new MotionMagicExpoVoltage(0);
     this.motorMotionMagicVelocityVoltageRequest = new MotionMagicVelocityVoltage(0);
   }
 
-  public ClimberIOTalonFX(int canID, TalonFXConfiguration config,
-      Optional<CANcoderConfiguration> canCoderConfig) {
+  public ClimberIOTalonFX(
+      int canID, TalonFXConfiguration config, Optional<CANcoderConfiguration> canCoderConfig) {
     this.canID = canID;
     this.config = config;
     this.canCoderConfig = canCoderConfig;
@@ -51,13 +48,14 @@ public class ClimberIOTalonFX implements ClimberIO {
         ccCfg -> {
           try (CANcoder canCoder = new CANcoder(CLIMBER_CANCODER_ID, CANBus.roboRIO())) {
             canCoder.getConfigurator().apply(ccCfg);
-            TalonFXConfiguration cfg = this.config.withFeedback(
-                new FeedbackConfigs()
-                    // .withFusedCANcoder(canCoder)
-                    .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
-                    .withRotorToSensorRatio(CLIMBER_GEAR_RATIO)
-                    .withSensorToMechanismRatio(1)
-                    .withFeedbackRotorOffset(1));
+            TalonFXConfiguration cfg =
+                this.config.withFeedback(
+                    new FeedbackConfigs()
+                        // .withFusedCANcoder(canCoder)
+                        .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
+                        .withRotorToSensorRatio(CLIMBER_GEAR_RATIO)
+                        .withSensorToMechanismRatio(1)
+                        .withFeedbackRotorOffset(1));
             motor.getConfigurator().apply(cfg);
           } catch (Exception e) {
             // Handle exceptions related to CANcoder configuration
@@ -88,11 +86,10 @@ public class ClimberIOTalonFX implements ClimberIO {
     motor.setControl(motorMotionMagicTorqueCurrentFOC.withPosition(setPoint));
   }
 
-  @Override 
+  @Override
   public void setMotorRPM(double rpm) {
     motor.setControl(motorMotionMagicVelocityVoltageRequest.withVelocity(rpm / 60));
-  } 
-  
+  }
 
   @Override
   public void updateInputs(ClimberIOInputs climberInputs) {
@@ -105,6 +102,5 @@ public class ClimberIOTalonFX implements ClimberIO {
     climberInputs.setMotorVoltage(motor.getMotorVoltage().getValueAsDouble());
     climberInputs.setMotorCurrent(motor.getStatorCurrent().getValueAsDouble());
     climberInputs.setMotorTemperature(motor.getDeviceTemp().getValueAsDouble());
-
   }
 }

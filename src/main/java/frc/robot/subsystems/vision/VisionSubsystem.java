@@ -4,8 +4,8 @@
 
 package frc.robot.subsystems.vision;
 
-import static frc.robot.Constants.FieldConstants.*;
-import static frc.robot.Constants.VisionConstants.*;
+import static frc.robot.util.constants.FieldConstants.*;
+import static frc.robot.util.constants.VisionConstants.*;
 
 import com.ctre.phoenix6.Utils;
 import dev.doglog.DogLog;

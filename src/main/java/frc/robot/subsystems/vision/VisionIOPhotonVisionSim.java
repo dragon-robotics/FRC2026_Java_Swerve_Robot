@@ -1,6 +1,6 @@
 package frc.robot.subsystems.vision;
 
-import static frc.robot.Constants.FieldConstants.*;
+import static frc.robot.util.constants.FieldConstants.*;
 
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import edu.wpi.first.math.geometry.Rotation2d;

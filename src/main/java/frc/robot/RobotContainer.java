@@ -4,21 +4,21 @@
 
 package frc.robot;
 
-import static frc.robot.Constants.GeneralConstants.*;
-import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_CANCODER_CONFIG;
-import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_MOTOR_ID;
-import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ARM_TALONFX_CONFIG;
-import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ROLLER_MOTOR_ID;
-import static frc.robot.Constants.IntakeSubsystemConstants.INTAKE_ROLLER_TALONFX_CONFIG;
-import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_FOLLOW_MOTOR_ID;
-import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_FOLLOW_TALONFX_CONFIG;
-import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_HOOD_MOTOR_ID;
-import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_HOOD_TALONFX_CONFIG;
-import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_KICKER_MOTOR_ID;
-import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_KICKER_TALONFX_CONFIG;
-import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_LEAD_MOTOR_ID;
-import static frc.robot.Constants.ShooterSubsystemConstants.SHOOTER_LEAD_TALONFX_CONFIG;
-import static frc.robot.Constants.VisionConstants.APTAG_CAMERA_NAMES;
+import static frc.robot.util.constants.GeneralConstants.*;
+import static frc.robot.util.constants.IntakeSubsystemConstants.INTAKE_ARM_CANCODER_CONFIG;
+import static frc.robot.util.constants.IntakeSubsystemConstants.INTAKE_ARM_MOTOR_ID;
+import static frc.robot.util.constants.IntakeSubsystemConstants.INTAKE_ARM_TALONFX_CONFIG;
+import static frc.robot.util.constants.IntakeSubsystemConstants.INTAKE_ROLLER_MOTOR_ID;
+import static frc.robot.util.constants.IntakeSubsystemConstants.INTAKE_ROLLER_TALONFX_CONFIG;
+import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_FOLLOW_MOTOR_ID;
+import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_FOLLOW_TALONFX_CONFIG;
+import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_HOOD_MOTOR_ID;
+import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_HOOD_TALONFX_CONFIG;
+import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_KICKER_MOTOR_ID;
+import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_KICKER_TALONFX_CONFIG;
+import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_LEAD_MOTOR_ID;
+import static frc.robot.util.constants.ShooterSubsystemConstants.SHOOTER_LEAD_TALONFX_CONFIG;
+import static frc.robot.util.constants.VisionConstants.APTAG_CAMERA_NAMES;
 
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
@@ -34,9 +34,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import frc.robot.Constants.OperatorConstants;
-import frc.robot.Constants.SwerveConstants;
-import frc.robot.Constants.VisionConstants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Superstructure;
@@ -51,6 +48,9 @@ import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.subsystems.vision.VisionSubsystem;
+import frc.robot.util.constants.OperatorConstants;
+import frc.robot.util.constants.SwerveConstants;
+import frc.robot.util.constants.VisionConstants;
 import java.util.Optional;
 
 public class RobotContainer {

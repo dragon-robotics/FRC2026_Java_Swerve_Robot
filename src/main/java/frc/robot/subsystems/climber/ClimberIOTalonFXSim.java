@@ -6,14 +6,14 @@ import com.ctre.phoenix6.sim.TalonFXSimState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import java.util.Optional;
 
-public class ClimberIOTalonFXSim extends ClimberIOTalonFX  {
+public class ClimberIOTalonFXSim extends ClimberIOTalonFX {
 
   private final DCMotor motorType;
 
   public ClimberIOTalonFXSim(int canID, TalonFXConfiguration config, String motorType) {
     this(canID, config, motorType, Optional.empty());
   }
-    
+
   public ClimberIOTalonFXSim(
       int canID,
       TalonFXConfiguration config,

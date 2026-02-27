@@ -33,6 +33,5 @@ public interface ClimberIO {
     @Getter @Setter private double motorTemperature;
   }
 
-  default void updateInputs(ClimberIOInputs climberInputs) {
-  }
+  default void updateInputs(ClimberIOInputs climberInputs) {}
 }
