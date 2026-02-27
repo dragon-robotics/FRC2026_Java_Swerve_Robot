@@ -27,7 +27,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import java.util.List;
 
-public final class ShooterSubsystemConstants {
+public final class ShooterConstants {
 
   public static final int SHOOTER_HOOD_MOTOR_ID = 13;
   public static final int SHOOTER_KICKER_MOTOR_ID = 14;

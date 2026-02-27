@@ -31,7 +31,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.util.Units;
 
-public final class IntakeSubsystemConstants {
+public final class IntakeConstants {
 
   public static final int INTAKE_ROLLER_MOTOR_ID = 11;
   public static final int INTAKE_ARM_MOTOR_ID = 12;
