@@ -67,11 +67,11 @@ public class HopperSubsystem extends SubsystemBase {
   /* Functions */
 
   public void indexToShooter() {
-    rollerMotorIO.setMotorRPM(ROLLER_RPM);
+    rollerMotorIO.setMotorRPM(HOPPER_ROLLER_RPM);
   }
 
   public void indexToIntake() {
-    rollerMotorIO.setMotorRPM(-ROLLER_RPM);
+    rollerMotorIO.setMotorRPM(-HOPPER_ROLLER_RPM);
   }
 
   public void stopIntake() {
