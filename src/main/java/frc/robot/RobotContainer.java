@@ -10,6 +10,8 @@ import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_MOTOR_ID;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_TALONFX_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_MOTOR_ID;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TALONFX_CONFIG;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MOTOR_ID;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_TALONFX_CONFIG;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_TALONFX_CONFIG;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_MOTOR_ID;
@@ -37,6 +39,10 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Superstructure;
+import frc.robot.subsystems.hopper.HopperIOTalonFX;
+import frc.robot.subsystems.hopper.HopperIOTalonFXSim;
+import frc.robot.subsystems.hopper.HopperIOTalonFXTunable;
+import frc.robot.subsystems.hopper.HopperSubsystem;
 import frc.robot.subsystems.intake.IntakeIOTalonFX;
 import frc.robot.subsystems.intake.IntakeIOTalonFXSim;
 import frc.robot.subsystems.intake.IntakeIOTalonFXTunable;
@@ -44,6 +50,7 @@ import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystemSim;
 import frc.robot.subsystems.shooter.ShooterIOTalonFX;
 import frc.robot.subsystems.shooter.ShooterIOTalonFXSim;
+import frc.robot.subsystems.shooter.ShooterIOTalonFXTunable;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
@@ -58,7 +65,7 @@ public class RobotContainer {
   /* Robot Subsystems */
   public final CommandSwerveDrivetrain swerveSubsystem;
   public final IntakeSubsystem intakeSubsystem;
-  // public final HopperSubsystem hopperSubsystem;
+  public final HopperSubsystem hopperSubsystem;
   public final ShooterSubsystem shooterSubsystem;
   // public final ClimberSubsystem climberSubsystem;
   public final VisionSubsystem visionSubsystem;
@@ -118,7 +125,9 @@ public class RobotContainer {
                 new IntakeIOTalonFX(
                     INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
                 new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
-        // hopperSubsystem = new HopperSubsystem();
+        hopperSubsystem =
+            new HopperSubsystem(
+                new HopperIOTalonFX(HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
         shooterSubsystem =
             new ShooterSubsystem(
                 new ShooterIOTalonFX(
@@ -160,7 +169,9 @@ public class RobotContainer {
                     "KrakenX60_FOC",
                     "Intake Arm",
                     Optional.of(INTAKE_ARM_CANCODER_CONFIG)));
-        // hopperSubsystem = new HopperSubsystem();
+        hopperSubsystem =
+            new HopperSubsystem(
+                new HopperIOTalonFXSim(HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "KrakenX60_FOC", "Hopper Motor"));
         shooterSubsystem =
             new ShooterSubsystem(
                 new ShooterIOTalonFXSim(
@@ -223,19 +234,21 @@ public class RobotContainer {
                     INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
                 new IntakeIOTalonFXTunable(
                     INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
-        // hopperSubsystem = new HopperSubsystem();
+        hopperSubsystem =
+            new HopperSubsystem(
+                new HopperIOTalonFXTunable(HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
         shooterSubsystem =
             new ShooterSubsystem(
-                new ShooterIOTalonFX(
+                new ShooterIOTalonFXTunable(
                     SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
-                new ShooterIOTalonFX(
+                new ShooterIOTalonFXTunable(
                     SHOOTER_FOLLOW_MOTOR_ID,
                     SHOOTER_FOLLOW_TALONFX_CONFIG,
                     "Shooter Follow",
                     new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
-                new ShooterIOTalonFX(
+                new ShooterIOTalonFXTunable(
                     SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
-                new ShooterIOTalonFX(
+                new ShooterIOTalonFXTunable(
                     SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
         visionSubsystem =
@@ -257,7 +270,9 @@ public class RobotContainer {
                 new IntakeIOTalonFX(
                     INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
                 new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
-        // hopperSubsystem = new HopperSubsystem();
+        hopperSubsystem =
+            new HopperSubsystem(
+                new HopperIOTalonFX(HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
         shooterSubsystem =
             new ShooterSubsystem(
                 new ShooterIOTalonFX(
@@ -292,8 +307,7 @@ public class RobotContainer {
         new Superstructure(
             swerveSubsystem,
             intakeSubsystem,
-            // hopperSubsystem,
-            null,
+            hopperSubsystem,
             shooterSubsystem,
             // climberSubsystem,
             null,
