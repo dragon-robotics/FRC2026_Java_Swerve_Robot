@@ -70,7 +70,7 @@ public class RobotContainer {
 
   /* Swerve Commands */
   private Command defaultDriveCommand;
-  private Command driveAimedAtHubCommand;
+  private Command shootDriveCommand;
   private Command swerveBrakeCommand;
   private Command seedFieldCentricCommand;
 
@@ -301,14 +301,14 @@ public class RobotContainer {
             this);
 
     defaultDriveCommand =
-        superstructureSubsystem.defaultDriveCmd(
+        superstructureSubsystem.defaultDrive(
             () -> -driverController.getLeftY(),
             () -> -driverController.getLeftX(),
             () -> -driverController.getRightX(),
             () -> driverController.getHID().getPOV() == 0);
 
-    driveAimedAtHubCommand =
-        superstructureSubsystem.driveAimedTowardsHubCmd(
+    shootDriveCommand =
+        superstructureSubsystem.shootDrive(
             () -> -driverController.getLeftY(), () -> -driverController.getLeftX());
 
     swerveBrakeCommand = superstructureSubsystem.swerveBrakeCmd();
@@ -331,7 +331,7 @@ public class RobotContainer {
     // and Y is defined as to the left according to WPILib convention.
     swerveSubsystem.setDefaultCommand(defaultDriveCommand);
 
-    driverController.rightBumper().whileTrue(driveAimedAtHubCommand);
+    driverController.rightBumper().whileTrue(shootDriveCommand);
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
