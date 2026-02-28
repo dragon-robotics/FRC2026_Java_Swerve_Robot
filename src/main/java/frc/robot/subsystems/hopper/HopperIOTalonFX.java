@@ -9,12 +9,14 @@ public class HopperIOTalonFX implements HopperIO {
   protected final TalonFX motor;
   protected final int canID;
   protected final TalonFXConfiguration config;
+  protected final String motorName;
 
   protected final VelocityTorqueCurrentFOC motorVelocityTorqueCurrentFOCRequest;
 
-  public HopperIOTalonFX(int canID, TalonFXConfiguration config) {
+  public HopperIOTalonFX(int canID, TalonFXConfiguration config, String motorName) {
     this.canID = canID;
     this.config = config;
+    this.motorName = motorName;
 
     motor = new TalonFX(canID);
     motor.clearStickyFaults();

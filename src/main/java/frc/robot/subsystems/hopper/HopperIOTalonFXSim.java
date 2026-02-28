@@ -8,9 +8,9 @@ public class HopperIOTalonFXSim extends HopperIOTalonFX {
 
   private final DCMotor motorType;
 
-  public HopperIOTalonFXSim(int canID, TalonFXConfiguration config, String motorType) {
+  public HopperIOTalonFXSim(int canID, TalonFXConfiguration config, String motorType, String motorName) {
 
-    super(canID, config);
+    super(canID, config, motorName);
 
     switch (motorType) {
       case "KrakenX60":
