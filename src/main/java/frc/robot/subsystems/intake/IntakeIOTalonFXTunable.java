@@ -8,8 +8,7 @@ public class IntakeIOTalonFXTunable extends IntakeIOTalonFX {
 
   private final TalonFXTunableHelper tunableHelper;
 
-  public IntakeIOTalonFXTunable(
-      int canID, TalonFXConfiguration config, String motorName) {
+  public IntakeIOTalonFXTunable(int canID, TalonFXConfiguration config, String motorName) {
     super(canID, config, motorName);
 
     String baseKey = "Intake/Tuning/TalonFX/" + motorName + "/";

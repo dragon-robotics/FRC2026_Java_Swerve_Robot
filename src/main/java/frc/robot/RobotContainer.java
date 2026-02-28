@@ -5,13 +5,13 @@
 package frc.robot;
 
 import static frc.robot.util.constants.GeneralConstants.*;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MOTOR_ID;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_TALONFX_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_CANCODER_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_MOTOR_ID;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_TALONFX_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_MOTOR_ID;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TALONFX_CONFIG;
-import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MOTOR_ID;
-import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_TALONFX_CONFIG;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_TALONFX_CONFIG;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_MOTOR_ID;
@@ -127,7 +127,8 @@ public class RobotContainer {
                 new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         hopperSubsystem =
             new HopperSubsystem(
-                new HopperIOTalonFX(HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
+                new HopperIOTalonFX(
+                    HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
         shooterSubsystem =
             new ShooterSubsystem(
                 new ShooterIOTalonFX(
@@ -171,7 +172,11 @@ public class RobotContainer {
                     Optional.of(INTAKE_ARM_CANCODER_CONFIG)));
         hopperSubsystem =
             new HopperSubsystem(
-                new HopperIOTalonFXSim(HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "KrakenX60_FOC", "Hopper Motor"));
+                new HopperIOTalonFXSim(
+                    HOPPER_ROLLER_MOTOR_ID,
+                    HOPPER_ROLLER_TALONFX_CONFIG,
+                    "KrakenX60_FOC",
+                    "Hopper Motor"));
         shooterSubsystem =
             new ShooterSubsystem(
                 new ShooterIOTalonFXSim(
@@ -236,7 +241,8 @@ public class RobotContainer {
                     INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         hopperSubsystem =
             new HopperSubsystem(
-                new HopperIOTalonFXTunable(HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
+                new HopperIOTalonFXTunable(
+                    HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
         shooterSubsystem =
             new ShooterSubsystem(
                 new ShooterIOTalonFXTunable(
@@ -272,7 +278,8 @@ public class RobotContainer {
                 new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         hopperSubsystem =
             new HopperSubsystem(
-                new HopperIOTalonFX(HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
+                new HopperIOTalonFX(
+                    HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
         shooterSubsystem =
             new ShooterSubsystem(
                 new ShooterIOTalonFX(

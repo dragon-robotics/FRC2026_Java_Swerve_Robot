@@ -99,10 +99,21 @@ public class Superstructure extends SubsystemBase {
     swerve.registerTelemetry(logger::telemeterize);
   }
 
-  public Optional<Rotation2d> getCurrentHeading() { return currentHeading; }
-  public void setCurrentHeading(Optional<Rotation2d> heading) { this.currentHeading = heading; }
-  public double getRotationLastTriggered() { return rotationLastTriggered; }
-  public void setRotationLastTriggered(double t) { this.rotationLastTriggered = t; }
+  public Optional<Rotation2d> getCurrentHeading() {
+    return currentHeading;
+  }
+
+  public void setCurrentHeading(Optional<Rotation2d> heading) {
+    this.currentHeading = heading;
+  }
+
+  public double getRotationLastTriggered() {
+    return rotationLastTriggered;
+  }
+
+  public void setRotationLastTriggered(double t) {
+    this.rotationLastTriggered = t;
+  }
 
   public Command defaultDrive(
       DoubleSupplier translationSup,
@@ -121,16 +132,8 @@ public class Superstructure extends SubsystemBase {
         this::setRotationLastTriggered);
   }
 
-  public Command shootDrive(
-      DoubleSupplier translationSup,
-      DoubleSupplier strafeSup
-  ) {
-    return new ShootDriveCmd(
-        swerve,
-        translationSup,
-        strafeSup,
-        this::setCurrentHeading
-    );
+  public Command shootDrive(DoubleSupplier translationSup, DoubleSupplier strafeSup) {
+    return new ShootDriveCmd(swerve, translationSup, strafeSup, this::setCurrentHeading);
   }
 
   public Command swerveBrakeCmd() {
@@ -185,8 +188,5 @@ public class Superstructure extends SubsystemBase {
   }
 
   @Override
-  public void periodic() {
-
-  }
-
+  public void periodic() {}
 }

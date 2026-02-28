@@ -8,16 +8,8 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
-import java.util.Optional;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
-import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -27,6 +19,12 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.util.constants.SwerveConstants;
+import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class DefaultDriveCmd extends Command {
@@ -77,7 +75,8 @@ public class DefaultDriveCmd extends Command {
     this.rotationLastTriggeredSetter = rotationLastTriggeredSetter;
 
     maxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // Max speed at 12 volts
-    maxAngularRate = RotationsPerSecond.of(1).in(RadiansPerSecond); // 1 rotation per second max angular velocity
+    maxAngularRate =
+        RotationsPerSecond.of(1).in(RadiansPerSecond); // 1 rotation per second max angular velocity
 
     drive =
         new SwerveRequest.FieldCentric()
@@ -129,7 +128,7 @@ public class DefaultDriveCmd extends Command {
       setSwerveToRotate(speeds.translation, speeds.strafe, speeds.rotation);
     } else {
       setSwerveToMaintainHeading(speeds.translation, speeds.strafe);
-    }    
+    }
   }
 
   // Called once the command ends or is interrupted.
@@ -168,11 +167,11 @@ public class DefaultDriveCmd extends Command {
   private void setSwerveToRotate(double translation, double strafe, double rotation) {
     swerve.setControl(
         drive.withVelocityX(translation).withVelocityY(strafe).withRotationalRate(rotation));
-    headingSetter.accept(Optional.empty());  // was: currentHeading = Optional.empty();
+    headingSetter.accept(Optional.empty()); // was: currentHeading = Optional.empty();
   }
 
   private void setSwerveToMaintainHeading(double translation, double strafe) {
-    if (headingGetter.get().isEmpty()) {     // was: currentHeading.isEmpty()
+    if (headingGetter.get().isEmpty()) { // was: currentHeading.isEmpty()
       headingSetter.accept(Optional.of(swerve.getState().Pose.getRotation()));
     }
 
@@ -180,7 +179,7 @@ public class DefaultDriveCmd extends Command {
     if (alliance.isPresent()) {
       Rotation2d targetDirection =
           alliance.get() == Alliance.Blue
-              ? headingGetter.get().get()    // was: currentHeading.get()
+              ? headingGetter.get().get() // was: currentHeading.get()
               : headingGetter.get().get().rotateBy(Rotation2d.fromDegrees(180));
       swerve.setControl(
           driveMaintainHeading

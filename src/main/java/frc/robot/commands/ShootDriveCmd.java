@@ -8,13 +8,8 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.DoubleSupplier;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -24,6 +19,9 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.util.constants.FieldConstants;
 import frc.robot.util.constants.SwerveConstants;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.DoubleSupplier;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class ShootDriveCmd extends Command {
@@ -34,7 +32,7 @@ public class ShootDriveCmd extends Command {
   private Consumer<Optional<Rotation2d>> setCurrentHeading;
 
   private double maxSpeed;
-  private double maxAngularRate;  
+  private double maxAngularRate;
 
   private final SwerveRequest.FieldCentricFacingAngle driveMaintainHeading;
 
@@ -63,7 +61,7 @@ public class ShootDriveCmd extends Command {
     driveMaintainHeading.HeadingController.setPID(
         SwerveConstants.HEADING_KP, SwerveConstants.HEADING_KI, SwerveConstants.HEADING_KD);
     driveMaintainHeading.HeadingController.enableContinuousInput(-Math.PI, Math.PI);
-    driveMaintainHeading.HeadingController.setTolerance(SwerveConstants.HEADING_TOLERANCE);            
+    driveMaintainHeading.HeadingController.setTolerance(SwerveConstants.HEADING_TOLERANCE);
 
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(swerve);
@@ -105,7 +103,6 @@ public class ShootDriveCmd extends Command {
             .withVelocityY(strafe)
             .withTargetDirection(angleToPointAt)
             .withTargetRateFeedforward(0.1));
-
   }
 
   // Called once the command ends or is interrupted.

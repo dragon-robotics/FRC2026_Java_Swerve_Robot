@@ -8,7 +8,8 @@ public class HopperIOTalonFXSim extends HopperIOTalonFX {
 
   private final DCMotor motorType;
 
-  public HopperIOTalonFXSim(int canID, TalonFXConfiguration config, String motorType, String motorName) {
+  public HopperIOTalonFXSim(
+      int canID, TalonFXConfiguration config, String motorType, String motorName) {
 
     super(canID, config, motorName);
 

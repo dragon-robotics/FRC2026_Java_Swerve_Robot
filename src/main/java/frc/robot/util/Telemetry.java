@@ -2,14 +2,9 @@ package frc.robot.util;
 
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.util.Units;
 
 public class Telemetry {
-  /**
-   * Construct a telemetry object.
-   */
+  /** Construct a telemetry object. */
   public Telemetry() {
     // SignalLogger.start();
   }
@@ -39,7 +34,8 @@ public class Telemetry {
     //     "FinalExtendingHopperPose",
     //     new Pose3d[] {
     //       new Pose3d(
-    //           // 0.05 + (((Math.sin(Timer.getTimestamp()) + 1) / 2) * Units.inchesToMeters(12.562)),
+    //           // 0.05 + (((Math.sin(Timer.getTimestamp()) + 1) / 2) *
+    // Units.inchesToMeters(12.562)),
     //           0.05, 0.06375, 0.3, new Rotation3d(0.0, 0.0, 0.0))
     //     });
   }
