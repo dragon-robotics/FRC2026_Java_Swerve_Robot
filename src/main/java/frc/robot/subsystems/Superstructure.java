@@ -11,9 +11,11 @@ import frc.robot.commands.DefaultDriveCmd;
 import frc.robot.commands.ShootDriveCmd;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.hopper.HopperSubsystem;
+import frc.robot.subsystems.hopper.HopperSubsystem.HopperState;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem.IntakeState;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem.ShooterState;
 import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.util.Telemetry;
 import java.util.Optional;
@@ -144,12 +146,32 @@ public class Superstructure extends SubsystemBase {
     return swerve.runOnce(swerve::seedFieldCentric);
   }
 
+  public Command activateIntakeCommand() {
+    return new InstantCommand(() -> intake.setDesiredState(IntakeState.INTAKE), intake);
+  }
+
   public Command deployIntakeCommand() {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.DEPLOYED), intake);
   }
 
   public Command stowIntakeCommand() {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.HOME), intake);
+  }
+
+  public Command stopHopperCommand() {
+    return new InstantCommand(() -> hopper.setDesiredState(HopperState.STOP), hopper);
+  }
+
+  public Command indexToShooterCommand() {
+    return new InstantCommand(() -> hopper.setDesiredState(HopperState.INDEXTOSHOOTER), hopper);
+  }
+
+  public Command stopShooterCommand() {
+    return new InstantCommand(() -> shooter.setDesiredState(ShooterState.STOP), shooter);
+  }
+
+  public Command shootCommand() {
+    return new InstantCommand(() -> shooter.setDesiredState(ShooterState.SHOOT), shooter);
   }
 
   /* State handling */
