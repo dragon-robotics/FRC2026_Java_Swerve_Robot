@@ -5,7 +5,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 public final class GeneralConstants {
 
   // Robot mode
-  public static final RobotMode CURRENT_MODE = RobotBase.isReal() ? RobotMode.TEST : RobotMode.SIM;
+  public static final RobotMode CURRENT_MODE = RobotBase.isReal() ? RobotMode.COMP : RobotMode.SIM;
 
   public static enum RobotMode {
     /** Running on test mode */
