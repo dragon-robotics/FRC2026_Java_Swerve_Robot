@@ -78,6 +78,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void runShooter() {
     shooterLeadIO.setMotorRPM(targetRPM);
+    shooterKickerIO.setMotorRPM(targetRPM);
   }
 
   // runs the shooter at half speed
