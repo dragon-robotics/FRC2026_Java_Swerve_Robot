@@ -28,6 +28,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -100,6 +101,11 @@ public class RobotContainer {
   private Command unjamCommand;
   private Command reverseShooterCommand;
   private Command reverseHopperCommand;
+
+  private double intakeRollerSpeed = 0.5;
+  private double hopperRollerSpeed = 0.5;
+  private double shooterLeadSpeed = 0.5;
+  private double shooterKickerSpeed = 0.5;
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -384,22 +390,50 @@ public class RobotContainer {
     // Intake Roller
     driverController
         .leftBumper()
-        .whileTrue(new RunCommand(() -> intakeSubsystem.runIntakeRollerPercentage(0.5), intakeSubsystem));
+        .whileTrue(
+            new RunCommand(
+                () -> intakeSubsystem.runIntakeRollerPercentage(intakeRollerSpeed),
+                intakeSubsystem));
+
+    DogLog.tunable(
+        "Intake Roller Speed %",
+        intakeRollerSpeed, newSpeed -> intakeRollerSpeed = MathUtil.clamp(newSpeed, 0, 1));
 
     // Hopper Roller
     driverController
         .leftStick()
-        .whileTrue(new RunCommand(() -> hopperSubsystem.runHopperRollerPercentage(0.5), hopperSubsystem));
+        .whileTrue(
+            new RunCommand(
+                () -> hopperSubsystem.runHopperRollerPercentage(hopperRollerSpeed),
+                hopperSubsystem));
+
+    DogLog.tunable(
+        "Hopper Roller Speed %",
+        hopperRollerSpeed, newSpeed -> hopperRollerSpeed = MathUtil.clamp(newSpeed, 0, 1));
 
     // Shooter Kicker
     driverController
         .leftTrigger(0.2)
-        .whileTrue(new RunCommand(() -> shooterSubsystem.runKickerMotorPercentage(0.5), shooterSubsystem));
+        .whileTrue(
+            new RunCommand(
+                () -> shooterSubsystem.runKickerMotorPercentage(shooterKickerSpeed),
+                shooterSubsystem));
+
+    DogLog.tunable(
+        "Shooter Kicker Speed %",
+        shooterKickerSpeed, newSpeed -> shooterKickerSpeed = MathUtil.clamp(newSpeed, 0, 1));
 
     // Shooter Flywheels
     driverController
         .rightTrigger(0.2)
-        .whileTrue(new RunCommand(() -> shooterSubsystem.runShooterMotorPercentage(0.5), shooterSubsystem));
+        .whileTrue(
+            new RunCommand(
+                () -> shooterSubsystem.runShooterMotorPercentage(shooterLeadSpeed),
+                shooterSubsystem));
+
+    DogLog.tunable(
+        "Shooter Flywheel Speed %",
+        shooterLeadSpeed, newSpeed -> shooterLeadSpeed = MathUtil.clamp(newSpeed, 0, 1));
 
     // // Intake to Hopper
     // driverController
