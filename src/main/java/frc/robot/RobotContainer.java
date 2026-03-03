@@ -33,6 +33,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.generated.TunerConstants;
@@ -366,7 +367,7 @@ public class RobotContainer {
     hopperSubsystem.setDefaultCommand(stopHopperCommand);
     shooterSubsystem.setDefaultCommand(stopShooterCommand);
 
-    driverController.rightBumper().whileTrue(shootDriveCommand);
+    // driverController.rightBumper().whileTrue(shootDriveCommand);
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
@@ -379,6 +380,26 @@ public class RobotContainer {
 
     // Reset the field-centric heading on start button press.
     driverController.start().onTrue(seedFieldCentricCommand);
+
+    // Intake Roller
+    driverController
+        .leftBumper()
+        .whileTrue(new RunCommand(() -> intakeSubsystem.runIntakeRollerPercentage(0.5), intakeSubsystem));
+
+    // Hopper Roller
+    driverController
+        .leftStick()
+        .whileTrue(new RunCommand(() -> hopperSubsystem.runHopperRollerPercentage(0.5), hopperSubsystem));
+
+    // Shooter Kicker
+    driverController
+        .leftTrigger(0.2)
+        .whileTrue(new RunCommand(() -> shooterSubsystem.runKickerMotorPercentage(0.5), shooterSubsystem));
+
+    // Shooter Flywheels
+    driverController
+        .rightTrigger(0.2)
+        .whileTrue(new RunCommand(() -> shooterSubsystem.runShooterMotorPercentage(0.5), shooterSubsystem));
 
     // // Intake to Hopper
     // driverController

@@ -66,6 +66,18 @@ public class HopperSubsystem extends SubsystemBase {
 
   /* Functions */
 
+  public void runHopperRollerRPM(double rpm) {
+    rollerMotorIO.setMotorRPM(rpm);
+  }
+
+  public void runHopperRollerVoltage(double voltage) {
+    rollerMotorIO.setMotorVoltage(voltage);
+  }
+
+  public void runHopperRollerPercentage(double percentage) {
+    rollerMotorIO.setMotorPercentage(percentage);
+  }  
+
   public void indexToShooter() {
     rollerMotorIO.setMotorRPM(HOPPER_ROLLER_RPM);
   }
