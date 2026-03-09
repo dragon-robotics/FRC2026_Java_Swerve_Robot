@@ -64,11 +64,11 @@ public class TunerConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(40))
+                  .withStatorCurrentLimit(Amps.of(80))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLowerLimit(Amps.of(40))
+                  .withSupplyCurrentLowerLimit(Amps.of(60))
                   .withSupplyCurrentLowerTime(Seconds.of(1))
-                  .withSupplyCurrentLimit(Amps.of(60)))
+                  .withSupplyCurrentLimit(Amps.of(40)))
           .withVoltage(
               new VoltageConfigs()
                   .withPeakForwardVoltage(Volts.of(12))
@@ -92,7 +92,7 @@ public class TunerConstants {
                   // relatively low stator current limit to help avoid brownouts without
                   // impacting performance.
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(15))
+                  .withStatorCurrentLimit(Amps.of(40))
                   .withSupplyCurrentLimitEnable(true)
                   .withSupplyCurrentLimit(Amps.of(30)))
           .withVoltage(
