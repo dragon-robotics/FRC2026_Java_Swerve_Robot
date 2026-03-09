@@ -8,6 +8,8 @@ import static frc.robot.util.constants.GeneralConstants.*;
 import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MOTOR_ID;
 import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_TALONFX_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_CANCODER_CONFIG;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_MOTOR_ID;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_TALONFX_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_MOTOR_ID;
@@ -102,10 +104,10 @@ public class RobotContainer {
   private Command reverseShooterCommand;
   private Command reverseHopperCommand;
 
-  private double intakeRollerSpeed = 0.5;
-  private double hopperRollerSpeed = 0.5;
-  private double shooterLeadSpeed = 0.5;
-  private double shooterKickerSpeed = 0.5;
+  private double intakeRollerSpeed = -1.0;
+  private double hopperRollerSpeed = -0.5;
+  private double shooterLeadSpeed = -0.5;
+  private double shooterKickerSpeed = -0.5;
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -387,17 +389,37 @@ public class RobotContainer {
     // Reset the field-centric heading on start button press.
     driverController.start().onTrue(seedFieldCentricCommand);
 
+    // Intake Arm
+    driverController
+        .a()
+        .whileTrue(
+            new RunCommand(
+                () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION),
+                intakeSubsystem));
+
+    driverController
+        .b()
+        .whileTrue(
+            new RunCommand(
+                () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_STOWED_POSITION),
+                intakeSubsystem));
+
     // Intake Roller
     driverController
         .leftBumper()
         .whileTrue(
             new RunCommand(
                 () -> intakeSubsystem.runIntakeRollerPercentage(intakeRollerSpeed),
+                intakeSubsystem))
+        .whileFalse(
+            new RunCommand(
+                () -> intakeSubsystem.runIntakeRollerPercentage(0),
                 intakeSubsystem));
+;
 
-    DogLog.tunable(
-        "Intake Roller Speed %",
-        intakeRollerSpeed, newSpeed -> intakeRollerSpeed = MathUtil.clamp(newSpeed, 0, 1));
+    // DogLog.tunable(
+    //     "Intake Roller Speed %",
+    //     intakeRollerSpeed, newSpeed -> intakeRollerSpeed = MathUtil.clamp(newSpeed, 0, 1));
 
     // Hopper Roller
     driverController
@@ -405,11 +427,14 @@ public class RobotContainer {
         .whileTrue(
             new RunCommand(
                 () -> hopperSubsystem.runHopperRollerPercentage(hopperRollerSpeed),
+                hopperSubsystem))
+        .whileFalse(
+            new RunCommand(
+                () -> hopperSubsystem.runHopperRollerPercentage(0),
                 hopperSubsystem));
-
-    DogLog.tunable(
-        "Hopper Roller Speed %",
-        hopperRollerSpeed, newSpeed -> hopperRollerSpeed = MathUtil.clamp(newSpeed, 0, 1));
+    // DogLog.tunable(
+    //     "Hopper Roller Speed %",
+    //     hopperRollerSpeed, newSpeed -> hopperRollerSpeed = MathUtil.clamp(newSpeed, 0, 1));
 
     // Shooter Kicker
     driverController
@@ -417,11 +442,14 @@ public class RobotContainer {
         .whileTrue(
             new RunCommand(
                 () -> shooterSubsystem.runKickerMotorPercentage(shooterKickerSpeed),
+                shooterSubsystem))
+        .whileFalse(
+            new RunCommand(
+                () -> shooterSubsystem.runKickerMotorPercentage(0),
                 shooterSubsystem));
-
-    DogLog.tunable(
-        "Shooter Kicker Speed %",
-        shooterKickerSpeed, newSpeed -> shooterKickerSpeed = MathUtil.clamp(newSpeed, 0, 1));
+    // DogLog.tunable(
+    //     "Shooter Kicker Speed %",
+    //     shooterKickerSpeed, newSpeed -> shooterKickerSpeed = MathUtil.clamp(newSpeed, 0, 1));
 
     // Shooter Flywheels
     driverController
@@ -429,11 +457,15 @@ public class RobotContainer {
         .whileTrue(
             new RunCommand(
                 () -> shooterSubsystem.runShooterMotorPercentage(shooterLeadSpeed),
+                shooterSubsystem))
+        .whileFalse(            
+            new RunCommand(
+                () -> shooterSubsystem.runShooterMotorPercentage(0),
                 shooterSubsystem));
 
-    DogLog.tunable(
-        "Shooter Flywheel Speed %",
-        shooterLeadSpeed, newSpeed -> shooterLeadSpeed = MathUtil.clamp(newSpeed, 0, 1));
+    // DogLog.tunable(
+    //     "Shooter Flywheel Speed %",
+    //     shooterLeadSpeed, newSpeed -> shooterLeadSpeed = MathUtil.clamp(newSpeed, 0, 1));
 
     // // Intake to Hopper
     // driverController
