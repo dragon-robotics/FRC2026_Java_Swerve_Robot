@@ -12,9 +12,9 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 
 public final class HopperConstants {
   public static final int HOPPER_ROLLER_MOTOR_ID = 17;
-  public static final double HOPPER_ROLLER_STATOR_CURRENT_LIMIT = 20.0;
-  public static final double HOPPER_ROLLER_SUPPLY_CURRENT_LIMIT = 40.0;
-  public static final double HOPPER_ROLLER_MAX_VOLTAGE = 10.0;
+  public static final double HOPPER_ROLLER_STATOR_CURRENT_LIMIT = 80.0;
+  public static final double HOPPER_ROLLER_SUPPLY_CURRENT_LIMIT = 60.0;
+  public static final double HOPPER_ROLLER_MAX_VOLTAGE = 12.0;
   public static final double HOPPER_ROLLER_RAMP_RATE = 0.5;
   public static final double HOPPER_ROLLER_RPM = 1000.0;
   public static final double HOPPER_ROLLER_REVERSE_RPM = -1000.0;
