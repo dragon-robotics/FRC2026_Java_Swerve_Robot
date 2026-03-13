@@ -6,6 +6,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.shooter.ShooterIO.ShooterIOInputs;
+import frc.robot.util.constants.ShooterConstants;
 import frc.robot.util.constants.ShooterConstants.ShooterSetpoint;
 
 public class ShooterSubsystem extends SubsystemBase {
@@ -25,7 +26,7 @@ public class ShooterSubsystem extends SubsystemBase {
   protected final ShooterIOInputs shooterLeadInputs, shooterFollowInputs;
 
   protected double targetRPM;
-  protected double hoodAngle;
+  protected ShooterHoodSettings hoodSetting;
 
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem(
@@ -45,8 +46,8 @@ public class ShooterSubsystem extends SubsystemBase {
     this.currShooterState = ShooterState.STOP;
 
     // Initialize target RPM and hood angle to default values
-    this.targetRPM = 0;
-    this.hoodAngle = 0;
+    this.targetRPM = ShooterConstants.SHOOTER_LEAD_RPM;
+    this.hoodSetting = ShooterHoodSettings.HOME;
   }
 
   /* Setters */
@@ -99,25 +100,30 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void runKicker() {
-    shooterKickerIO.setMotorRPM(SHOOTER_KICKER_RPM);
+    // shooterKickerIO.setMotorRPM(SHOOTER_KICKER_RPM);
+    shooterKickerIO.setMotorPercentage(-0.75); // Run kicker at full RPM for shooting
   }
 
   public void prepKicker() {
-    shooterKickerIO.setMotorRPM(SHOOTER_KICKER_RPM * 0.3); // Run at 30% of kicker RPM for prep
+    // shooterKickerIO.setMotorRPM(SHOOTER_KICKER_RPM * 0.3); // Run at 30% of kicker RPM for prep
+    shooterKickerIO.setMotorPercentage(-0.75 * 0.3); // Run kicker at 30% of full RPM for prep
   }
 
   public void stopKicker() {
-    shooterKickerIO.setMotorRPM(0);
+    // shooterKickerIO.setMotorRPM(0);
+    shooterKickerIO.setMotorPercentage(0);
   }
 
   public void setHoodAngle() {
-    shooterHoodIO.setMotorPosition(hoodAngle);
+    shooterHoodIO.setMotorPosition(hoodSetting.getSetting());
   }
 
   public void setSetpointForDistance(double distanceToTarget) {
     ShooterSetpoint setpoint = getSetpointForDistance(distanceToTarget);
     targetRPM = setpoint.shooterRPM();
-    hoodAngle = setpoint.hoodAngleDeg();
+
+    /* TODO: Switch based on distance and where we are on the field */
+    hoodSetting = ShooterHoodSettings.HOME;
   }
 
   public double getShooterSpeed() {
@@ -141,12 +147,14 @@ public class ShooterSubsystem extends SubsystemBase {
     switch (currShooterState) {
       case STOP:
         stopShooter();
+        stopKicker();
         break;
       case PREPFUEL:
         prepShooter();
         break;
       case SHOOT:
         runShooter();
+        runKicker();
         break;
       case TRANSITION:
         switch (desiredShooterState) {
