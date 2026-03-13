@@ -25,10 +25,10 @@ import java.util.function.DoubleSupplier;
 public class Superstructure extends SubsystemBase {
 
   public enum SuperState {
-    DRIVE,
-    INTAKE,
-    OUTTAKE,
-    SHOOT
+    DRIVE,            // DRIVE
+    INTAKE,           // DRIVE, SHOOTER PREPFUEL, HOPPER INDEXTOSHOOTER, INTAKE INTAKE
+    OUTTAKE,          // DRIVE, SHOOTER PREPFUEL, HOPPER INDEXTOINTAKE, INTAKE OUTTAKE
+    SHOOT,            // DRIVE points towards target, SHOOTER SHOOT, HOPPER INDEXTOSHOOTER, INTAKE OFF
   }
 
   private SuperState state;
@@ -146,8 +146,14 @@ public class Superstructure extends SubsystemBase {
     return swerve.runOnce(swerve::seedFieldCentric);
   }
 
-  public Command activateIntakeCommand() {
+  /* Intake Commands */
+  
+  public Command intakeCommand() {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.INTAKE), intake);
+  }
+
+  public Command outtakeCommand() {
+    return new InstantCommand(() -> intake.setDesiredState(IntakeState.OUTTAKE), intake);
   }
 
   public Command deployIntakeCommand() {
@@ -158,13 +164,22 @@ public class Superstructure extends SubsystemBase {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.HOME), intake);
   }
 
-  public Command stopHopperCommand() {
-    return new InstantCommand(() -> hopper.setDesiredState(HopperState.STOP), hopper);
+  
+  /* Hopper Commands */
+  
+  public Command indexToIntakeCommand() {
+    return new InstantCommand(() -> hopper.setDesiredState(HopperState.INDEXTOINTAKE), hopper);
   }
 
   public Command indexToShooterCommand() {
     return new InstantCommand(() -> hopper.setDesiredState(HopperState.INDEXTOSHOOTER), hopper);
   }
+
+  public Command stopHopperCommand() {
+    return new InstantCommand(() -> hopper.setDesiredState(HopperState.STOP), hopper);
+  }
+
+  /* Shooter Commands */
 
   public Command stopShooterCommand() {
     return new InstantCommand(() -> shooter.setDesiredState(ShooterState.STOP), shooter);
@@ -172,6 +187,10 @@ public class Superstructure extends SubsystemBase {
 
   public Command shootCommand() {
     return new InstantCommand(() -> shooter.setDesiredState(ShooterState.SHOOT), shooter);
+  }
+
+  public Command prepFuelCommand() {
+    return new InstantCommand(() -> shooter.setDesiredState(ShooterState.PREPFUEL), shooter);
   }
 
   /* State handling */
@@ -184,6 +203,7 @@ public class Superstructure extends SubsystemBase {
     switch (state) {
       case DRIVE:
         // Set Drive to maintain heading
+
         // Intake remains in deployed or home based on current intake state
         // Set Hopper to STOP
         // Set Shooter to PREPFUEL
