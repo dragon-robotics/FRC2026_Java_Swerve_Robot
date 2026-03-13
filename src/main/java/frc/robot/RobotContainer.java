@@ -85,21 +85,23 @@ public class RobotContainer {
   private Command intakeCommand;
   private Command outtakeCommand;
   private Command stowIntakeCommand;
+  private Command deployIntakeCommand;
 
   /* Hopper Commands */
   private Command stopHopperCommand;
   private Command indexToShooterCommand;
+  private Command indexToIntakeCommand;
 
   /* Shooter Commands */
   private Command stopShooterCommand;
   private Command shootCommand;
 
   /* Climber Commands */
-  private Command deployClimberCommand;
-  private Command climbCommand;
+//   private Command deployClimberCommand;
+//   private Command climbCommand;
 
   /* Manual override commands */
-  private Command deployIntakeCommand;
+  
   private Command unjamCommand;
   private Command reverseShooterCommand;
   private Command reverseHopperCommand;
@@ -346,7 +348,8 @@ public class RobotContainer {
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
 
     // Intake
-    intakeCommand = superstructureSubsystem.activateIntakeCommand();
+    intakeCommand = superstructureSubsystem.intakeCommand();
+    outtakeCommand = superstructureSubsystem.outtakeCommand();
     deployIntakeCommand = superstructureSubsystem.deployIntakeCommand();
     stowIntakeCommand = superstructureSubsystem.stowIntakeCommand();
 
@@ -368,14 +371,6 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    // Note that X is defined as forward according to WPILib convention,
-    // and Y is defined as to the left according to WPILib convention.
-    swerveSubsystem.setDefaultCommand(defaultDriveCommand);
-    intakeSubsystem.setDefaultCommand(stowIntakeCommand);
-    hopperSubsystem.setDefaultCommand(stopHopperCommand);
-    shooterSubsystem.setDefaultCommand(stopShooterCommand);
-
-    // driverController.rightBumper().whileTrue(shootDriveCommand);
 
     // Idle while the robot is disabled. This ensures the configured
     // neutral mode is applied to the drive motors while disabled.
@@ -383,21 +378,61 @@ public class RobotContainer {
     RobotModeTriggers.disabled()
         .whileTrue(swerveSubsystem.applyRequest(() -> idle).ignoringDisable(true));
 
+    /* Default Commands */
+    // Note that X is defined as forward according to WPILib convention,
+    // and Y is defined as to the left according to WPILib convention.
+    swerveSubsystem.setDefaultCommand(defaultDriveCommand);
+
+    /* Driver Controls */
+
     // Brake the drivetrain on pressing the back button.
     driverController.back().whileTrue(swerveBrakeCommand);
 
     // Reset the field-centric heading on start button press.
     driverController.start().onTrue(seedFieldCentricCommand);
 
+    /* Intake */
+    driverController.leftBumper()
+        .whileTrue(intakeCommand)
+        .whileTrue(indexToShooterCommand)
+        .onFalse(deployIntakeCommand)
+        .onFalse(stopHopperCommand);
+
+    /* Outtake */
+    driverController.rightBumper()
+        .whileTrue(outtakeCommand)
+        .whileTrue(indexToIntakeCommand)
+        .onFalse(stopHopperCommand);
+
+    /* Shoot */
+    driverController.rightTrigger(0.2)
+        .whileTrue(shootCommand)
+        // .whileTrue(shootDriveCommand)
+        .onFalse(stopShooterCommand)
+        .onFalse(stopHopperCommand)
+        .onFalse(stowIntakeCommand);
+
+    /* Operator Controls */
+
+    /* Manual Intake Arm */
+
+    /* Manual Intake Roller */
+
+    /* Manual Hopper Roller */
+
+    /* Manual Shooter Kicker */
+
+    /* Manual Shooter Roller */
+
     // Intake Arm
-    driverController
+    operatorController
         .a()
         .whileTrue(
             new RunCommand(
                 () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION),
                 intakeSubsystem));
 
-    driverController
+    operatorController
         .b()
         .whileTrue(
             new RunCommand(
@@ -405,7 +440,7 @@ public class RobotContainer {
                 intakeSubsystem));
 
     // Intake Roller
-    driverController
+    operatorController
         .leftBumper()
         .whileTrue(
             new RunCommand(
@@ -422,7 +457,7 @@ public class RobotContainer {
     //     intakeRollerSpeed, newSpeed -> intakeRollerSpeed = MathUtil.clamp(newSpeed, 0, 1));
 
     // Hopper Roller
-    driverController
+    operatorController
         .leftStick()
         .whileTrue(
             new RunCommand(
@@ -437,7 +472,7 @@ public class RobotContainer {
     //     hopperRollerSpeed, newSpeed -> hopperRollerSpeed = MathUtil.clamp(newSpeed, 0, 1));
 
     // Shooter Kicker
-    driverController
+    operatorController
         .leftTrigger(0.2)
         .whileTrue(
             new RunCommand(
@@ -452,7 +487,7 @@ public class RobotContainer {
     //     shooterKickerSpeed, newSpeed -> shooterKickerSpeed = MathUtil.clamp(newSpeed, 0, 1));
 
     // Shooter Flywheels
-    driverController
+    operatorController
         .rightTrigger(0.2)
         .whileTrue(
             new RunCommand(
