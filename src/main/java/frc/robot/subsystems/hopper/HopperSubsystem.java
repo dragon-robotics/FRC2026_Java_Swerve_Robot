@@ -79,15 +79,18 @@ public class HopperSubsystem extends SubsystemBase {
   }
 
   public void indexToShooter() {
-    rollerMotorIO.setMotorRPM(HOPPER_ROLLER_RPM);
+    // rollerMotorIO.setMotorRPM(HOPPER_ROLLER_RPM);
+    rollerMotorIO.setMotorPercentage(HOPPER_ROLLER_DUTY_CYCLE);
   }
 
   public void indexToIntake() {
-    rollerMotorIO.setMotorRPM(-HOPPER_ROLLER_RPM);
+    // rollerMotorIO.setMotorRPM(-HOPPER_ROLLER_RPM);
+    rollerMotorIO.setMotorPercentage(-HOPPER_ROLLER_DUTY_CYCLE);
   }
 
   public void stopIntake() {
-    rollerMotorIO.setMotorRPM(0);
+    // rollerMotorIO.setMotorRPM(0);
+    rollerMotorIO.setMotorPercentage(0);
   }
 
   public void handleStateTransition() {
