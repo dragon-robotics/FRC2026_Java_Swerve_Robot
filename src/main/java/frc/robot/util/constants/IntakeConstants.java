@@ -17,6 +17,7 @@ import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.hardware.core.CoreCANcoder;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
@@ -46,12 +47,12 @@ public final class IntakeConstants {
   public static final double INTAKE_MAX_ANGLE_RADIANS = Units.degreesToRadians(90);
   public static final double INTAKE_STARTING_ANGLE_RADIANS = INTAKE_MAX_ANGLE_RADIANS;
 
-  public static final double INTAKE_ROLLER_DUTY_CYCLE = 0.5;
-  public static final double INTAKE_ROLLER_VOLTAGE = 5.0;
-  public static final double INTAKE_ROLLER_RPM = 4000.0;
-  public static final double OUTTAKE_ROLLER_DUTY_CYCLE = -0.5;
-  public static final double OUTTAKE_ROLLER_VOLTAGE = -5.0;
-  public static final double OUTTAKE_ROLLER_RPM = -4000.0;
+  public static final double INTAKE_ROLLER_DUTY_CYCLE = 1.0;
+  public static final double INTAKE_ROLLER_VOLTAGE = 12;
+  public static final double INTAKE_ROLLER_RPM = 6000.0;
+  public static final double OUTTAKE_ROLLER_DUTY_CYCLE = -1.0;
+  public static final double OUTTAKE_ROLLER_VOLTAGE = -12.0;
+  public static final double OUTTAKE_ROLLER_RPM = -6000.0;
 
   public static final double INTAKE_ARM_STOWED_POSITION = -0.25;
   public static final double INTAKE_ARM_STOWED_ANGLE_DEG = Units.degreesToRadians(90);
@@ -76,7 +77,10 @@ public final class IntakeConstants {
                   .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.1))
                   .withTorqueOpenLoopRampPeriod(Seconds.of(0.1))
                   .withVoltageOpenLoopRampPeriod(Seconds.of(0.1)))
-          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               new Slot0Configs()
                   .withKS(0)
@@ -137,8 +141,8 @@ public final class IntakeConstants {
           .withSlot0(
               new Slot0Configs()
                   .withKS(0)
-                  .withKV(0.0)
-                  .withKA(0.0)
+                  .withKV(0)
+                  .withKA(0)
                   .withKG(0)
                   .withKP(0)
                   .withKI(0)
