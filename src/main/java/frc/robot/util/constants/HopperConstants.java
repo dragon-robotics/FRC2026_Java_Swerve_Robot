@@ -15,7 +15,8 @@ public final class HopperConstants {
   public static final double HOPPER_ROLLER_STATOR_CURRENT_LIMIT = 80.0;
   public static final double HOPPER_ROLLER_SUPPLY_CURRENT_LIMIT = 60.0;
   public static final double HOPPER_ROLLER_MAX_VOLTAGE = 12.0;
-  public static final double HOPPER_ROLLER_RAMP_RATE = 0.5;
+  public static final double HOPPER_ROLLER_RAMP_RATE = 0.2;
+  public static final double HOPPER_ROLLER_DUTY_CYCLE = 1.0;
   public static final double HOPPER_ROLLER_RPM = 1000.0;
   public static final double HOPPER_ROLLER_REVERSE_RPM = -1000.0;
 
@@ -36,20 +37,5 @@ public final class HopperConstants {
                   .withDutyCycleOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
                   .withTorqueOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
                   .withVoltageOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE))
-          .withClosedLoopRamps(
-              new ClosedLoopRampsConfigs()
-                  .withDutyCycleClosedLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
-                  .withTorqueClosedLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
-                  .withVoltageClosedLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE))
-          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
-          .withMotionMagic(
-              new MotionMagicConfigs().withMotionMagicAcceleration(200).withMotionMagicJerk(2000))
-          .withSlot0(
-              new Slot0Configs()
-                  .withKS(0.0)
-                  .withKV(0.0)
-                  .withKA(0.0)
-                  .withKP(0.0)
-                  .withKI(0.0)
-                  .withKD(0.0));
+          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
 }
