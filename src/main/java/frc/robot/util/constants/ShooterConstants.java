@@ -37,6 +37,25 @@ public final class ShooterConstants {
   public static final int SHOOTER_CANCODER_ID = 2;
 
   public static final double SHOOTER_KICKER_RPM = 3000.0;
+  public static final double SHOOTER_LEAD_RPM = 3000.0;
+
+  public static enum ShooterHoodSettings {
+    HOME(0),
+    MIDDLE_CLOSE(0.75),
+    MIDDLE(1.5),
+    MIDDLE_FAR(2.25),
+    FAR(3);
+
+    private final double setpoint;
+
+    ShooterHoodSettings(double setpoint) {
+      this.setpoint = setpoint;
+    }
+
+    public double getSetting() {
+      return setpoint;
+    }
+  }
 
   public record ShooterSetpoint(double shooterRPM, double hoodAngleDeg) {}
 
