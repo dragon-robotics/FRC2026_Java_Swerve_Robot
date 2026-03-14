@@ -5,21 +5,25 @@
 package frc.robot;
 
 import static frc.robot.util.constants.GeneralConstants.*;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_DUTY_CYCLE;
 import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MOTOR_ID;
 import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_TALONFX_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_CANCODER_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
-import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_MOTOR_ID;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_TALONFX_CONFIG;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_DUTY_CYCLE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_MOTOR_ID;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TALONFX_CONFIG;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_TALONFX_CONFIG;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_TALONFX_CONFIG;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_DUTY_CYCLE;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_TALONFX_CONFIG;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_LEAD_DUTY_CYCLE;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_LEAD_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_LEAD_TALONFX_CONFIG;
 
@@ -30,7 +34,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -97,19 +100,8 @@ public class RobotContainer {
   private Command shootCommand;
 
   /* Climber Commands */
-//   private Command deployClimberCommand;
-//   private Command climbCommand;
-
-  /* Manual override commands */
-  
-  private Command unjamCommand;
-  private Command reverseShooterCommand;
-  private Command reverseHopperCommand;
-
-  private double intakeRollerSpeed = -1.0;
-  private double hopperRollerSpeed = -0.5;
-  private double shooterLeadSpeed = -0.5;
-  private double shooterKickerSpeed = -0.5;
+  //   private Command deployClimberCommand;
+  //   private Command climbCommand;
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -392,20 +384,23 @@ public class RobotContainer {
     driverController.start().onTrue(seedFieldCentricCommand);
 
     /* Intake */
-    driverController.leftBumper()
+    driverController
+        .leftBumper()
         .whileTrue(intakeCommand)
         .whileTrue(indexToShooterCommand)
         .onFalse(deployIntakeCommand)
         .onFalse(stopHopperCommand);
 
     /* Outtake */
-    driverController.rightBumper()
+    driverController
+        .rightBumper()
         .whileTrue(outtakeCommand)
         .whileTrue(indexToIntakeCommand)
         .onFalse(stopHopperCommand);
 
     /* Shoot */
-    driverController.rightTrigger(0.2)
+    driverController
+        .rightTrigger(0.2)
         .whileTrue(shootCommand)
         // .whileTrue(shootDriveCommand)
         .onFalse(stopShooterCommand)
@@ -415,16 +410,6 @@ public class RobotContainer {
     /* Operator Controls */
 
     /* Manual Intake Arm */
-
-    /* Manual Intake Roller */
-
-    /* Manual Hopper Roller */
-
-    /* Manual Shooter Kicker */
-
-    /* Manual Shooter Roller */
-
-    // Intake Arm
     operatorController
         .a()
         .whileTrue(
@@ -439,80 +424,81 @@ public class RobotContainer {
                 () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_STOWED_POSITION),
                 intakeSubsystem));
 
-    // Intake Roller
+    /* Manual Intake Roller */
     operatorController
         .leftBumper()
         .whileTrue(
             new RunCommand(
-                () -> intakeSubsystem.runIntakeRollerPercentage(intakeRollerSpeed),
+                () -> intakeSubsystem.runIntakeRollerPercentage(INTAKE_ROLLER_DUTY_CYCLE),
                 intakeSubsystem))
         .whileFalse(
+            new RunCommand(() -> intakeSubsystem.runIntakeRollerPercentage(0), intakeSubsystem));
+
+    operatorController
+        .rightBumper()
+        .whileTrue(
             new RunCommand(
-                () -> intakeSubsystem.runIntakeRollerPercentage(0),
-                intakeSubsystem));
-;
+                () -> intakeSubsystem.runIntakeRollerPercentage(-INTAKE_ROLLER_DUTY_CYCLE),
+                intakeSubsystem))
+        .whileFalse(
+            new RunCommand(() -> intakeSubsystem.runIntakeRollerPercentage(0), intakeSubsystem));
 
-    // DogLog.tunable(
-    //     "Intake Roller Speed %",
-    //     intakeRollerSpeed, newSpeed -> intakeRollerSpeed = MathUtil.clamp(newSpeed, 0, 1));
-
-    // Hopper Roller
+    /* Manual Hopper Roller */
     operatorController
         .leftStick()
         .whileTrue(
             new RunCommand(
-                () -> hopperSubsystem.runHopperRollerPercentage(hopperRollerSpeed),
+                () -> hopperSubsystem.runHopperRollerPercentage(HOPPER_ROLLER_DUTY_CYCLE),
                 hopperSubsystem))
         .whileFalse(
-            new RunCommand(
-                () -> hopperSubsystem.runHopperRollerPercentage(0),
-                hopperSubsystem));
-    // DogLog.tunable(
-    //     "Hopper Roller Speed %",
-    //     hopperRollerSpeed, newSpeed -> hopperRollerSpeed = MathUtil.clamp(newSpeed, 0, 1));
+            new RunCommand(() -> hopperSubsystem.runHopperRollerPercentage(0), hopperSubsystem));
 
-    // Shooter Kicker
+    operatorController
+        .rightStick()
+        .whileTrue(
+            new RunCommand(
+                () -> hopperSubsystem.runHopperRollerPercentage(-HOPPER_ROLLER_DUTY_CYCLE),
+                hopperSubsystem))
+        .whileFalse(
+            new RunCommand(() -> hopperSubsystem.runHopperRollerPercentage(0), hopperSubsystem));
+
+    /* Manual Shooter Kicker */
     operatorController
         .leftTrigger(0.2)
         .whileTrue(
             new RunCommand(
-                () -> shooterSubsystem.runKickerMotorPercentage(shooterKickerSpeed),
+                () -> shooterSubsystem.runKickerMotorPercentage(SHOOTER_KICKER_DUTY_CYCLE),
                 shooterSubsystem))
         .whileFalse(
-            new RunCommand(
-                () -> shooterSubsystem.runKickerMotorPercentage(0),
-                shooterSubsystem));
-    // DogLog.tunable(
-    //     "Shooter Kicker Speed %",
-    //     shooterKickerSpeed, newSpeed -> shooterKickerSpeed = MathUtil.clamp(newSpeed, 0, 1));
+            new RunCommand(() -> shooterSubsystem.runKickerMotorPercentage(0), shooterSubsystem));
 
-    // Shooter Flywheels
     operatorController
         .rightTrigger(0.2)
         .whileTrue(
             new RunCommand(
-                () -> shooterSubsystem.runShooterMotorPercentage(shooterLeadSpeed),
+                () -> shooterSubsystem.runKickerMotorPercentage(-SHOOTER_KICKER_DUTY_CYCLE),
                 shooterSubsystem))
-        .whileFalse(            
+        .whileFalse(
+            new RunCommand(() -> shooterSubsystem.runKickerMotorPercentage(0), shooterSubsystem));
+
+    /* Manual Shooter Flywheel */
+    operatorController
+        .x()
+        .whileTrue(
             new RunCommand(
-                () -> shooterSubsystem.runShooterMotorPercentage(0),
-                shooterSubsystem));
+                () -> shooterSubsystem.runShooterMotorPercentage(SHOOTER_LEAD_DUTY_CYCLE),
+                shooterSubsystem))
+        .whileFalse(
+            new RunCommand(() -> shooterSubsystem.runShooterMotorPercentage(0), shooterSubsystem));
 
-    // DogLog.tunable(
-    //     "Shooter Flywheel Speed %",
-    //     shooterLeadSpeed, newSpeed -> shooterLeadSpeed = MathUtil.clamp(newSpeed, 0, 1));
-
-    // // Intake to Hopper
-    // driverController
-    //     .leftBumper()
-    //     .whileTrue(intakeCommand.alongWith(indexToShooterCommand))
-    //     .whileFalse(deployIntakeCommand);
-
-    // // Shoot FUEL //
-    // driverController
-    //     .rightTrigger(0.2)
-    //     .whileTrue(indexToShooterCommand.alongWith(shootCommand))
-    //     .whileFalse(stopHopperCommand.alongWith(stopShooterCommand));
+    operatorController
+        .y()
+        .whileTrue(
+            new RunCommand(
+                () -> shooterSubsystem.runShooterMotorPercentage(SHOOTER_LEAD_DUTY_CYCLE),
+                shooterSubsystem))
+        .whileFalse(
+            new RunCommand(() -> shooterSubsystem.runShooterMotorPercentage(0), shooterSubsystem));
 
     // // Run SysId routines when holding back/start and X/Y.
     // // Note that each routine should be run exactly once in a single log.

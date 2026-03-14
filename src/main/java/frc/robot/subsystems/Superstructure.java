@@ -25,10 +25,10 @@ import java.util.function.DoubleSupplier;
 public class Superstructure extends SubsystemBase {
 
   public enum SuperState {
-    DRIVE,            // DRIVE
-    INTAKE,           // DRIVE, SHOOTER PREPFUEL, HOPPER INDEXTOSHOOTER, INTAKE INTAKE
-    OUTTAKE,          // DRIVE, SHOOTER PREPFUEL, HOPPER INDEXTOINTAKE, INTAKE OUTTAKE
-    SHOOT,            // DRIVE points towards target, SHOOTER SHOOT, HOPPER INDEXTOSHOOTER, INTAKE OFF
+    DRIVE, // DRIVE
+    INTAKE, // DRIVE, SHOOTER PREPFUEL, HOPPER INDEXTOSHOOTER, INTAKE INTAKE
+    OUTTAKE, // DRIVE, SHOOTER PREPFUEL, HOPPER INDEXTOINTAKE, INTAKE OUTTAKE
+    SHOOT, // DRIVE points towards target, SHOOTER SHOOT, HOPPER INDEXTOSHOOTER, INTAKE OFF
   }
 
   private SuperState state;
@@ -147,7 +147,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   /* Intake Commands */
-  
+
   public Command intakeCommand() {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.INTAKE), intake);
   }
@@ -164,9 +164,8 @@ public class Superstructure extends SubsystemBase {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.HOME), intake);
   }
 
-  
   /* Hopper Commands */
-  
+
   public Command indexToIntakeCommand() {
     return new InstantCommand(() -> hopper.setDesiredState(HopperState.INDEXTOINTAKE), hopper);
   }
