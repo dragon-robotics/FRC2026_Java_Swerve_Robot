@@ -6,8 +6,10 @@ package frc.robot;
 
 import static frc.robot.util.constants.GeneralConstants.*;
 import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_DUTY_CYCLE;
-import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MOTOR_ID;
-import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_TALONFX_CONFIG;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_FOLLOW_MOTOR_ID;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_LEAD_MOTOR_ID;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_LEAD_TALONFX_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_CANCODER_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_MOTOR_ID;
@@ -132,7 +134,14 @@ public class RobotContainer {
         hopperSubsystem =
             new HopperSubsystem(
                 new HopperIOTalonFX(
-                    HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
+                    HOPPER_ROLLER_LEAD_MOTOR_ID,
+                    HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
+                    "Hopper Lead Motor"),
+                new HopperIOTalonFX(
+                    HOPPER_ROLLER_FOLLOW_MOTOR_ID,
+                    HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
+                    "Hopper Follow Motor",
+                    new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
         shooterSubsystem =
             new ShooterSubsystem(
                 new ShooterIOTalonFX(
@@ -177,10 +186,16 @@ public class RobotContainer {
         hopperSubsystem =
             new HopperSubsystem(
                 new HopperIOTalonFXSim(
-                    HOPPER_ROLLER_MOTOR_ID,
-                    HOPPER_ROLLER_TALONFX_CONFIG,
+                    HOPPER_ROLLER_LEAD_MOTOR_ID,
+                    HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
                     "KrakenX60_FOC",
-                    "Hopper Motor"));
+                    "Hopper Lead Motor"),
+                new HopperIOTalonFXSim(
+                    HOPPER_ROLLER_FOLLOW_MOTOR_ID,
+                    HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
+                    "KrakenX60_FOC",
+                    "Shooter Follow",
+                    new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)));
         shooterSubsystem =
             new ShooterSubsystem(
                 new ShooterIOTalonFXSim(
@@ -245,8 +260,15 @@ public class RobotContainer {
                     INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         hopperSubsystem =
             new HopperSubsystem(
-                new HopperIOTalonFXTunable(
-                    HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
+                new HopperIOTalonFX(
+                    HOPPER_ROLLER_LEAD_MOTOR_ID,
+                    HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
+                    "Hopper Lead Motor"),
+                new HopperIOTalonFX(
+                    HOPPER_ROLLER_FOLLOW_MOTOR_ID,
+                    HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
+                    "Hopper Follow Motor",
+                    new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
         shooterSubsystem =
             new ShooterSubsystem(
                 new ShooterIOTalonFXTunable(
@@ -283,7 +305,14 @@ public class RobotContainer {
         hopperSubsystem =
             new HopperSubsystem(
                 new HopperIOTalonFX(
-                    HOPPER_ROLLER_MOTOR_ID, HOPPER_ROLLER_TALONFX_CONFIG, "Hopper Motor"));
+                    HOPPER_ROLLER_LEAD_MOTOR_ID,
+                    HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
+                    "Hopper Lead Motor"),
+                new HopperIOTalonFX(
+                    HOPPER_ROLLER_FOLLOW_MOTOR_ID,
+                    HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
+                    "Hopper Follow Motor",
+                    new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
         shooterSubsystem =
             new ShooterSubsystem(
                 new ShooterIOTalonFX(

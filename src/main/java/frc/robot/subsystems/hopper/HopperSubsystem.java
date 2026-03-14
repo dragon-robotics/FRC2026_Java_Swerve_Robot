@@ -20,15 +20,21 @@ public class HopperSubsystem extends SubsystemBase {
   private HopperState desiredHopperState;
   // inputs
 
-  private final HopperIO rollerMotorIO;
+  private final HopperIO leadRollerMotorIO;
+  private final HopperIO followRollerMotorIO;
+
   // hardware layer
-  private final HopperIOInputs rollerMotorIOInputs;
+  private final HopperIOInputs leadRollerMotorIOInputs;
+  private final HopperIOInputs followRollerMotorIOInputs;
 
   /* Creates new HopperSubsystem */
-  public HopperSubsystem(HopperIO rollerMotorIO) {
+  public HopperSubsystem(HopperIO leadRollerMotorIO, HopperIO followRollerMotorIO) {
 
-    this.rollerMotorIO = rollerMotorIO;
-    this.rollerMotorIOInputs = new HopperIOInputs();
+    this.leadRollerMotorIO = leadRollerMotorIO;
+    this.followRollerMotorIO = followRollerMotorIO;
+
+    this.leadRollerMotorIOInputs = new HopperIOInputs();
+    this.followRollerMotorIOInputs = new HopperIOInputs();
 
     this.currHopperState = HopperState.STOP;
     this.desiredHopperState = HopperState.STOP;
@@ -67,30 +73,30 @@ public class HopperSubsystem extends SubsystemBase {
   /* Functions */
 
   public void runHopperRollerRPM(double rpm) {
-    rollerMotorIO.setMotorRPM(rpm);
+    leadRollerMotorIO.setMotorRPM(rpm);
   }
 
   public void runHopperRollerVoltage(double voltage) {
-    rollerMotorIO.setMotorVoltage(voltage);
+    leadRollerMotorIO.setMotorVoltage(voltage);
   }
 
   public void runHopperRollerPercentage(double percentage) {
-    rollerMotorIO.setMotorPercentage(percentage);
+    leadRollerMotorIO.setMotorPercentage(percentage);
   }
 
   public void indexToShooter() {
-    // rollerMotorIO.setMotorRPM(HOPPER_ROLLER_RPM);
-    rollerMotorIO.setMotorPercentage(HOPPER_ROLLER_DUTY_CYCLE);
+    // leadRollerMotorIO.setMotorRPM(HOPPER_ROLLER_RPM);
+    leadRollerMotorIO.setMotorPercentage(HOPPER_ROLLER_DUTY_CYCLE);
   }
 
   public void indexToIntake() {
-    // rollerMotorIO.setMotorRPM(-HOPPER_ROLLER_RPM);
-    rollerMotorIO.setMotorPercentage(-HOPPER_ROLLER_DUTY_CYCLE);
+    // leadRollerMotorIO.setMotorRPM(-HOPPER_ROLLER_RPM);
+    leadRollerMotorIO.setMotorPercentage(-HOPPER_ROLLER_DUTY_CYCLE);
   }
 
-  public void stopIntake() {
-    // rollerMotorIO.setMotorRPM(0);
-    rollerMotorIO.setMotorPercentage(0);
+  public void stopHopperRoller() {
+    // leadRollerMotorIO.setMotorRPM(0);
+    leadRollerMotorIO.setMotorPercentage(0);
   }
 
   public void handleStateTransition() {
@@ -99,7 +105,7 @@ public class HopperSubsystem extends SubsystemBase {
     switch (currHopperState) {
       case STOP:
         /* Stop rollers */
-        stopIntake();
+        stopHopperRoller();
         break;
       case INDEXTOSHOOTER:
         /* set hopper rollers to index to shooter speed */
@@ -122,6 +128,7 @@ public class HopperSubsystem extends SubsystemBase {
 
     DogLog.log("Hopper/Hopper State", currHopperState.toString());
 
-    rollerMotorIO.updateInputs(rollerMotorIOInputs);
+    leadRollerMotorIO.updateInputs(leadRollerMotorIOInputs);
+    followRollerMotorIO.updateInputs(followRollerMotorIOInputs);
   }
 }

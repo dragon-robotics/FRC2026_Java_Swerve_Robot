@@ -1,6 +1,7 @@
 package frc.robot.subsystems.hopper;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 
@@ -12,6 +13,13 @@ public class HopperIOTalonFX implements HopperIO {
   protected final String motorName;
 
   protected final VelocityTorqueCurrentFOC motorVelocityTorqueCurrentFOCRequest;
+
+  public HopperIOTalonFX(
+      int canID, TalonFXConfiguration config, String motorName, Follower followCfg) {
+    this(canID, config, motorName); // reuse common init
+    motor.setControl(followCfg);
+  }
+
 
   public HopperIOTalonFX(int canID, TalonFXConfiguration config, String motorName) {
     this.canID = canID;

@@ -1,6 +1,7 @@
 package frc.robot.subsystems.hopper;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 import edu.wpi.first.math.system.plant.DCMotor;
 
@@ -12,6 +13,33 @@ public class HopperIOTalonFXSim extends HopperIOTalonFX {
       int canID, TalonFXConfiguration config, String motorType, String motorName) {
 
     super(canID, config, motorName);
+
+    switch (motorType) {
+      case "KrakenX60":
+        this.motorType = DCMotor.getKrakenX60(1);
+        break;
+      case "KrakenX60_FOC":
+        this.motorType = DCMotor.getKrakenX60Foc(1);
+        break;
+      case "KrakenX44":
+        this.motorType = DCMotor.getKrakenX44(1);
+        break;
+      case "KrakenX44_FOC":
+        this.motorType = DCMotor.getKrakenX44Foc(1);
+        break;
+      default:
+        this.motorType = DCMotor.getKrakenX60(1);
+    }
+  }
+
+  public HopperIOTalonFXSim(
+      int canID,
+      TalonFXConfiguration config,
+      String motorType,
+      String motorName,
+      Follower followCfg) {
+
+    super(canID, config, motorName, followCfg);
 
     switch (motorType) {
       case "KrakenX60":
