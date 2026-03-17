@@ -12,6 +12,7 @@ import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.hardware.core.CoreCANcoder;
@@ -138,6 +139,7 @@ public final class IntakeConstants {
                   .withTorqueOpenLoopRampPeriod(Seconds.of(0.1))
                   .withVoltageOpenLoopRampPeriod(Seconds.of(0.1)))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
+          /* Fast profile for deploying the intake to overcome the constant force spring of the extending hopper */
           .withSlot0(
               new Slot0Configs()
                   .withKS(0)
@@ -149,6 +151,18 @@ public final class IntakeConstants {
                   .withKD(0)
                   .withGravityType(GravityTypeValue.Arm_Cosine)
                   .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
+          /* Slow profile for deploying the intake to overcome the constant force spring of the extending hopper */
+          .withSlot1(
+              new Slot1Configs()
+                  .withKS(0)
+                  .withKV(0)
+                  .withKA(0)
+                  .withKG(0)
+                  .withKP(0)
+                  .withKI(0)
+                  .withKD(0)
+                  .withGravityType(GravityTypeValue.Arm_Cosine)
+                  .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))          
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(0)
