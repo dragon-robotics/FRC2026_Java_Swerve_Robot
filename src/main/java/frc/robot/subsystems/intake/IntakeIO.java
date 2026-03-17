@@ -16,7 +16,7 @@ public interface IntakeIO {
     throw new UnsupportedOperationException("setMotorRPM is not implemented");
   }
 
-  default void setMotorPosition(double setpoint) {
+  default void setMotorPosition(double setpoint, int slotID) {
     throw new UnsupportedOperationException("setMotorPosition is not implemented");
   }
 

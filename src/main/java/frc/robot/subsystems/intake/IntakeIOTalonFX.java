@@ -123,8 +123,8 @@ public class IntakeIOTalonFX implements IntakeIO {
   }
 
   @Override
-  public void setMotorPosition(double setpoint) {
-    motor.setControl(motorMotionMagicExpoTorqueCurrentFOCRequest.withPosition(setpoint));
+  public void setMotorPosition(double setpoint, int slotID) {
+    motor.setControl(motorMotionMagicExpoTorqueCurrentFOCRequest.withPosition(setpoint).withSlot(slotID));
   }
 
   @Override

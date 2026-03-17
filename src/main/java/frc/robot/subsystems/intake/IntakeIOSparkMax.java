@@ -3,6 +3,7 @@ package frc.robot.subsystems.intake;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkBase.ControlType;
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
@@ -113,8 +114,8 @@ public class IntakeIOSparkMax implements IntakeIO {
   }
 
   @Override
-  public void setMotorPosition(double setpoint) {
-    motorController.setSetpoint(setpoint, ControlType.kMAXMotionPositionControl);
+  public void setMotorPosition(double setpoint, int slotID) {
+    motorController.setSetpoint(setpoint, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.values()[slotID]);
   }
 
   @Override
