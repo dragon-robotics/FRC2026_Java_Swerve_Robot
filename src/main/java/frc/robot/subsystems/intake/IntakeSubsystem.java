@@ -98,16 +98,16 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeRollerIO.setMotorPercentage(0.0);
   }
 
-  public void setIntakeArmSetpoint(double setpoint) {
-    intakeArmIO.setMotorPosition(setpoint);
+  public void setIntakeArmSetpoint(double setpoint, int slotID) {
+    intakeArmIO.setMotorPosition(setpoint, slotID);
   }
 
   public void deployIntakeArm() {
-    intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION);
+    intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION, 0);
   }
 
   public void stowIntakeArm() {
-    intakeArmIO.setMotorPosition(INTAKE_ARM_STOWED_POSITION);
+    intakeArmIO.setMotorPosition(INTAKE_ARM_STOWED_POSITION, 1);
   }
 
   /* Getters */

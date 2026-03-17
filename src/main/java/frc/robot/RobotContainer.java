@@ -443,14 +443,14 @@ public class RobotContainer {
         .a()
         .whileTrue(
             new RunCommand(
-                () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION),
+                () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION, 0),
                 intakeSubsystem));
 
     operatorController
         .b()
         .whileTrue(
             new RunCommand(
-                () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_STOWED_POSITION),
+                () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_STOWED_POSITION, 1),
                 intakeSubsystem));
 
     /* Manual Intake Roller */
