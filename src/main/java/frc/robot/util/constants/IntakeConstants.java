@@ -58,11 +58,11 @@ public final class IntakeConstants {
   public static final double OUTTAKE_ROLLER_VOLTAGE = -12.0;
   public static final double OUTTAKE_ROLLER_RPM = -6000.0;
 
-  public static final double INTAKE_ARM_STOWED_POSITION = -0.25;
-  public static final double INTAKE_ARM_STOWED_ANGLE_DEG = Units.degreesToRadians(90);
+
+  public static final double INTAKE_ARM_STOWED_POSITION = 0.25;
+  public static final double INTAKE_ARM_WOKTOSS_POSITION = 0.125;
   public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0;
-  public static final double INTAKE_ARM_DEPLOYED_ANGLE_DEG = Units.degreesToRadians(0);
-  public static final double INTAKE_ARM_POSITION_TOLERANCE = 5.0;
+  public static final double INTAKE_ARM_POSITION_TOLERANCE = 0.05;
 
   public static final TalonFXConfiguration INTAKE_ROLLER_TALONFX_CONFIG =
       new TalonFXConfiguration()
