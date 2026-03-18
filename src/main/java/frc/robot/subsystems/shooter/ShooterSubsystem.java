@@ -5,8 +5,10 @@ import static frc.robot.util.constants.ShooterConstants.*;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.shooter.ShooterIO.ShooterIOInputs;
+import frc.robot.io.MotorIO;
+import frc.robot.io.MotorIO.MotorIOInputs;
 import frc.robot.util.constants.ShooterConstants;
+import frc.robot.util.constants.ShooterConstants.ShooterHoodSettings;
 import frc.robot.util.constants.ShooterConstants.ShooterSetpoint;
 
 public class ShooterSubsystem extends SubsystemBase {
@@ -20,26 +22,26 @@ public class ShooterSubsystem extends SubsystemBase {
   protected ShooterState desiredShooterState;
   protected ShooterState currShooterState;
 
-  protected final ShooterIO shooterHoodIO;
-  protected final ShooterIO shooterKickerIO;
-  protected final ShooterIO shooterLeadIO, shooterFollowIO;
-  protected final ShooterIOInputs shooterLeadInputs, shooterFollowInputs;
+  protected final MotorIO shooterHoodIO;
+  protected final MotorIO shooterKickerIO;
+  protected final MotorIO shooterLeadIO, shooterFollowIO;
+  protected final MotorIOInputs shooterLeadInputs, shooterFollowInputs;
 
   protected double targetRPM;
   protected ShooterHoodSettings hoodSetting;
 
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem(
-      ShooterIO shooterLeadIO,
-      ShooterIO shooterFollowIO,
-      ShooterIO shooterKickerIO,
-      ShooterIO shooterHoodIO) {
+      MotorIO shooterLeadIO,
+      MotorIO shooterFollowIO,
+      MotorIO shooterKickerIO,
+      MotorIO shooterHoodIO) {
     this.shooterLeadIO = shooterLeadIO;
     this.shooterFollowIO = shooterFollowIO;
     this.shooterKickerIO = shooterKickerIO;
     this.shooterHoodIO = shooterHoodIO;
-    this.shooterLeadInputs = new ShooterIOInputs();
-    this.shooterFollowInputs = new ShooterIOInputs();
+    this.shooterLeadInputs = new MotorIOInputs();
+    this.shooterFollowInputs = new MotorIOInputs();
 
     // initialize shooter states
     this.desiredShooterState = ShooterState.STOP;

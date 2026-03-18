@@ -4,7 +4,8 @@ import static frc.robot.util.constants.ClimberConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.climber.ClimberIO.ClimberIOInputs;
+import frc.robot.io.MotorIO;
+import frc.robot.io.MotorIO.MotorIOInputs;
 
 public class ClimberSubsystem extends SubsystemBase {
 
@@ -18,12 +19,12 @@ public class ClimberSubsystem extends SubsystemBase {
   protected ClimberState currentClimberState;
   protected ClimberState desiredClimberState;
 
-  protected ClimberIO climberMotorIO;
-  protected ClimberIOInputs climberMotorInputs;
+  protected MotorIO climberMotorIO;
+  protected MotorIOInputs climberMotorInputs;
 
-  public ClimberSubsystem(ClimberIO climbMotorIO) {
+  public ClimberSubsystem(MotorIO climbMotorIO) {
     this.climberMotorIO = climbMotorIO;
-    this.climberMotorInputs = new ClimberIOInputs();
+    this.climberMotorInputs = new MotorIOInputs();
 
     // initailize climber states
     this.desiredClimberState = ClimberState.STOWED;

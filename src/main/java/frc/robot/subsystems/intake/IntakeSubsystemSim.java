@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
+import frc.robot.io.MotorIO;
 
 public class IntakeSubsystemSim extends IntakeSubsystem {
 
@@ -43,7 +44,7 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
    *
    * @param armSubsystem The arm subsystem to visualize
    */
-  public IntakeSubsystemSim(IntakeIO intakeRollerIO, IntakeIO intakeArmIO) {
+  public IntakeSubsystemSim(MotorIO intakeRollerIO, MotorIO intakeArmIO) {
     super(intakeRollerIO, intakeArmIO);
 
     // Get arm length from subsystem (in meters)

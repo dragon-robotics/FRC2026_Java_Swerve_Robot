@@ -45,25 +45,18 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.generated.TunerConstants;
+import frc.robot.io.TalonFXMotorIO;
+import frc.robot.io.TalonFXMotorIOSim;
+import frc.robot.io.TalonFXMotorIOTunable;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Superstructure;
-import frc.robot.subsystems.hopper.HopperIOTalonFX;
-import frc.robot.subsystems.hopper.HopperIOTalonFXSim;
-import frc.robot.subsystems.hopper.HopperIOTalonFXTunable;
 import frc.robot.subsystems.hopper.HopperSubsystem;
-import frc.robot.subsystems.intake.IntakeIOTalonFX;
-import frc.robot.subsystems.intake.IntakeIOTalonFXSim;
-import frc.robot.subsystems.intake.IntakeIOTalonFXTunable;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystemSim;
-import frc.robot.subsystems.shooter.ShooterIOTalonFX;
-import frc.robot.subsystems.shooter.ShooterIOTalonFXSim;
-import frc.robot.subsystems.shooter.ShooterIOTalonFXTunable;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.util.constants.OperatorConstants;
 import frc.robot.util.constants.SwerveConstants;
 import frc.robot.util.constants.VisionConstants;
-import java.util.Optional;
 
 public class RobotContainer {
 
@@ -128,32 +121,32 @@ public class RobotContainer {
       case COMP:
         intakeSubsystem =
             new IntakeSubsystem(
-                new IntakeIOTalonFX(
+                new TalonFXMotorIO(
                     INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
-                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
+                new TalonFXMotorIO(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         hopperSubsystem =
             new HopperSubsystem(
-                new HopperIOTalonFX(
+                new TalonFXMotorIO(
                     HOPPER_ROLLER_LEAD_MOTOR_ID,
                     HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
                     "Hopper Lead Motor"),
-                new HopperIOTalonFX(
+                new TalonFXMotorIO(
                     HOPPER_ROLLER_FOLLOW_MOTOR_ID,
                     HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
                     "Hopper Follow Motor",
                     new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
         shooterSubsystem =
             new ShooterSubsystem(
-                new ShooterIOTalonFX(
+                new TalonFXMotorIO(
                     SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
-                new ShooterIOTalonFX(
+                new TalonFXMotorIO(
                     SHOOTER_FOLLOW_MOTOR_ID,
                     SHOOTER_FOLLOW_TALONFX_CONFIG,
                     "Shooter Follow",
                     new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
-                new ShooterIOTalonFX(
+                new TalonFXMotorIO(
                     SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
-                new ShooterIOTalonFX(
+                new TalonFXMotorIO(
                     SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
         // visionSubsystem =
@@ -172,25 +165,25 @@ public class RobotContainer {
       case SIM:
         intakeSubsystem =
             new IntakeSubsystemSim(
-                new IntakeIOTalonFXSim(
+                new TalonFXMotorIOSim(
                     INTAKE_ROLLER_MOTOR_ID,
                     INTAKE_ROLLER_TALONFX_CONFIG,
                     "KrakenX60_FOC",
                     "Intake Roller"),
-                new IntakeIOTalonFXSim(
+                new TalonFXMotorIOSim(
                     INTAKE_ARM_MOTOR_ID,
                     INTAKE_ARM_TALONFX_CONFIG,
                     "KrakenX60_FOC",
                     "Intake Arm",
-                    Optional.of(INTAKE_ARM_CANCODER_CONFIG)));
+                    INTAKE_ARM_CANCODER_CONFIG));
         hopperSubsystem =
             new HopperSubsystem(
-                new HopperIOTalonFXSim(
+                new TalonFXMotorIOSim(
                     HOPPER_ROLLER_LEAD_MOTOR_ID,
                     HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
                     "KrakenX60_FOC",
                     "Hopper Lead Motor"),
-                new HopperIOTalonFXSim(
+                new TalonFXMotorIOSim(
                     HOPPER_ROLLER_FOLLOW_MOTOR_ID,
                     HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
                     "KrakenX60_FOC",
@@ -198,23 +191,23 @@ public class RobotContainer {
                     new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)));
         shooterSubsystem =
             new ShooterSubsystem(
-                new ShooterIOTalonFXSim(
+                new TalonFXMotorIOSim(
                     SHOOTER_LEAD_MOTOR_ID,
                     SHOOTER_LEAD_TALONFX_CONFIG,
                     "KrakenX60_FOC",
                     "Shooter Lead"),
-                new ShooterIOTalonFXSim(
+                new TalonFXMotorIOSim(
                     SHOOTER_FOLLOW_MOTOR_ID,
                     SHOOTER_FOLLOW_TALONFX_CONFIG,
                     "KrakenX60_FOC",
                     "Shooter Follow",
                     new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
-                new ShooterIOTalonFXSim(
+                new TalonFXMotorIOSim(
                     SHOOTER_KICKER_MOTOR_ID,
                     SHOOTER_KICKER_TALONFX_CONFIG,
                     "KrakenX60_FOC",
                     "Shooter Kicker"),
-                new ShooterIOTalonFXSim(
+                new TalonFXMotorIOSim(
                     SHOOTER_HOOD_MOTOR_ID,
                     SHOOTER_HOOD_TALONFX_CONFIG,
                     "KrakenX44",
@@ -254,33 +247,33 @@ public class RobotContainer {
       case TEST:
         intakeSubsystem =
             new IntakeSubsystem(
-                new IntakeIOTalonFXTunable(
+                new TalonFXMotorIOTunable(
                     INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
-                new IntakeIOTalonFXTunable(
+                new TalonFXMotorIOTunable(
                     INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         hopperSubsystem =
             new HopperSubsystem(
-                new HopperIOTalonFX(
+                new TalonFXMotorIOTunable(
                     HOPPER_ROLLER_LEAD_MOTOR_ID,
                     HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
                     "Hopper Lead Motor"),
-                new HopperIOTalonFX(
+                new TalonFXMotorIOTunable(
                     HOPPER_ROLLER_FOLLOW_MOTOR_ID,
                     HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
                     "Hopper Follow Motor",
                     new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
         shooterSubsystem =
             new ShooterSubsystem(
-                new ShooterIOTalonFXTunable(
+                new TalonFXMotorIOTunable(
                     SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
-                new ShooterIOTalonFXTunable(
+                new TalonFXMotorIOTunable(
                     SHOOTER_FOLLOW_MOTOR_ID,
                     SHOOTER_FOLLOW_TALONFX_CONFIG,
                     "Shooter Follow",
                     new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
-                new ShooterIOTalonFXTunable(
+                new TalonFXMotorIOTunable(
                     SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
-                new ShooterIOTalonFXTunable(
+                new TalonFXMotorIOTunable(
                     SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
         // visionSubsystem =
@@ -299,32 +292,32 @@ public class RobotContainer {
       default: // Default should be in comp mode //
         intakeSubsystem =
             new IntakeSubsystem(
-                new IntakeIOTalonFX(
+                new TalonFXMotorIO(
                     INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
-                new IntakeIOTalonFX(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
+                new TalonFXMotorIO(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         hopperSubsystem =
             new HopperSubsystem(
-                new HopperIOTalonFX(
+                new TalonFXMotorIO(
                     HOPPER_ROLLER_LEAD_MOTOR_ID,
                     HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
                     "Hopper Lead Motor"),
-                new HopperIOTalonFX(
+                new TalonFXMotorIO(
                     HOPPER_ROLLER_FOLLOW_MOTOR_ID,
                     HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
                     "Hopper Follow Motor",
                     new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
         shooterSubsystem =
             new ShooterSubsystem(
-                new ShooterIOTalonFX(
+                new TalonFXMotorIO(
                     SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
-                new ShooterIOTalonFX(
+                new TalonFXMotorIO(
                     SHOOTER_FOLLOW_MOTOR_ID,
                     SHOOTER_FOLLOW_TALONFX_CONFIG,
                     "Shooter Follow",
                     new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
-                new ShooterIOTalonFX(
+                new TalonFXMotorIO(
                     SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
-                new ShooterIOTalonFX(
+                new TalonFXMotorIO(
                     SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
         // visionSubsystem =

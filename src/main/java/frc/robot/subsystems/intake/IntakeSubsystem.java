@@ -8,7 +8,8 @@ import static frc.robot.util.constants.IntakeConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.intake.IntakeIO.IntakeIOInputs;
+import frc.robot.io.MotorIO;
+import frc.robot.io.MotorIO.MotorIOInputs;
 
 public class IntakeSubsystem extends SubsystemBase {
 
@@ -24,18 +25,18 @@ public class IntakeSubsystem extends SubsystemBase {
   protected IntakeState currIntakeState;
   protected IntakeState desiredIntakeState;
 
-  protected final IntakeIO intakeRollerIO;
-  protected final IntakeIO intakeArmIO;
-  protected final IntakeIOInputs intakeRollerInputs;
-  protected final IntakeIOInputs intakeArmInputs;
+  protected final MotorIO intakeRollerIO;
+  protected final MotorIO intakeArmIO;
+  protected final MotorIOInputs intakeRollerInputs;
+  protected final MotorIOInputs intakeArmInputs;
 
   /** Creates a new IntakeSubsystem. */
-  public IntakeSubsystem(IntakeIO intakeRollerIO, IntakeIO intakeArmIO) {
+  public IntakeSubsystem(MotorIO intakeRollerIO, MotorIO intakeArmIO) {
 
     this.intakeRollerIO = intakeRollerIO;
     this.intakeArmIO = intakeArmIO;
-    this.intakeRollerInputs = new IntakeIOInputs();
-    this.intakeArmInputs = new IntakeIOInputs();
+    this.intakeRollerInputs = new MotorIOInputs();
+    this.intakeArmInputs = new MotorIOInputs();
 
     /* Initialize intake states */
     currIntakeState = IntakeState.HOME;
@@ -103,11 +104,11 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void deployIntakeArm() {
-    intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION, 0);
+    intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_FAST_PID_SLOT);
   }
 
   public void stowIntakeArm() {
-    intakeArmIO.setMotorPosition(INTAKE_ARM_STOWED_POSITION, 1);
+    intakeArmIO.setMotorPosition(INTAKE_ARM_STOWED_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
   }
 
   /* Getters */

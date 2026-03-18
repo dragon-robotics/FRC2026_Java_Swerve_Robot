@@ -17,6 +17,8 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
+import frc.robot.io.MotorIO;
+import frc.robot.io.TalonFXMotorIOSim;
 import frc.robot.subsystems.intake.IntakeIOSparkMaxSim;
 import frc.robot.subsystems.intake.IntakeIOTalonFXSim;
 
@@ -36,7 +38,7 @@ public class ClimberSubsystemSim extends ClimberSubsystem {
 
   private final SingleJointedArmSim climberSim;
 
-  public ClimberSubsystemSim(ClimberIO climberMotorIO) {
+  public ClimberSubsystemSim(MotorIO climberMotorIO) {
     super(climberMotorIO);
 
     climberLength = 1;
@@ -84,7 +86,7 @@ public class ClimberSubsystemSim extends ClimberSubsystem {
   public void simulationPeriodic() {
 
     // Apply motor voltage to physics sim
-    if (climberMotorIO instanceof ClimberIOTalonFXSim talonIO) {
+    if (climberMotorIO instanceof TalonFXMotorIOSim talonIO) {
       climberSim.setInput(talonIO.getSimState().getMotorVoltage());
     } else {
       climberSim.setInput(climberMotorInputs.getMotorVelocity());

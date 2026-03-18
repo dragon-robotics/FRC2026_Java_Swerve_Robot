@@ -4,7 +4,8 @@ import static frc.robot.util.constants.HopperConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.hopper.HopperIO.HopperIOInputs;
+import frc.robot.io.MotorIO;
+import frc.robot.io.MotorIO.MotorIOInputs;
 
 public class HopperSubsystem extends SubsystemBase {
 
@@ -20,21 +21,21 @@ public class HopperSubsystem extends SubsystemBase {
   private HopperState desiredHopperState;
   // inputs
 
-  private final HopperIO leadRollerMotorIO;
-  private final HopperIO followRollerMotorIO;
+  private final MotorIO leadRollerMotorIO;
+  private final MotorIO followRollerMotorIO;
 
   // hardware layer
-  private final HopperIOInputs leadRollerMotorIOInputs;
-  private final HopperIOInputs followRollerMotorIOInputs;
+  private final MotorIOInputs leadRollerMotorIOInputs;
+  private final MotorIOInputs followRollerMotorIOInputs;
 
   /* Creates new HopperSubsystem */
-  public HopperSubsystem(HopperIO leadRollerMotorIO, HopperIO followRollerMotorIO) {
+  public HopperSubsystem(MotorIO leadRollerMotorIO, MotorIO followRollerMotorIO) {
 
     this.leadRollerMotorIO = leadRollerMotorIO;
     this.followRollerMotorIO = followRollerMotorIO;
 
-    this.leadRollerMotorIOInputs = new HopperIOInputs();
-    this.followRollerMotorIOInputs = new HopperIOInputs();
+    this.leadRollerMotorIOInputs = new MotorIOInputs();
+    this.followRollerMotorIOInputs = new MotorIOInputs();
 
     this.currHopperState = HopperState.STOP;
     this.desiredHopperState = HopperState.STOP;

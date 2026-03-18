@@ -41,6 +41,9 @@ public final class IntakeConstants {
   public static final int INTAKE_ARM_CANCODER_ID = 0;
   public static final int INTAKE_ROLLER_CANCODER_ID = 1;
 
+  public static final int INTAKE_ARM_FAST_PID_SLOT = 0;
+  public static final int INTAKE_ARM_SLOW_PID_SLOT = 1;
+
   public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(18);
   public static final double INTAKE_ARM_MASS_KG = Units.lbsToKilograms(10);
   public static final double INTAKE_ARM_GEAR_RATIO = 36;
