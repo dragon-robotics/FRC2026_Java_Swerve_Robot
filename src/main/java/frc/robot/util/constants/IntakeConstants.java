@@ -165,7 +165,7 @@ public final class IntakeConstants {
                   .withKI(0)
                   .withKD(0)
                   .withGravityType(GravityTypeValue.Arm_Cosine)
-                  .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))          
+                  .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(0)
