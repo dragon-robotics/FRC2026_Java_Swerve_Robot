@@ -18,6 +18,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import frc.robot.io.MotorIO;
+import frc.robot.io.SparkMaxMotorIOSim;
+import frc.robot.io.TalonFXMotorIOSim;
 
 public class IntakeSubsystemSim extends IntakeSubsystem {
 
@@ -80,9 +82,9 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
                 "Arm", armLength * visualScaleFactor, 0, ARM_WIDTH, new Color8Bit(Color.kBlue)));
 
     var motorType =
-        intakeArmIO instanceof IntakeIOTalonFXSim
-            ? ((IntakeIOTalonFXSim) intakeArmIO).getMotorType()
-            : ((IntakeIOSparkMaxSim) intakeArmIO).getMotorType();
+        intakeArmIO instanceof TalonFXMotorIOSim
+            ? ((TalonFXMotorIOSim) intakeArmIO).getMotorType()
+            : ((SparkMaxMotorIOSim) intakeArmIO).getMotorType();
 
     // Initialize simulation
     intakeArmSim =
@@ -112,7 +114,7 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
     // armSim.setInput(getVoltage());
     // Sets input voltage based on whether it is talon fx or not
     // Use motor voltage for TalonFX simulation input, otherwise get the motor voltage from inputs
-    if (intakeArmIO instanceof IntakeIOTalonFXSim talonIO) {
+    if (intakeArmIO instanceof TalonFXMotorIOSim talonIO) {
       intakeArmSim.setInput(talonIO.getSimState().getMotorVoltage());
     } else {
       intakeArmSim.setInput(intakeArmInputs.getMotorVoltage());
@@ -129,11 +131,11 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
         RadiansPerSecond.of(intakeArmSim.getVelocityRadPerSec() * INTAKE_ARM_GEAR_RATIO)
             .in(RotationsPerSecond);
 
-    if (intakeArmIO instanceof IntakeIOTalonFXSim talonIO) {
+    if (intakeArmIO instanceof TalonFXMotorIOSim talonIO) {
       talonIO.getSimState().setRawRotorPosition(motorPosition);
       talonIO.getSimState().setRotorVelocity(motorVelocity);
     } else {
-      ((IntakeIOSparkMaxSim) intakeArmIO)
+      ((SparkMaxMotorIOSim) intakeArmIO)
           .getMotorSim()
           .iterate(motorVelocity, RoboRioSim.getVInVoltage(), 0.02);
     }

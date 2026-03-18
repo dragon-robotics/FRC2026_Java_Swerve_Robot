@@ -49,7 +49,7 @@ public class TalonFXMotorIOSim extends TalonFXMotorIO {
         return motor.getSimState();
     }
 
-    public DCMotor getMotorModel() {
+    public DCMotor getMotorType() {
         return motorModel;
     }
 

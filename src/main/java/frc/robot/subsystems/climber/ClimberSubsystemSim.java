@@ -18,9 +18,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import frc.robot.io.MotorIO;
+import frc.robot.io.SparkMaxMotorIOSim;
 import frc.robot.io.TalonFXMotorIOSim;
-import frc.robot.subsystems.intake.IntakeIOSparkMaxSim;
-import frc.robot.subsystems.intake.IntakeIOTalonFXSim;
 
 public class ClimberSubsystemSim extends ClimberSubsystem {
   private final Mechanism2d mech;
@@ -64,9 +63,9 @@ public class ClimberSubsystemSim extends ClimberSubsystem {
                 new Color8Bit(Color.kBlue)));
 
     var motorType =
-        climberMotorIO instanceof IntakeIOTalonFXSim
-            ? ((IntakeIOTalonFXSim) climberMotorIO).getMotorType()
-            : ((IntakeIOSparkMaxSim) climberMotorIO).getMotorType();
+        climberMotorIO instanceof TalonFXMotorIOSim
+            ? ((TalonFXMotorIOSim) climberMotorIO).getMotorType()
+            : ((SparkMaxMotorIOSim) climberMotorIO).getMotorType();
 
     climberSim =
         new SingleJointedArmSim(
@@ -101,11 +100,11 @@ public class ClimberSubsystemSim extends ClimberSubsystem {
         RadiansPerSecond.of(climberSim.getVelocityRadPerSec() * CLIMBER_GEAR_RATIO)
             .in(RotationsPerSecond);
 
-    if (climberMotorIO instanceof IntakeIOTalonFXSim talonIO) {
+    if (climberMotorIO instanceof TalonFXMotorIOSim talonIO) {
       talonIO.getSimState().setRawRotorPosition(motorPosition);
       talonIO.getSimState().setRotorVelocity(motorVelocity);
     } else {
-      ((IntakeIOSparkMaxSim) climberMotorIO)
+      ((SparkMaxMotorIOSim) climberMotorIO)
           .getMotorSim()
           .iterate(motorVelocity, RoboRioSim.getVInVoltage(), 0.02);
     }
