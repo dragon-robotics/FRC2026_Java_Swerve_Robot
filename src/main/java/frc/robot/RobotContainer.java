@@ -370,6 +370,7 @@ public class RobotContainer {
     // Hopper
     stopHopperCommand = superstructureSubsystem.stopHopperCommand();
     indexToShooterCommand = superstructureSubsystem.indexToShooterCommand();
+    indexToIntakeCommand = superstructureSubsystem.indexToIntakeCommand();
 
     // Shooter
     stopShooterCommand = superstructureSubsystem.stopShooterCommand();
