@@ -93,10 +93,10 @@ public final class ShooterConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(80))
+                  .withStatorCurrentLimit(Amps.of(100))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(40))
-                  .withSupplyCurrentLowerLimit(20)
+                  .withSupplyCurrentLimit(Amps.of(60))
+                  .withSupplyCurrentLowerLimit(Amps.of(40))
                   .withSupplyCurrentLowerTime(1))
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(12).withPeakReverseVoltage(-12))
           .withOpenLoopRamps(
@@ -113,7 +113,7 @@ public final class ShooterConstants {
                   .withKS(4.325)
                   .withKV(0.013)
                   .withKA(0.0)
-                  .withKP(1.5)
+                  .withKP(3)
                   .withKI(0.0)
                   .withKD(0.0));
 
