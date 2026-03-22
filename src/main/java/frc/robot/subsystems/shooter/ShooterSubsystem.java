@@ -103,12 +103,12 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void runKicker() {
     // shooterKickerIO.setMotorRPM(SHOOTER_KICKER_RPM);
-    shooterKickerIO.setMotorPercentage(-0.75); // Run kicker at full RPM for shooting
+    shooterKickerIO.setMotorPercentage(0.75); // Run kicker at full RPM for shooting
   }
 
   public void prepKicker() {
     // shooterKickerIO.setMotorRPM(SHOOTER_KICKER_RPM * 0.3); // Run at 30% of kicker RPM for prep
-    shooterKickerIO.setMotorPercentage(-0.75 * 0.3); // Run kicker at 30% of full RPM for prep
+    shooterKickerIO.setMotorPercentage(0.75 * 0.3); // Run kicker at 30% of full RPM for prep
   }
 
   public void stopKicker() {
@@ -116,8 +116,8 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterKickerIO.setMotorPercentage(0);
   }
 
-  public void setHoodAngle() {
-    shooterHoodIO.setMotorPosition(hoodSetting.getSetting());
+  public void setHoodAngle(double position) {
+    shooterHoodIO.setMotorPosition(position);
   }
 
   public void setSetpointForDistance(double distanceToTarget) {
@@ -150,6 +150,7 @@ public class ShooterSubsystem extends SubsystemBase {
       case STOP:
         stopShooter();
         stopKicker();
+        setHoodAngle(0);
         break;
       case PREPFUEL:
         prepShooter();
@@ -157,6 +158,7 @@ public class ShooterSubsystem extends SubsystemBase {
       case SHOOT:
         runShooter();
         runKicker();
+        setHoodAngle(1.25);
         break;
       case TRANSITION:
         switch (desiredShooterState) {
@@ -174,7 +176,9 @@ public class ShooterSubsystem extends SubsystemBase {
             break;
           case SHOOT:
             runShooter();
-            if (MathUtil.isNear(targetRPM, getShooterSpeed(), 5)) {
+            runKicker();
+            setHoodAngle(1.5);
+            if (MathUtil.isNear(targetRPM, getShooterSpeed() * 60, 5)) {
               currShooterState = ShooterState.SHOOT;
             }
             break;
@@ -188,7 +192,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public void periodic() {
 
     // Set Hood Angle every loop to ensure it reaches the desired position
-    setHoodAngle();
+    // setHoodAngle();
 
     // This method will be called once per scheduler run
     handleStateTransition();

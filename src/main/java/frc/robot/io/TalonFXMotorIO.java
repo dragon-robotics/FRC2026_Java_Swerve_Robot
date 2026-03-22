@@ -1,11 +1,14 @@
 package frc.robot.io;
 
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
+
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -23,6 +26,7 @@ public class TalonFXMotorIO implements MotorIO {
   protected final VelocityTorqueCurrentFOC velocityRequest;
   protected final MotionMagicVelocityTorqueCurrentFOC mmVelocityRequest;
   protected final MotionMagicExpoTorqueCurrentFOC mmPositionRequest;
+  protected final PositionVoltage positionVoltageRequest;
 
   /** Standard motor (no follower, no CANcoder). */
   public TalonFXMotorIO(int canID, TalonFXConfiguration config, String motorName) {
@@ -61,6 +65,7 @@ public class TalonFXMotorIO implements MotorIO {
     velocityRequest = new VelocityTorqueCurrentFOC(0);
     mmVelocityRequest = new MotionMagicVelocityTorqueCurrentFOC(0);
     mmPositionRequest = new MotionMagicExpoTorqueCurrentFOC(0);
+    positionVoltageRequest = new PositionVoltage(INTAKE_ARM_DEPLOYED_POSITION);
 
     // Apply CANcoder config if present
     canCoderConfig.ifPresent(
@@ -105,12 +110,12 @@ public class TalonFXMotorIO implements MotorIO {
 
   @Override
   public void setMotorPosition(double setpoint) {
-    motor.setControl(mmPositionRequest.withPosition(setpoint));
+    motor.setControl(positionVoltageRequest.withPosition(setpoint));
   }
 
   @Override
   public void setMotorPosition(double setpoint, int slotID) {
-    motor.setControl(mmPositionRequest.withPosition(setpoint).withSlot(slotID));
+    motor.setControl(positionVoltageRequest.withPosition(setpoint).withSlot(slotID));
   }
 
   @Override

@@ -185,15 +185,7 @@ public final class ShooterConstants {
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
-                  .withInverted(InvertedValue.Clockwise_Positive))
-          .withSlot0(
-              new Slot0Configs()
-                  .withKS(14.4)
-                  .withKV(0.11)
-                  .withKA(0.0)
-                  .withKP(1.5)
-                  .withKI(0.0)
-                  .withKD(0.0));
+                  .withInverted(InvertedValue.Clockwise_Positive));
 
   public static final SparkBaseConfig SHOOTER_KICKER_SPARKMAX_CONFIG =
       new SparkMaxConfig()
@@ -220,16 +212,19 @@ public final class ShooterConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(20))
+                  .withStatorCurrentLimit(Amps.of(30))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(10)))
+                  .withSupplyCurrentLimit(Amps.of(20)))
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
           .withOpenLoopRamps(
               new OpenLoopRampsConfigs()
                   .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.1))
                   .withTorqueOpenLoopRampPeriod(Seconds.of(0.1))
                   .withVoltageOpenLoopRampPeriod(Seconds.of(0.1)))
-          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Brake)
+                  .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               new Slot0Configs()
                   .withKS(0.0)

@@ -84,6 +84,7 @@ public class RobotContainer {
   private Command outtakeCommand;
   private Command stowIntakeCommand;
   private Command deployIntakeCommand;
+  private Command wokTossIntakeCommand;
 
   /* Hopper Commands */
   private Command stopHopperCommand;
@@ -366,6 +367,7 @@ public class RobotContainer {
     outtakeCommand = superstructureSubsystem.outtakeCommand();
     deployIntakeCommand = superstructureSubsystem.deployIntakeCommand();
     stowIntakeCommand = superstructureSubsystem.stowIntakeCommand();
+    wokTossIntakeCommand = superstructureSubsystem.wokTossIntakeCommand();
 
     // Hopper
     stopHopperCommand = superstructureSubsystem.stopHopperCommand();
@@ -408,9 +410,9 @@ public class RobotContainer {
 
     /* Intake */
     driverController
-        .leftBumper()
+        .leftTrigger(0.2)
         .whileTrue(intakeCommand)
-        .whileTrue(indexToShooterCommand)
+        // .whileTrue(indexToShooterCommand)
         .onFalse(deployIntakeCommand)
         .onFalse(stopHopperCommand);
 
@@ -419,6 +421,13 @@ public class RobotContainer {
         .rightBumper()
         .whileTrue(outtakeCommand)
         .whileTrue(indexToIntakeCommand)
+        .onFalse(stopHopperCommand)
+        .onFalse(deployIntakeCommand);
+
+    /* Hopper */
+    driverController
+        .pov(180)
+        .whileTrue(indexToShooterCommand)
         .onFalse(stopHopperCommand);
 
     /* Shoot */
@@ -428,8 +437,8 @@ public class RobotContainer {
         // .whileTrue(shootDriveCommand)
         // .whileTrue(wokTossCommand)
         .onFalse(stopShooterCommand)
-        .onFalse(stopHopperCommand)
-        .onFalse(stowIntakeCommand);
+        .onFalse(stopHopperCommand);
+        // .onFalse(stowIntakeCommand);
 
     /* Operator Controls */
 
@@ -443,10 +452,8 @@ public class RobotContainer {
 
     operatorController
         .b()
-        .whileTrue(
-            new RunCommand(
-                () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_STOWED_POSITION, 1),
-                intakeSubsystem));
+        .whileTrue(wokTossIntakeCommand)
+        .onFalse(deployIntakeCommand);
 
     /* Manual Intake Roller */
     operatorController

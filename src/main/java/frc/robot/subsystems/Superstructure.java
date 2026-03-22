@@ -164,6 +164,10 @@ public class Superstructure extends SubsystemBase {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.HOME), intake);
   }
 
+  public Command wokTossIntakeCommand() {
+    return new InstantCommand(() -> intake.setDesiredState(IntakeState.WOKTOSS), intake);
+  }
+
   /* Hopper Commands */
 
   public Command indexToIntakeCommand() {

@@ -14,7 +14,7 @@ public final class HopperConstants {
   public static final double HOPPER_ROLLER_STATOR_CURRENT_LIMIT = 40.0;
   public static final double HOPPER_ROLLER_SUPPLY_CURRENT_LIMIT = 30.0;
   public static final double HOPPER_ROLLER_MAX_VOLTAGE = 12.0;
-  public static final double HOPPER_ROLLER_RAMP_RATE = 0.1;
+  public static final double HOPPER_ROLLER_RAMP_RATE = 0.5;
   public static final double HOPPER_ROLLER_DUTY_CYCLE = 1.0;
   public static final double HOPPER_ROLLER_RPM = 1000.0;
   public static final double HOPPER_ROLLER_REVERSE_RPM = -1000.0;
@@ -39,7 +39,7 @@ public final class HopperConstants {
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
-                  .withInverted(InvertedValue.Clockwise_Positive));
+                  .withInverted(InvertedValue.CounterClockwise_Positive));
 
   public static final TalonFXConfiguration HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG =
       new TalonFXConfiguration()

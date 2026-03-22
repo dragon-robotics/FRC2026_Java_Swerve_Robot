@@ -20,7 +20,8 @@ public class IntakeSubsystem extends SubsystemBase {
     DEPLOYED,
     DEPLOYING,
     STOWING,
-    WOKTOSS
+    WOKTOSS,
+    WOKTOSSING
   }
 
   protected IntakeState currIntakeState;
@@ -77,7 +78,7 @@ public class IntakeSubsystem extends SubsystemBase {
         currIntakeState = IntakeState.DEPLOYING;
         break;
       case WOKTOSS:
-        currIntakeState = IntakeState.WOKTOSS;
+        currIntakeState = IntakeState.WOKTOSSING;
         wokTossMovingToDeployed = true;
         break;
       default:
@@ -115,10 +116,16 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public void deployIntakeArm() {
     intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_FAST_PID_SLOT);
+    // intakeRollerIO.setMotorPercentage(0.5);
   }
 
   public void stowIntakeArm() {
     intakeArmIO.setMotorPosition(INTAKE_ARM_STOWED_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
+    // intakeRollerIO.setMotorPercentage(0.5);
+  }
+
+  public void wokTossIntakeArm() {
+    intakeArmIO.setMotorPosition(INTAKE_ARM_WOKTOSS_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
   }
 
   /* Getters */
@@ -226,21 +233,35 @@ public class IntakeSubsystem extends SubsystemBase {
           currIntakeState = IntakeState.HOME;
         }
         break;
-      case WOKTOSS:
-        // Oscillate the arm between the woktoss setpoint and the deployed setpoint
-        if (wokTossMovingToDeployed) {
-          intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
-          runOuttake();
-          if (isIntakeArmAtDeployed()) {
-            wokTossMovingToDeployed = false;
-          }
-        } else {
-          intakeArmIO.setMotorPosition(INTAKE_ARM_WOKTOSS_POSITION, INTAKE_ARM_FAST_PID_SLOT);
-          runIntake();
-          if (isIntakeArmAtWokToss()) {
-            wokTossMovingToDeployed = true;
-          }
+      case WOKTOSSING:
+        // Set intake arm to home setpoint
+        wokTossIntakeArm();
+        // Set intake rollers off
+        runIntake();
+        // When intake arm reaches setpoint, transition to HOME state
+        if (isIntakeArmAtWokToss()) {
+          currIntakeState = IntakeState.WOKTOSS;
         }
+        // // Oscillate the arm between the woktoss setpoint and the deployed setpoint
+        // if (wokTossMovingToDeployed) {
+        //   intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
+        //   runOuttake();
+        //   if (isIntakeArmAtDeployed()) {
+        //     wokTossMovingToDeployed = false;
+        //   }
+        // } else {
+        //   intakeArmIO.setMotorPosition(INTAKE_ARM_WOKTOSS_POSITION, INTAKE_ARM_FAST_PID_SLOT);
+        //   runIntake();
+        //   if (isIntakeArmAtWokToss()) {
+        //     wokTossMovingToDeployed = true;
+        //   }
+        // }
+        break;
+      case WOKTOSS:
+        // Set intake arm to home setpoint
+        wokTossIntakeArm();
+        // Set intake rollers off
+        runIntake();
         break;
     }
   }
