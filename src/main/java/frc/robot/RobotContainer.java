@@ -28,6 +28,7 @@ import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_TALONFX_C
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_LEAD_DUTY_CYCLE;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_LEAD_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_LEAD_TALONFX_CONFIG;
+import static frc.robot.util.constants.VisionConstants.APTAG_CAMERA_NAMES;
 
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
@@ -54,6 +55,9 @@ import frc.robot.subsystems.hopper.HopperSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystemSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.vision.VisionIOPhotonVision;
+import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
+import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.util.constants.OperatorConstants;
 import frc.robot.util.constants.SwerveConstants;
 import frc.robot.util.constants.VisionConstants;
@@ -65,7 +69,8 @@ public class RobotContainer {
   public final IntakeSubsystem intakeSubsystem;
   public final HopperSubsystem hopperSubsystem;
   public final ShooterSubsystem shooterSubsystem;
-  // public final VisionSubsystem visionSubsystem;
+  // public final ClimberSubsystem climberSubsystem;
+  public final VisionSubsystem visionSubsystem;
   public final Superstructure superstructureSubsystem;
 
   /* Driver Controllers */
@@ -144,18 +149,19 @@ public class RobotContainer {
                     SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
                 new TalonFXMotorIO(
                     SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
-        // visionSubsystem =
-        //     new VisionSubsystem(
-        //         swerveSubsystem,
-        //         swerveSubsystem::addVisionMeasurement,
-        //         // new VisionIOPhotonVision(
-        //         // APTAG_CAMERA_NAMES[0],
-        //         // VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
-        //         // swerveSubsystem::getState),
-        //         new VisionIOPhotonVision(
-        //             APTAG_CAMERA_NAMES[1],
-        //             VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
-        //             swerveSubsystem::getState));
+        // climberSubsystem = new ClimberSubsystem();
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                // new VisionIOPhotonVision(
+                // APTAG_CAMERA_NAMES[0],
+                // VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
+                // swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[1],
+                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    swerveSubsystem::getState));
         break;
       case SIM:
         intakeSubsystem =
@@ -207,36 +213,38 @@ public class RobotContainer {
                     SHOOTER_HOOD_TALONFX_CONFIG,
                     "KrakenX44",
                     "Shooter Hood"));
-        // visionSubsystem =
-        //     new VisionSubsystem(
-        //         swerveSubsystem,
-        //         swerveSubsystem::addVisionMeasurement,
-        //         // Auto-Align Cameras //
-        //         new VisionIOPhotonVisionSim(
-        //             APTAG_CAMERA_NAMES[0],
-        //             VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
-        //             swerveSubsystem::getState),
-        //         new VisionIOPhotonVisionSim(
-        //             APTAG_CAMERA_NAMES[1],
-        //             VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
-        //             swerveSubsystem::getState),
-        //         // Apriltag Pose-Estimation Cameras //
-        //         new VisionIOPhotonVisionSim(
-        //             APTAG_CAMERA_NAMES[2],
-        //             VisionConstants.APTAG_POSE_EST_CAM_FL_POS,
-        //             swerveSubsystem::getState),
-        //         new VisionIOPhotonVisionSim(
-        //             APTAG_CAMERA_NAMES[3],
-        //             VisionConstants.APTAG_POSE_EST_CAM_FR_POS,
-        //             swerveSubsystem::getState),
-        //         new VisionIOPhotonVisionSim(
-        //             APTAG_CAMERA_NAMES[4],
-        //             VisionConstants.APTAG_POSE_EST_CAM_BL_POS,
-        //             swerveSubsystem::getState),
-        //         new VisionIOPhotonVisionSim(
-        //             APTAG_CAMERA_NAMES[5],
-        //             VisionConstants.APTAG_POSE_EST_CAM_BR_POS,
-        //             swerveSubsystem::getState));
+        // climberSubsystem = new ClimberSubsystem();
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                // Auto-Align Cameras //
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[0],
+                //     VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
+                //     swerveSubsystem::getState),
+                new VisionIOPhotonVisionSim(
+                    APTAG_CAMERA_NAMES[1],
+                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    swerveSubsystem::getState)
+                // // Apriltag Pose-Estimation Cameras //
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[2],
+                //     VisionConstants.APTAG_POSE_EST_CAM_FL_POS,
+                //     swerveSubsystem::getState),
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[3],
+                //     VisionConstants.APTAG_POSE_EST_CAM_FR_POS,
+                //     swerveSubsystem::getState),
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[4],
+                //     VisionConstants.APTAG_POSE_EST_CAM_BL_POS,
+                //     swerveSubsystem::getState),
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[5],
+                //     VisionConstants.APTAG_POSE_EST_CAM_BR_POS,
+                //     swerveSubsystem::getState)
+                );
         break;
       case TEST:
         intakeSubsystem =
@@ -269,18 +277,19 @@ public class RobotContainer {
                     SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
                 new TalonFXMotorIOTunable(
                     SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
-        // visionSubsystem =
-        //     new VisionSubsystem(
-        //         swerveSubsystem,
-        //         swerveSubsystem::addVisionMeasurement,
-        //         // new VisionIOPhotonVision(
-        //         // APTAG_CAMERA_NAMES[0],
-        //         // VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
-        //         // swerveSubsystem::getState),
-        //         new VisionIOPhotonVision(
-        //             APTAG_CAMERA_NAMES[1],
-        //             VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
-        //             swerveSubsystem::getState));
+        // climberSubsystem = new ClimberSubsystem();
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                // new VisionIOPhotonVision(
+                // APTAG_CAMERA_NAMES[0],
+                // VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
+                // swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[1],
+                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    swerveSubsystem::getState));
         break;
       default: // Default should be in comp mode //
         intakeSubsystem =
@@ -312,18 +321,19 @@ public class RobotContainer {
                     SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
                 new TalonFXMotorIO(
                     SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
-        // visionSubsystem =
-        //     new VisionSubsystem(
-        //         swerveSubsystem,
-        //         swerveSubsystem::addVisionMeasurement,
-        //         new VisionIOPhotonVision(
-        //             APTAG_CAMERA_NAMES[0],
-        //             VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
-        //             swerveSubsystem::getState),
-        //         new VisionIOPhotonVision(
-        //             APTAG_CAMERA_NAMES[1],
-        //             VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
-        //             swerveSubsystem::getState));
+        // climberSubsystem = new ClimberSubsystem();
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[0],
+                    VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[1],
+                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    swerveSubsystem::getState));
         break;
     }
 

@@ -30,10 +30,10 @@ public final class VisionConstants {
   public static final Transform3d APTAG_ALIGN_RIGHT_CAM_POS =
       new Transform3d(
           new Translation3d(
-              Units.inchesToMeters(9.749),
-              Units.inchesToMeters(-4.910),
-              Units.inchesToMeters(7.3885)),
-          new Rotation3d(0, Units.degreesToRadians(-20), 0));
+              Units.inchesToMeters(-11.152),
+              Units.inchesToMeters(-7.579),
+              Units.inchesToMeters(20.930)),
+          new Rotation3d(0, Units.degreesToRadians(-12), 0));
 
   public static final Transform3d APTAG_POSE_EST_CAM_FL_POS =
       new Transform3d(
