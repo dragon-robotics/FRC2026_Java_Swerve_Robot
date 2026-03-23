@@ -58,7 +58,7 @@ public final class IntakeConstants {
   public static final double OUTTAKE_ROLLER_VOLTAGE = -12.0;
   public static final double OUTTAKE_ROLLER_RPM = -6000.0;
 
-  public static final double INTAKE_ARM_STOWED_POSITION = 0.25;
+  public static final double INTAKE_ARM_STOWED_POSITION = 0.37;
   public static final double INTAKE_ARM_WOKTOSS_POSITION = 0.25;
   public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0;
   public static final double INTAKE_ARM_POSITION_TOLERANCE = 0.025;
