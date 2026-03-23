@@ -2,6 +2,8 @@ package frc.robot.io;
 
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -13,6 +15,13 @@ import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Temperature;
+import edu.wpi.first.units.measure.Voltage;
+
 import java.util.Optional;
 
 public class TalonFXMotorIO implements MotorIO {
@@ -27,6 +36,18 @@ public class TalonFXMotorIO implements MotorIO {
   protected final MotionMagicVelocityTorqueCurrentFOC mmVelocityRequest;
   protected final MotionMagicExpoTorqueCurrentFOC mmPositionRequest;
   protected final PositionVoltage positionVoltageRequest;
+
+  // Cached status signals — refreshed in batch to optimize loop time and use opt-in to optimize CAN bus util
+  protected final StatusSignal<Voltage> motorVoltageSignal;
+  protected final StatusSignal<Current> statorCurrentSignal;
+  protected final StatusSignal<Temperature> deviceTempSignal;
+  protected final StatusSignal<AngularVelocity> velocitySignal;
+  protected final StatusSignal<Angle> positionSignal;
+
+  // Needs to be enabled for follower motors
+  protected final StatusSignal<Double> dutyCycleSignal;
+  protected final StatusSignal<Current> torqueCurrentSignal;
+
 
   /** Standard motor (no follower, no CANcoder). */
   public TalonFXMotorIO(int canID, TalonFXConfiguration config, String motorName) {
@@ -67,6 +88,34 @@ public class TalonFXMotorIO implements MotorIO {
     mmPositionRequest = new MotionMagicExpoTorqueCurrentFOC(0);
     positionVoltageRequest = new PositionVoltage(INTAKE_ARM_DEPLOYED_POSITION);
 
+    // Disabled all unused signals first
+    motor.optimizeBusUtilization(0);
+
+    // Initialize status signals that we are using
+    motorVoltageSignal = motor.getMotorVoltage();
+    statorCurrentSignal = motor.getStatorCurrent();
+    deviceTempSignal = motor.getDeviceTemp();
+    velocitySignal = motor.getVelocity();
+    positionSignal = motor.getPosition();
+    
+    dutyCycleSignal = motor.getDutyCycle();
+    torqueCurrentSignal = motor.getTorqueCurrent();
+
+    // Re-enable update for signals that we are using
+    BaseStatusSignal.setUpdateFrequencyForAll(
+        50,
+        dutyCycleSignal,      // required for Follower
+        motorVoltageSignal,   // required for Follower
+        torqueCurrentSignal,  // required for Follower
+        statorCurrentSignal,  // fault detection
+        velocitySignal,       // closed-loop feedback
+        positionSignal);      // closed-loop feedback
+    
+    deviceTempSignal.setUpdateFrequency(0.25); // temperature doesn't need to be updated as often, so we set it to 0.25Hz or every 4 seconds
+
+    // Register the motor to the signal registry
+    SignalRegistry.getInstance().registerMotorIO(this);
+
     // Apply CANcoder config if present
     canCoderConfig.ifPresent(
         ccCfg -> {
@@ -78,6 +127,16 @@ public class TalonFXMotorIO implements MotorIO {
                       .withFeedbackRemoteSensorID(canCoder.getDeviceID())
                       .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder));
           motor.getConfigurator().apply(updatedConfig);
+
+          canCoder.optimizeBusUtilization(0);
+
+          // Modify CANCoder signal frequencies to match the motor's closed-loop update rate for better synchronization
+          BaseStatusSignal.setUpdateFrequencyForAll(
+              50,
+              canCoder.getPosition(),
+              canCoder.getVelocity(),
+              canCoder.getAbsolutePosition()
+          );
         });
 
     if (canCoderConfig.isEmpty()) {
@@ -119,13 +178,33 @@ public class TalonFXMotorIO implements MotorIO {
   }
 
   @Override
+  public BaseStatusSignal[] getStatusSignals() {
+    return new BaseStatusSignal[] {
+      motorVoltageSignal,
+      statorCurrentSignal,
+      deviceTempSignal,
+      velocitySignal,
+      positionSignal,
+      dutyCycleSignal,
+      torqueCurrentSignal
+    };
+  }  
+
+  @Override
   public void updateInputs(MotorIOInputs inputs) {
-    inputs.setMotorConnected(motor.isConnected());
-    inputs.setMotorVoltage(motor.getMotorVoltage().getValueAsDouble());
-    inputs.setMotorCurrent(motor.getStatorCurrent().getValueAsDouble());
-    inputs.setMotorTemperature(motor.getDeviceTemp().getValueAsDouble());
-    inputs.setMotorVelocity(motor.getVelocity().getValueAsDouble());
-    inputs.setMotorPosition(motor.getPosition().getValueAsDouble());
+    inputs.setMotorConnected(
+        BaseStatusSignal.isAllGood(
+            motorVoltageSignal,
+            statorCurrentSignal,
+            velocitySignal,
+            positionSignal
+        )
+    );
+    inputs.setMotorVoltage(motorVoltageSignal.getValueAsDouble());
+    inputs.setMotorCurrent(statorCurrentSignal.getValueAsDouble());
+    inputs.setMotorTemperature(deviceTempSignal.getValueAsDouble());
+    inputs.setMotorVelocity(velocitySignal.getValueAsDouble());
+    inputs.setMotorPosition(positionSignal.getValueAsDouble());
   }
 
   /** Expose for sim subclasses. */

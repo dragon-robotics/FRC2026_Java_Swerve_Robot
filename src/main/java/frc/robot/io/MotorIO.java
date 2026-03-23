@@ -1,5 +1,6 @@
 package frc.robot.io;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -42,5 +43,13 @@ public interface MotorIO {
   /** Returns the user-friendly name for this motor. */
   default String getMotorName() {
     return "Unknown";
+  }
+
+  /**
+   * Returns status signals that should be batch-refreshed each loop. Non-CTRE implementations
+   * return an empty array.
+   */
+  default BaseStatusSignal[] getStatusSignals() {
+    return new BaseStatusSignal[0];
   }
 }
