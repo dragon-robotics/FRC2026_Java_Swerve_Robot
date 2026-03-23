@@ -326,10 +326,10 @@ public class RobotContainer {
             new VisionSubsystem(
                 swerveSubsystem,
                 swerveSubsystem::addVisionMeasurement,
-                new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[0],
-                    VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
-                    swerveSubsystem::getState),
+                // new VisionIOPhotonVision(
+                //     APTAG_CAMERA_NAMES[0],
+                //     VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
+                //     swerveSubsystem::getState),
                 new VisionIOPhotonVision(
                     APTAG_CAMERA_NAMES[1],
                     VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
