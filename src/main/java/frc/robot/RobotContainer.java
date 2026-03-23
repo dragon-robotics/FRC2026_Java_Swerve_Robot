@@ -65,8 +65,7 @@ public class RobotContainer {
   public final IntakeSubsystem intakeSubsystem;
   public final HopperSubsystem hopperSubsystem;
   public final ShooterSubsystem shooterSubsystem;
-  // public final ClimberSubsystem climberSubsystem;
-  //   public final VisionSubsystem visionSubsystem;
+  // public final VisionSubsystem visionSubsystem;
   public final Superstructure superstructureSubsystem;
 
   /* Driver Controllers */
@@ -94,10 +93,6 @@ public class RobotContainer {
   /* Shooter Commands */
   private Command stopShooterCommand;
   private Command shootCommand;
-
-  /* Climber Commands */
-  //   private Command deployClimberCommand;
-  //   private Command climbCommand;
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -149,7 +144,6 @@ public class RobotContainer {
                     SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
                 new TalonFXMotorIO(
                     SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
-        // climberSubsystem = new ClimberSubsystem();
         // visionSubsystem =
         //     new VisionSubsystem(
         //         swerveSubsystem,
@@ -213,7 +207,6 @@ public class RobotContainer {
                     SHOOTER_HOOD_TALONFX_CONFIG,
                     "KrakenX44",
                     "Shooter Hood"));
-        // climberSubsystem = new ClimberSubsystem();
         // visionSubsystem =
         //     new VisionSubsystem(
         //         swerveSubsystem,
@@ -276,7 +269,6 @@ public class RobotContainer {
                     SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
                 new TalonFXMotorIOTunable(
                     SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
-        // climberSubsystem = new ClimberSubsystem();
         // visionSubsystem =
         //     new VisionSubsystem(
         //         swerveSubsystem,
@@ -320,7 +312,6 @@ public class RobotContainer {
                     SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
                 new TalonFXMotorIO(
                     SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
-        // climberSubsystem = new ClimberSubsystem();
         // visionSubsystem =
         //     new VisionSubsystem(
         //         swerveSubsystem,
@@ -343,8 +334,6 @@ public class RobotContainer {
             intakeSubsystem,
             hopperSubsystem,
             shooterSubsystem,
-            // climberSubsystem,
-            null,
             null,
             this);
 

@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotContainer;
 import frc.robot.commands.DefaultDriveCmd;
 import frc.robot.commands.ShootDriveCmd;
-import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.hopper.HopperSubsystem;
 import frc.robot.subsystems.hopper.HopperSubsystem.HopperState;
 import frc.robot.subsystems.intake.IntakeSubsystem;
@@ -37,7 +36,6 @@ public class Superstructure extends SubsystemBase {
   private final IntakeSubsystem intake;
   private final HopperSubsystem hopper;
   private final ShooterSubsystem shooter;
-  private final ClimberSubsystem climber;
   private final VisionSubsystem vision;
   private final RobotContainer container;
   private final Telemetry logger;
@@ -58,14 +56,12 @@ public class Superstructure extends SubsystemBase {
       IntakeSubsystem intake,
       HopperSubsystem hopper,
       ShooterSubsystem shooter,
-      ClimberSubsystem climber,
       VisionSubsystem vision,
       RobotContainer container) {
     this.swerve = swerve;
     this.intake = intake;
     this.hopper = hopper;
     this.shooter = shooter;
-    this.climber = climber;
     this.vision = vision;
     this.container = container;
 
