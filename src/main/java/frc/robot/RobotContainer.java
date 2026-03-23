@@ -13,7 +13,6 @@ import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_LEAD_TALONF
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_CANCODER_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_MOTOR_ID;
-import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_TALONFX_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_DUTY_CYCLE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_MOTOR_ID;
@@ -340,12 +339,7 @@ public class RobotContainer {
     // Create the superstructure subsystem //
     superstructureSubsystem =
         new Superstructure(
-            swerveSubsystem,
-            intakeSubsystem,
-            hopperSubsystem,
-            shooterSubsystem,
-            null,
-            this);
+            swerveSubsystem, intakeSubsystem, hopperSubsystem, shooterSubsystem, null, this);
 
     defaultDriveCommand =
         superstructureSubsystem.defaultDrive(
@@ -415,6 +409,9 @@ public class RobotContainer {
         .onFalse(deployIntakeCommand)
         .onFalse(stopHopperCommand);
 
+    /* Manual woktoss */
+    driverController.pov(90).whileTrue(wokTossIntakeCommand).onFalse(deployIntakeCommand);
+
     /* Outtake */
     driverController
         .rightBumper()
@@ -424,10 +421,7 @@ public class RobotContainer {
         .onFalse(deployIntakeCommand);
 
     /* Hopper */
-    driverController
-        .pov(180)
-        .whileTrue(indexToShooterCommand)
-        .onFalse(stopHopperCommand);
+    driverController.pov(180).whileTrue(indexToShooterCommand).onFalse(stopHopperCommand);
 
     /* Shoot */
     driverController
@@ -437,7 +431,7 @@ public class RobotContainer {
         // .whileTrue(wokTossCommand)
         .onFalse(stopShooterCommand)
         .onFalse(stopHopperCommand);
-        // .onFalse(stowIntakeCommand);
+    // .onFalse(stowIntakeCommand);
 
     /* Operator Controls */
 
@@ -449,10 +443,7 @@ public class RobotContainer {
                 () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION, 0),
                 intakeSubsystem));
 
-    operatorController
-        .b()
-        .whileTrue(wokTossIntakeCommand)
-        .onFalse(deployIntakeCommand);
+    operatorController.b().whileTrue(wokTossIntakeCommand).onFalse(deployIntakeCommand);
 
     /* Manual Intake Roller */
     operatorController
