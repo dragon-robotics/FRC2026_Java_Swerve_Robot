@@ -128,16 +128,17 @@ public class ShooterSubsystem extends SubsystemBase {
     hoodSetting = ShooterHoodSettings.HOME;
   }
 
+  /* Returns the speed in RPM */
   public double getShooterSpeed() {
-    return shooterLeadInputs.getMotorVelocity();
+    return shooterLeadInputs.getMotorVelocity() * 60.0; // Convert from RPS to RPM
   }
 
   public boolean isShooting() {
-    return getShooterSpeed() > 5;
+    return getShooterSpeed() > 60;
   }
 
   public boolean isShooterStopped() {
-    return Math.abs(getShooterSpeed()) < 1.0; // Use threshold instead of exact comparison
+    return Math.abs(getShooterSpeed()) < 0.5; // Use threshold instead of exact comparison
   }
 
   public double getTargetRPM() {
@@ -170,15 +171,15 @@ public class ShooterSubsystem extends SubsystemBase {
             break;
           case PREPFUEL:
             prepShooter();
-            if (MathUtil.isNear(targetRPM * 0.3, getShooterSpeed(), 5)) {
+            if (MathUtil.isNear(targetRPM * 0.3, getShooterSpeed(), 60)) {
               currShooterState = ShooterState.PREPFUEL;
             }
             break;
           case SHOOT:
             runShooter();
             runKicker();
-            setHoodAngle(1.5);
-            if (MathUtil.isNear(targetRPM, getShooterSpeed() * 60, 5)) {
+            setHoodAngle(1.25);
+            if (MathUtil.isNear(targetRPM, getShooterSpeed(), 60)) {
               currShooterState = ShooterState.SHOOT;
             }
             break;
