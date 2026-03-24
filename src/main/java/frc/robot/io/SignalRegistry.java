@@ -33,13 +33,13 @@ public class SignalRegistry {
 
     signalArray = allSignals.toArray(new BaseStatusSignal[0]);
 
-    DogLog.log("SignalRegistry/" + motorIO.getMotorName(),
-        "Registered " + signals.length + " signals");
+    DogLog.log(
+        "SignalRegistry/" + motorIO.getMotorName(), "Registered " + signals.length + " signals");
   }
 
   /**
-   * Batch-refresh all registered CTRE signals in one CAN call.
-   * Call once at the top of robotPeriodic() BEFORE CommandScheduler.run().
+   * Batch-refresh all registered CTRE signals in one CAN call. Call once at the top of
+   * robotPeriodic() BEFORE CommandScheduler.run().
    */
   public void refreshAll() {
     if (signalArray.length > 0) {

@@ -25,7 +25,10 @@ public class ShooterSubsystem extends SubsystemBase {
   protected final MotorIO shooterHoodIO;
   protected final MotorIO shooterKickerIO;
   protected final MotorIO shooterLeadIO, shooterFollowIO;
-  protected final MotorIOInputs shooterLeadInputs, shooterFollowInputs, shooterKickerInputs, shooterHoodInputs;
+  protected final MotorIOInputs shooterLeadInputs,
+      shooterFollowInputs,
+      shooterKickerInputs,
+      shooterHoodInputs;
 
   protected double targetRPM;
   protected ShooterHoodSettings hoodSetting;
@@ -183,7 +186,8 @@ public class ShooterSubsystem extends SubsystemBase {
             runShooter();
             runKicker();
             setHoodAngle(1.25);
-            if (MathUtil.isNear(targetRPM, getShooterSpeed(), 60) && MathUtil.isNear(1.25, shooterHoodInputs.getMotorPosition(), 0.1)) {
+            if (MathUtil.isNear(targetRPM, getShooterSpeed(), 60)
+                && MathUtil.isNear(1.25, shooterHoodInputs.getMotorPosition(), 0.1)) {
               currShooterState = ShooterState.SHOOT;
             }
             break;
