@@ -201,33 +201,50 @@ public class Superstructure extends SubsystemBase {
     // State machine logic
     switch (state) {
       case DRIVE:
-        // Set Drive to maintain heading
-
-        // Intake remains in deployed or home based on current intake state
+        // Intake remains deployed
+        intake.setDesiredState(IntakeState.DEPLOYED);
         // Set Hopper to STOP
+        hopper.setDesiredState(HopperState.STOP);
         // Set Shooter to PREPFUEL
+        shooter.setDesiredState(ShooterState.PREPFUEL);
         break;
       case INTAKE:
-        // Set Drive to maintain heading at reduced speeds
         // Set Intake to INTAKE
+        intake.setDesiredState(IntakeState.INTAKE);
         // Set Hopper to INDEXTOSHOOTER
+        hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
         // Set Shooter to PREPFUEL
+        shooter.setDesiredState(ShooterState.PREPFUEL);
         break;
       case OUTTAKE:
         // Set Drive to maintain heading at reduced speeds
         // Set Intake to OUTTAKE
+        intake.setDesiredState(IntakeState.OUTTAKE);
         // Set Hopper to INDEXTOINTAKE
+        hopper.setDesiredState(HopperState.INDEXTOINTAKE);
         // Set Shooter to PREPFUEL
+        shooter.setDesiredState(ShooterState.PREPFUEL);
         break;
       case SHOOT:
-        // Set Drive to point towards target
-        // Set Intake to INTAKE
-        // Set Hopper to INDEXTOSHOOTER
         // Set Shooter to SHOOT
+        shooter.setDesiredState(ShooterState.SHOOT);
+        
+        if (shooter.getCurrentState() == ShooterState.SHOOT) {
+          // Set Drive to point towards target
+          // Once the robot is in position, set to x-lock
+          // TODO: In the future, set to hold position, or shoot on the move //
+          // Set Intake to INTAKE
+          intake.setDesiredState(IntakeState.INTAKE);
+          // Set Hopper to INDEXTOSHOOTER
+          hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+        }
         break;
     }
   }
 
   @Override
-  public void periodic() {}
+  public void periodic() {
+    // Updates where the robot is //
+    // Based on where the robot is, update the shooting location the robot should point towards
+  }
 }

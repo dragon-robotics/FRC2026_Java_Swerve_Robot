@@ -21,7 +21,8 @@ public class IntakeSubsystem extends SubsystemBase {
     DEPLOYING,
     STOWING,
     WOKTOSS,
-    WOKTOSSING
+    WOKTOSSING,
+    AUTO_WOKTOSSING
   }
 
   protected IntakeState currIntakeState;
@@ -51,40 +52,6 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /* Setters */
-
-  public void setDesiredState(IntakeState state) {
-    this.desiredIntakeState = state;
-
-    // Handle state transitions
-    switch (desiredIntakeState) {
-      case HOME:
-        currIntakeState = IntakeState.STOWING;
-        break;
-      case INTAKE:
-        if (currIntakeState == IntakeState.OUTTAKE || currIntakeState == IntakeState.DEPLOYED) {
-          currIntakeState = IntakeState.INTAKE;
-        } else {
-          currIntakeState = IntakeState.DEPLOYING;
-        }
-        break;
-      case OUTTAKE:
-        if (currIntakeState == IntakeState.INTAKE || currIntakeState == IntakeState.DEPLOYED) {
-          currIntakeState = IntakeState.OUTTAKE;
-        } else {
-          currIntakeState = IntakeState.DEPLOYING;
-        }
-        break;
-      case DEPLOYED:
-        currIntakeState = IntakeState.DEPLOYING;
-        break;
-      case WOKTOSS:
-        currIntakeState = IntakeState.WOKTOSSING;
-        wokTossMovingToDeployed = true;
-        break;
-      default:
-        break;
-    }
-  }
 
   public void runIntakeRollerRPM(double rpm) {
     intakeRollerIO.setMotorRPM(rpm);
@@ -180,6 +147,46 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeArmInputs.getMotorCurrent();
   }
 
+  /* State Management */
+
+  public void setDesiredState(IntakeState state) {
+    this.desiredIntakeState = state;
+
+    // Handle state transitions
+    switch (desiredIntakeState) {
+      case HOME:
+        currIntakeState = IntakeState.STOWING;
+        break;
+      case INTAKE:
+        if (currIntakeState == IntakeState.OUTTAKE || currIntakeState == IntakeState.DEPLOYED) {
+          currIntakeState = IntakeState.INTAKE;
+        } else {
+          currIntakeState = IntakeState.DEPLOYING;
+        }
+        break;
+      case OUTTAKE:
+        if (currIntakeState == IntakeState.INTAKE || currIntakeState == IntakeState.DEPLOYED) {
+          currIntakeState = IntakeState.OUTTAKE;
+        } else {
+          currIntakeState = IntakeState.DEPLOYING;
+        }
+        break;
+      case DEPLOYED:
+        currIntakeState = IntakeState.DEPLOYING;
+        break;
+      case WOKTOSS:
+        currIntakeState = IntakeState.WOKTOSSING;
+        wokTossMovingToDeployed = true;
+        break;
+      case AUTO_WOKTOSSING:
+        currIntakeState = IntakeState.AUTO_WOKTOSSING;
+        wokTossMovingToDeployed = true;
+        break;
+      default:
+        break;
+    }
+  }
+
   public void handleStateTransition() {
     // Handle the state transitions
     switch (currIntakeState) {
@@ -206,6 +213,12 @@ public class IntakeSubsystem extends SubsystemBase {
         deployIntakeArm();
         // Set intake rollers off
         stopIntake();
+        break;
+      case WOKTOSS:
+        // Set intake arm to home setpoint
+        wokTossIntakeArm();
+        // Set intake rollers off
+        runIntake();
         break;
       case DEPLOYING:
         // Set intake arm to intake setpoint
@@ -257,11 +270,19 @@ public class IntakeSubsystem extends SubsystemBase {
         //   }
         // }
         break;
-      case WOKTOSS:
-        // Set intake arm to home setpoint
-        wokTossIntakeArm();
-        // Set intake rollers off
-        runIntake();
+      case AUTO_WOKTOSSING:
+        // Intake arm oscillate between deployed and woktoss setpoints in a set sequence
+        // 1. Do nothing for the first 3 seconds
+        // 2. Then oscillate between deployed and woktoss setpoints every 0.5 seconds
+
+        // // Set intake arm to home setpoint
+        // wokTossIntakeArm();
+        // // Set intake rollers off
+        // runIntake();
+        // // When intake arm reaches setpoint, transition to HOME state
+        // if (isIntakeArmAtWokToss()) {
+        //   currIntakeState = IntakeState.WOKTOSS;
+        // }
         break;
     }
   }

@@ -57,25 +57,6 @@ public class ShooterSubsystem extends SubsystemBase {
     this.hoodSetting = ShooterHoodSettings.HOME;
   }
 
-  /* Setters */
-  public void setDesiredState(ShooterState state) {
-    this.desiredShooterState = state;
-
-    switch (desiredShooterState) {
-      case STOP:
-        currShooterState = ShooterState.TRANSITION;
-        break;
-      case PREPFUEL:
-        currShooterState = ShooterState.TRANSITION;
-        break;
-      case SHOOT:
-        currShooterState = ShooterState.TRANSITION;
-        break;
-      default:
-        break;
-    }
-  }
-
   public ShooterState getCurrentState() {
     return this.currShooterState;
   }
@@ -107,12 +88,10 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void runKicker() {
-    // shooterKickerIO.setMotorRPM(SHOOTER_KICKER_RPM);
     shooterKickerIO.setMotorPercentage(0.75); // Run kicker at full RPM for shooting
   }
 
   public void prepKicker() {
-    // shooterKickerIO.setMotorRPM(SHOOTER_KICKER_RPM * 0.3); // Run at 30% of kicker RPM for prep
     shooterKickerIO.setMotorPercentage(0.75 * 0.3); // Run kicker at 30% of full RPM for prep
   }
 
@@ -121,16 +100,17 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterKickerIO.setMotorPercentage(0);
   }
 
+  /* Setters */
+
   public void setHoodAngle(double position) {
     shooterHoodIO.setMotorPosition(position);
   }
 
   public void setSetpointForDistance(double distanceToTarget) {
+    /* TODO: Switch based on distance and where we are on the field */
     ShooterSetpoint setpoint = getSetpointForDistance(distanceToTarget);
     targetRPM = setpoint.shooterRPM();
-
-    /* TODO: Switch based on distance and where we are on the field */
-    hoodSetting = ShooterHoodSettings.HOME;
+    hoodSetting = setpoint.hoodSetting();
   }
 
   /* Returns the speed in RPM */
@@ -150,6 +130,26 @@ public class ShooterSubsystem extends SubsystemBase {
     return targetRPM;
   }
 
+  /* State Management */
+
+  public void setDesiredState(ShooterState state) {
+    this.desiredShooterState = state;
+
+    switch (desiredShooterState) {
+      case STOP:
+        currShooterState = ShooterState.TRANSITION;
+        break;
+      case PREPFUEL:
+        currShooterState = ShooterState.TRANSITION;
+        break;
+      case SHOOT:
+        currShooterState = ShooterState.TRANSITION;
+        break;
+      default:
+        break;
+    }
+  }
+
   public void handleStateTransition() {
     // Handle the state transitions
     switch (currShooterState) {
@@ -164,7 +164,7 @@ public class ShooterSubsystem extends SubsystemBase {
       case SHOOT:
         runShooter();
         runKicker();
-        setHoodAngle(1.25);
+        setHoodAngle(hoodSetting.getSetting());
         break;
       case TRANSITION:
         switch (desiredShooterState) {
@@ -178,16 +178,16 @@ public class ShooterSubsystem extends SubsystemBase {
             break;
           case PREPFUEL:
             prepShooter();
+            setHoodAngle(0);
             if (MathUtil.isNear(targetRPM * 0.3, getShooterSpeed(), 60)) {
               currShooterState = ShooterState.PREPFUEL;
             }
             break;
           case SHOOT:
             runShooter();
-            runKicker();
-            setHoodAngle(1.25);
+            setHoodAngle(hoodSetting.getSetting());
             if (MathUtil.isNear(targetRPM, getShooterSpeed(), 60)
-                && MathUtil.isNear(1.25, shooterHoodInputs.getMotorPosition(), 0.1)) {
+                && MathUtil.isNear(hoodSetting.getSetting(), shooterHoodInputs.getMotorPosition(), 0.05)) {
               currShooterState = ShooterState.SHOOT;
             }
             break;

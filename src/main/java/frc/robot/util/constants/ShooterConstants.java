@@ -2,6 +2,7 @@ package frc.robot.util.constants;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -25,6 +26,9 @@ import com.revrobotics.spark.config.MAXMotionConfig;
 import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+
+import edu.wpi.first.math.util.Units;
+
 import com.revrobotics.spark.config.SparkMaxConfig;
 import java.util.List;
 
@@ -62,7 +66,7 @@ public final class ShooterConstants {
     }
   }
 
-  public record ShooterSetpoint(double shooterRPM, double hoodAngleDeg) {}
+  public record ShooterSetpoint(double shooterRPM, ShooterHoodSettings hoodSetting) {}
 
   public record ShooterZone(
       double minDistanceMeters, double maxDistanceMeters, ShooterSetpoint setpoint) {
@@ -74,10 +78,27 @@ public final class ShooterConstants {
   // Example 3 zones (TODO: Tune these values in real world testing)
   public static final List<ShooterZone> SHOOTER_ZONES =
       List.of(
-          new ShooterZone(0.0, 2.0, new ShooterSetpoint(3000.0, 0.12)), // close
-          new ShooterZone(2.0, 4.0, new ShooterSetpoint(3800.0, 0.28)), // mid
-          new ShooterZone(4.0, Double.POSITIVE_INFINITY, new ShooterSetpoint(4500.0, 0.42)) // far
-          );
+          new ShooterZone(0.0, Units.feetToMeters(2), new ShooterSetpoint(2500, ShooterHoodSettings.HOME)),
+          new ShooterZone(Units.feetToMeters(2), Units.feetToMeters(3), new ShooterSetpoint(2550.0, ShooterHoodSettings.HOME)),
+          new ShooterZone(Units.feetToMeters(3), Units.feetToMeters(4), new ShooterSetpoint(2600.0, ShooterHoodSettings.HOME)),
+          new ShooterZone(Units.feetToMeters(4), Units.feetToMeters(5), new ShooterSetpoint(2650.0, ShooterHoodSettings.HOME)),
+          new ShooterZone(Units.feetToMeters(5), Units.feetToMeters(6), new ShooterSetpoint(2700.0, ShooterHoodSettings.HOME)),
+          new ShooterZone(Units.feetToMeters(6), Units.feetToMeters(7), new ShooterSetpoint(2750.0, ShooterHoodSettings.HOME)),
+          new ShooterZone(Units.feetToMeters(7), Units.feetToMeters(8), new ShooterSetpoint(2800.0, ShooterHoodSettings.HOME)),
+          new ShooterZone(Units.feetToMeters(8), Units.feetToMeters(9), new ShooterSetpoint(2850.0, ShooterHoodSettings.HOME)),
+          new ShooterZone(Units.feetToMeters(9), Units.feetToMeters(10), new ShooterSetpoint(2900.0, ShooterHoodSettings.HOME)),
+          new ShooterZone(Units.feetToMeters(10), Units.feetToMeters(11), new ShooterSetpoint(2950.0, ShooterHoodSettings.HOME)),
+          new ShooterZone(Units.feetToMeters(11), Units.feetToMeters(12), new ShooterSetpoint(3000.0, ShooterHoodSettings.MIDDLE_CLOSE)),
+          new ShooterZone(Units.feetToMeters(12), Units.feetToMeters(13), new ShooterSetpoint(3050.0, ShooterHoodSettings.MIDDLE_CLOSE)),
+          new ShooterZone(Units.feetToMeters(13), Units.feetToMeters(14), new ShooterSetpoint(3100.0, ShooterHoodSettings.MIDDLE_CLOSE)),
+          new ShooterZone(Units.feetToMeters(14), Units.feetToMeters(15), new ShooterSetpoint(3150.0, ShooterHoodSettings.MIDDLE_CLOSE)),
+          new ShooterZone(Units.feetToMeters(15), Units.feetToMeters(16), new ShooterSetpoint(3200.0, ShooterHoodSettings.MIDDLE_CLOSE)),
+          new ShooterZone(Units.feetToMeters(16), Units.feetToMeters(17), new ShooterSetpoint(3250.0, ShooterHoodSettings.MIDDLE_CLOSE)),
+          new ShooterZone(Units.feetToMeters(17), Units.feetToMeters(18), new ShooterSetpoint(3300.0, ShooterHoodSettings.MIDDLE)),
+          new ShooterZone(Units.feetToMeters(18), Units.feetToMeters(19), new ShooterSetpoint(3350.0, ShooterHoodSettings.MIDDLE)),
+          new ShooterZone(Units.feetToMeters(19), Units.feetToMeters(20), new ShooterSetpoint(3400.0, ShooterHoodSettings.MIDDLE)),
+          new ShooterZone(Units.feetToMeters(20), Double.POSITIVE_INFINITY, new ShooterSetpoint(4500.0, ShooterHoodSettings.FAR))
+      );
 
   public static ShooterSetpoint getSetpointForDistance(double distanceMeters) {
     for (ShooterZone zone : SHOOTER_ZONES) {
@@ -97,25 +118,20 @@ public final class ShooterConstants {
                   .withSupplyCurrentLimitEnable(true)
                   .withSupplyCurrentLimit(Amps.of(60))
                   .withSupplyCurrentLowerLimit(Amps.of(40))
-                  .withSupplyCurrentLowerTime(1))
+                  .withSupplyCurrentLowerTime(Seconds.of(1)))
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(12).withPeakReverseVoltage(-12))
-          .withOpenLoopRamps(
-              new OpenLoopRampsConfigs()
-                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.1))
-                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.1))
-                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.1)))
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKS(4.325)
-                  .withKV(0.013)
-                  .withKA(0.0)
                   .withKP(3)
                   .withKI(0.0)
-                  .withKD(0.0));
+                  .withKD(0.0)
+                  .withKS(4.325)
+                  .withKV(0.013)
+                  .withKA(0.0));
 
   public static final SparkBaseConfig SHOOTER_LEAD_SPARKMAX_CONFIG =
       new SparkMaxConfig()
@@ -142,17 +158,12 @@ public final class ShooterConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(80))
+                  .withStatorCurrentLimit(Amps.of(100))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(40))
-                  .withSupplyCurrentLowerLimit(20)
-                  .withSupplyCurrentLowerTime(1))
-          .withVoltage(new VoltageConfigs().withPeakForwardVoltage(12).withPeakReverseVoltage(-12))
-          .withOpenLoopRamps(
-              new OpenLoopRampsConfigs()
-                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.1))
-                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.1))
-                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.1)))
+                  .withSupplyCurrentLimit(Amps.of(60))
+                  .withSupplyCurrentLowerLimit(Amps.of(40))
+                  .withSupplyCurrentLowerTime(Seconds.of(1)))
+          .withVoltage(new VoltageConfigs().withPeakForwardVoltage(Volts.of(12)).withPeakReverseVoltage(Volts.of(-12)))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
 
   public static final SparkBaseConfig SHOOTER_FOLLOW_SPARKMAX_CONFIG =
@@ -175,13 +186,8 @@ public final class ShooterConstants {
                   .withSupplyCurrentLimitEnable(true)
                   .withSupplyCurrentLimit(Amps.of(60))
                   .withSupplyCurrentLowerLimit(Amps.of(40))
-                  .withSupplyCurrentLowerTime(1))
-          .withVoltage(new VoltageConfigs().withPeakForwardVoltage(12).withPeakReverseVoltage(-12))
-          .withOpenLoopRamps(
-              new OpenLoopRampsConfigs()
-                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.1))
-                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.1))
-                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.1)))
+                  .withSupplyCurrentLowerTime(Seconds.of(1)))
+          .withVoltage(new VoltageConfigs().withPeakForwardVoltage(Volts.of(12)).withPeakReverseVoltage(Volts.of(-12)))
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
@@ -215,26 +221,21 @@ public final class ShooterConstants {
                   .withStatorCurrentLimit(Amps.of(30))
                   .withSupplyCurrentLimitEnable(true)
                   .withSupplyCurrentLimit(Amps.of(20)))
-          .withVoltage(new VoltageConfigs().withPeakForwardVoltage(10).withPeakReverseVoltage(-10))
-          .withOpenLoopRamps(
-              new OpenLoopRampsConfigs()
-                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.1))
-                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.1))
-                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.1)))
+          .withVoltage(new VoltageConfigs().withPeakForwardVoltage(Volts.of(10)).withPeakReverseVoltage(Volts.of(-10)))
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Brake)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               new Slot0Configs()
+                  .withKP(8.0)
+                  .withKI(0.0)
+                  .withKD(0.1)
                   .withKS(0.0)
                   .withKV(0.0)
                   .withKA(0.0)
                   .withKG(0.4)
                   .withGravityType(GravityTypeValue.Elevator_Static)
-                  .withKP(8.0)
-                  .withKI(0.0)
-                  .withKD(0.1)
                   .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign));
 
   public static final CANcoderConfiguration SHOOTER_HOOD_CANCODER_CONFIG =

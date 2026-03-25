@@ -435,6 +435,11 @@ public class RobotContainer {
 
     /* Operator Controls */
 
+    /* TODO: Add overrides to the shooter in case camera goes down */
+    // If up d-pad, shooter is close up bumper shot
+    // If left or right d-pad, shooter is trench shot
+    // If down d-pad, shooter is tower shot
+
     /* Manual Intake Arm */
     operatorController
         .a()
