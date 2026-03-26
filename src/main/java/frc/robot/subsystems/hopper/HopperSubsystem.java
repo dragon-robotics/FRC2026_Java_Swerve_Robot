@@ -3,6 +3,7 @@ package frc.robot.subsystems.hopper;
 import static frc.robot.util.constants.HopperConstants.*;
 
 import dev.doglog.DogLog;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
@@ -46,24 +47,6 @@ public class HopperSubsystem extends SubsystemBase {
 
   /* Setters */
 
-  public void setDesiredState(HopperState state) {
-    this.desiredHopperState = state;
-
-    switch (desiredHopperState) {
-      case STOP:
-        currHopperState = HopperState.STOP;
-        break;
-      case INDEXTOINTAKE:
-        currHopperState = HopperState.INDEXTOINTAKE;
-        break;
-      case INDEXTOSHOOTER:
-        currHopperState = HopperState.INDEXTOSHOOTER;
-        break;
-      default:
-        break;
-    }
-  }
-
   /* Getters */
 
   public HopperState getCurrentState() {
@@ -91,16 +74,37 @@ public class HopperSubsystem extends SubsystemBase {
   public void indexToShooter() {
     // leadRollerMotorIO.setMotorRPM(HOPPER_ROLLER_RPM);
     leadRollerMotorIO.setMotorPercentage(HOPPER_ROLLER_DUTY_CYCLE);
+    // leadRollerMotorIO.setMotorPercentage(hopperPercentageSub.get());
   }
 
   public void indexToIntake() {
     // leadRollerMotorIO.setMotorRPM(-HOPPER_ROLLER_RPM);
     leadRollerMotorIO.setMotorPercentage(-HOPPER_ROLLER_DUTY_CYCLE);
+    // leadRollerMotorIO.setMotorPercentage(-hopperPercentageSub.get());
   }
 
   public void stopHopperRoller() {
     // leadRollerMotorIO.setMotorRPM(0);
     leadRollerMotorIO.setMotorPercentage(0);
+  }
+
+  /* State Managemeent */
+  public void setDesiredState(HopperState state) {
+    this.desiredHopperState = state;
+
+    switch (desiredHopperState) {
+      case STOP:
+        currHopperState = HopperState.STOP;
+        break;
+      case INDEXTOINTAKE:
+        currHopperState = HopperState.INDEXTOINTAKE;
+        break;
+      case INDEXTOSHOOTER:
+        currHopperState = HopperState.INDEXTOSHOOTER;
+        break;
+      default:
+        break;
+    }
   }
 
   public void handleStateTransition() {
