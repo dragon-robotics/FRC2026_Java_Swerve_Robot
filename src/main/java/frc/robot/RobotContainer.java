@@ -110,6 +110,7 @@ public class RobotContainer {
     DogLog.setOptions(new DogLogOptions().withCaptureDs(true));
     DogLog.setPdh(new PowerDistribution());
 
+    /* Disable warnings */
     DriverStation.silenceJoystickConnectionWarning(true);
 
     /* Initialize Joysticks */
