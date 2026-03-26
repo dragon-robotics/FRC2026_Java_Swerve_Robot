@@ -228,7 +228,7 @@ public class Superstructure extends SubsystemBase {
       case SHOOT:
         // Set Shooter to SHOOT
         shooter.setDesiredState(ShooterState.SHOOT);
-        
+
         if (shooter.getCurrentState() == ShooterState.SHOOT) {
           // Set Drive to point towards target
           // Once the robot is in position, set to x-lock

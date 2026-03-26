@@ -241,8 +241,7 @@ public class RobotContainer {
                 new VisionIOPhotonVisionSim(
                     APTAG_CAMERA_NAMES[3],
                     VisionConstants.APTAG_POSE_EST_CAM_L_POS,
-                    swerveSubsystem::getState)
-                );
+                    swerveSubsystem::getState));
         break;
       case TEST:
         intakeSubsystem =

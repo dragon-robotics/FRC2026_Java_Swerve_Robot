@@ -187,7 +187,8 @@ public class ShooterSubsystem extends SubsystemBase {
             runShooter();
             setHoodAngle(hoodSetting.getSetting());
             if (MathUtil.isNear(targetRPM, getShooterSpeed(), 60)
-                && MathUtil.isNear(hoodSetting.getSetting(), shooterHoodInputs.getMotorPosition(), 0.05)) {
+                && MathUtil.isNear(
+                    hoodSetting.getSetting(), shooterHoodInputs.getMotorPosition(), 0.05)) {
               currShooterState = ShooterState.SHOOT;
             }
             break;
