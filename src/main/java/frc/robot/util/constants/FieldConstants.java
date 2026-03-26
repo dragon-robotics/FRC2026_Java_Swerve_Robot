@@ -2,6 +2,7 @@ package frc.robot.util.constants;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import java.io.IOException;
@@ -32,6 +33,7 @@ public final class FieldConstants {
 
   public static final double FIELD_LENGTH = APTAG_FIELD_LAYOUT.getFieldLength();
   public static final double FIELD_WIDTH = APTAG_FIELD_LAYOUT.getFieldWidth();
+  public static final double FIELD_HEIGHT = Units.inchesToMeters(72);
 
   public static final class Hub {
     public static final double BLUE_HUB_CENTER_X =
