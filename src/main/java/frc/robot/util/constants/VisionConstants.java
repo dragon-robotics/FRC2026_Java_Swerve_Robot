@@ -11,23 +11,13 @@ import edu.wpi.first.math.util.Units;
 
 public final class VisionConstants {
   public static final String[] APTAG_CAMERA_NAMES = {
-    "LEFT_CAM",
-    "RIGHT_CAM",
-    "AprilTagPoseEstCameraFL",
-    "AprilTagPoseEstCameraFR",
-    "AprilTagPoseEstCameraBL",
-    "AprilTagPoseEstCameraBR"
+    "AprilTagPoseEstCameraF",
+    "AprilTagPoseEstCameraR",
+    "AprilTagPoseEstCameraB",
+    "AprilTagPoseEstCameraL"
   };
 
-  public static final Transform3d APTAG_ALIGN_LEFT_CAM_POS =
-      new Transform3d(
-          new Translation3d(
-              Units.inchesToMeters(9.249),
-              Units.inchesToMeters(4.910),
-              Units.inchesToMeters(7.3885)),
-          new Rotation3d(0, Units.degreesToRadians(-20), 0));
-
-  public static final Transform3d APTAG_ALIGN_RIGHT_CAM_POS =
+  public static final Transform3d APTAG_POSE_EST_CAM_F_POS =
       new Transform3d(
           new Translation3d(
               Units.inchesToMeters(-11.152),
@@ -35,43 +25,35 @@ public final class VisionConstants {
               Units.inchesToMeters(20.930)),
           new Rotation3d(0, Units.degreesToRadians(-12), 0));
 
-  public static final Transform3d APTAG_POSE_EST_CAM_FL_POS =
+  public static final Transform3d APTAG_POSE_EST_CAM_R_POS =
       new Transform3d(
           new Translation3d(
-              Units.inchesToMeters(17.125),
-              Units.inchesToMeters(17.125),
-              Units.inchesToMeters(6.825)),
-          new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(45)));
+              Units.inchesToMeters(-11.652),
+              Units.inchesToMeters(-8.779),
+              Units.inchesToMeters(20.930)),
+          new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(-90)));
 
-  public static final Transform3d APTAG_POSE_EST_CAM_FR_POS =
+  public static final Transform3d APTAG_POSE_EST_CAM_B_POS =
       new Transform3d(
           new Translation3d(
-              Units.inchesToMeters(17.125),
-              Units.inchesToMeters(-17.125),
-              Units.inchesToMeters(6.825)),
-          new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(-45)));
+              Units.inchesToMeters(-11.152),
+              Units.inchesToMeters(11.329),
+              Units.inchesToMeters(20.930)),
+          new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(180)));
 
-  public static final Transform3d APTAG_POSE_EST_CAM_BL_POS =
+  public static final Transform3d APTAG_POSE_EST_CAM_L_POS =
       new Transform3d(
           new Translation3d(
-              Units.inchesToMeters(-17.125),
-              Units.inchesToMeters(17.125),
-              Units.inchesToMeters(6.825)),
-          new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(135)));
-
-  public static final Transform3d APTAG_POSE_EST_CAM_BR_POS =
-      new Transform3d(
-          new Translation3d(
-              Units.inchesToMeters(-17.125),
-              Units.inchesToMeters(-17.125),
-              Units.inchesToMeters(6.825)),
-          new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(-135)));
+              Units.inchesToMeters(-10.152),
+              Units.inchesToMeters(12.529),
+              Units.inchesToMeters(20.930)),
+          new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(90)));
 
   public static final Transform3d[] APTAG_POSE_EST_CAM_POSITIONS = {
-    APTAG_POSE_EST_CAM_FL_POS,
-    APTAG_POSE_EST_CAM_FR_POS,
-    APTAG_POSE_EST_CAM_BL_POS,
-    APTAG_POSE_EST_CAM_BR_POS
+    APTAG_POSE_EST_CAM_F_POS,
+    APTAG_POSE_EST_CAM_R_POS,
+    APTAG_POSE_EST_CAM_B_POS,
+    APTAG_POSE_EST_CAM_L_POS
   };
 
   public static final Matrix<N3, N1> SINGLE_TAG_STDDEV = VecBuilder.fill(4, 4, 8);

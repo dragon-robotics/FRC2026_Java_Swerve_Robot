@@ -153,13 +153,21 @@ public class RobotContainer {
             new VisionSubsystem(
                 swerveSubsystem,
                 swerveSubsystem::addVisionMeasurement,
-                // new VisionIOPhotonVision(
-                // APTAG_CAMERA_NAMES[0],
-                // VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
-                // swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[0],
+                    VisionConstants.APTAG_POSE_EST_CAM_F_POS,
+                    swerveSubsystem::getState),
                 new VisionIOPhotonVision(
                     APTAG_CAMERA_NAMES[1],
-                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    VisionConstants.APTAG_POSE_EST_CAM_R_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[2],
+                    VisionConstants.APTAG_POSE_EST_CAM_B_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[3],
+                    VisionConstants.APTAG_POSE_EST_CAM_L_POS,
                     swerveSubsystem::getState));
         break;
       case SIM:
@@ -217,32 +225,23 @@ public class RobotContainer {
             new VisionSubsystem(
                 swerveSubsystem,
                 swerveSubsystem::addVisionMeasurement,
-                // Auto-Align Cameras //
-                // new VisionIOPhotonVisionSim(
-                //     APTAG_CAMERA_NAMES[0],
-                //     VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
-                //     swerveSubsystem::getState),
+                // // Apriltag Pose-Estimation Cameras //
+                new VisionIOPhotonVisionSim(
+                    APTAG_CAMERA_NAMES[0],
+                    VisionConstants.APTAG_POSE_EST_CAM_F_POS,
+                    swerveSubsystem::getState),
                 new VisionIOPhotonVisionSim(
                     APTAG_CAMERA_NAMES[1],
-                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    VisionConstants.APTAG_POSE_EST_CAM_R_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVisionSim(
+                    APTAG_CAMERA_NAMES[2],
+                    VisionConstants.APTAG_POSE_EST_CAM_B_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVisionSim(
+                    APTAG_CAMERA_NAMES[3],
+                    VisionConstants.APTAG_POSE_EST_CAM_L_POS,
                     swerveSubsystem::getState)
-                // // Apriltag Pose-Estimation Cameras //
-                // new VisionIOPhotonVisionSim(
-                //     APTAG_CAMERA_NAMES[2],
-                //     VisionConstants.APTAG_POSE_EST_CAM_FL_POS,
-                //     swerveSubsystem::getState),
-                // new VisionIOPhotonVisionSim(
-                //     APTAG_CAMERA_NAMES[3],
-                //     VisionConstants.APTAG_POSE_EST_CAM_FR_POS,
-                //     swerveSubsystem::getState),
-                // new VisionIOPhotonVisionSim(
-                //     APTAG_CAMERA_NAMES[4],
-                //     VisionConstants.APTAG_POSE_EST_CAM_BL_POS,
-                //     swerveSubsystem::getState),
-                // new VisionIOPhotonVisionSim(
-                //     APTAG_CAMERA_NAMES[5],
-                //     VisionConstants.APTAG_POSE_EST_CAM_BR_POS,
-                //     swerveSubsystem::getState)
                 );
         break;
       case TEST:
@@ -281,13 +280,21 @@ public class RobotContainer {
             new VisionSubsystem(
                 swerveSubsystem,
                 swerveSubsystem::addVisionMeasurement,
-                // new VisionIOPhotonVision(
-                // APTAG_CAMERA_NAMES[0],
-                // VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
-                // swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[0],
+                    VisionConstants.APTAG_POSE_EST_CAM_F_POS,
+                    swerveSubsystem::getState),
                 new VisionIOPhotonVision(
                     APTAG_CAMERA_NAMES[1],
-                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    VisionConstants.APTAG_POSE_EST_CAM_R_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[2],
+                    VisionConstants.APTAG_POSE_EST_CAM_B_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[3],
+                    VisionConstants.APTAG_POSE_EST_CAM_L_POS,
                     swerveSubsystem::getState));
         break;
       default: // Default should be in comp mode //
@@ -325,13 +332,21 @@ public class RobotContainer {
             new VisionSubsystem(
                 swerveSubsystem,
                 swerveSubsystem::addVisionMeasurement,
-                // new VisionIOPhotonVision(
-                //     APTAG_CAMERA_NAMES[0],
-                //     VisionConstants.APTAG_ALIGN_LEFT_CAM_POS,
-                //     swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[0],
+                    VisionConstants.APTAG_POSE_EST_CAM_F_POS,
+                    swerveSubsystem::getState),
                 new VisionIOPhotonVision(
                     APTAG_CAMERA_NAMES[1],
-                    VisionConstants.APTAG_ALIGN_RIGHT_CAM_POS,
+                    VisionConstants.APTAG_POSE_EST_CAM_R_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[2],
+                    VisionConstants.APTAG_POSE_EST_CAM_B_POS,
+                    swerveSubsystem::getState),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[3],
+                    VisionConstants.APTAG_POSE_EST_CAM_L_POS,
                     swerveSubsystem::getState));
         break;
     }
