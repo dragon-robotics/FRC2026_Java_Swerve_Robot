@@ -101,7 +101,7 @@ public class TalonFXMotorIO implements MotorIO {
 
     // Re-enable update for signals that we are using
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50,
+        100,
         dutyCycleSignal, // required for Follower
         motorVoltageSignal, // required for Follower
         torqueCurrentSignal, // required for Follower
@@ -133,7 +133,7 @@ public class TalonFXMotorIO implements MotorIO {
           // Modify CANCoder signal frequencies to match the motor's closed-loop update rate for
           // better synchronization
           BaseStatusSignal.setUpdateFrequencyForAll(
-              50, canCoder.getPosition(), canCoder.getVelocity(), canCoder.getAbsolutePosition());
+              100, canCoder.getPosition(), canCoder.getVelocity(), canCoder.getAbsolutePosition());
         });
 
     if (canCoderConfig.isEmpty()) {
