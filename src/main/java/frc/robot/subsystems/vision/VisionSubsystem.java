@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems.vision;
 
-import static frc.robot.util.constants.FieldConstants.*;
 import static frc.robot.util.constants.VisionConstants.*;
 
 import com.ctre.phoenix6.Utils;
@@ -17,13 +16,14 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
 import frc.robot.util.vision.AcceptedPose;
 import frc.robot.util.vision.RejectedPose;
 import frc.robot.util.vision.VisionPoseValidator;
-import java.util.LinkedList;
+import java.util.Arrays;
 
 public class VisionSubsystem extends SubsystemBase {
 
@@ -39,6 +39,18 @@ public class VisionSubsystem extends SubsystemBase {
 
   // Import VisionPoseValidator to validate our vision observations //
   private final VisionPoseValidator poseValidator = new VisionPoseValidator();
+
+  // Pre-allocated pose buffer — avoids ArrayList and toArray() allocation each cycle.
+  // Max capacity = io.length cameras * ~2 poses each (generous upper bound).
+  // acceptedPoseCount tracks how many slots are filled this cycle.
+  private Pose3d[] acceptedPoseBuffer;
+  private int acceptedPoseCount = 0;
+
+  // Pre-computed log key strings — avoid string concatenation each cycle
+  private final String[] cameraPerfKeys;
+
+  // Static empty Pose3d array to avoid allocation
+  private static final Pose3d[] EMPTY_POSE3D_ARRAY = new Pose3d[0];
 
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(CommandSwerveDrivetrain swerve, VisionConsumer consumer, VisionIO... io) {
@@ -56,6 +68,15 @@ public class VisionSubsystem extends SubsystemBase {
           new Alert(
               "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
     }
+
+    // Pre-compute camera log key strings (avoids string concat each cycle)
+    cameraPerfKeys = new String[io.length];
+    for (int i = 0; i < io.length; i++) {
+      cameraPerfKeys[i] = "Vision/Perf/Camera" + i + "Ms";
+    }
+
+    // Pre-allocate pose buffer: each camera can produce ~2 poses max per cycle
+    acceptedPoseBuffer = new Pose3d[io.length * 2];
   }
 
   @FunctionalInterface
@@ -66,97 +87,72 @@ public class VisionSubsystem extends SubsystemBase {
         Matrix<N3, N1> visionMeasurementStdDevs);
   }
 
-  private sealed interface VisionResult permits ValidPose, InvalidPose, NoTargets {}
-
-  private record ValidPose(Pose2d pose, double confidence) implements VisionResult {}
-
-  private record InvalidPose(String reason) implements VisionResult {}
-
-  private record NoTargets() implements VisionResult {}
-
   @Override
   public void periodic() {
+    double periodicStartTime = Timer.getFPGATimestamp();
+
     // Use local variables to reduce field access (optimization)
     final var cameraIOs = io;
     final var cameraInputs = inputs;
 
-    // Initialize logging values
-    // LinkedList<Pose3d> allTagPoses = new LinkedList<>();
-    // LinkedList<Pose3d> allRobotPoses = new LinkedList<>();
-    LinkedList<Pose3d> allRobotPosesAccepted = new LinkedList<>();
-    // LinkedList<Pose3d> allRobotPosesRejected = new LinkedList<>();
+    // Reset pose count — no clearing needed, just overwrite slots
+    acceptedPoseCount = 0;
 
     // This method will be called once per scheduler run
     for (int cameraIndex = 0; cameraIndex < cameraIOs.length; cameraIndex++) {
+      double cameraStartTime = Timer.getFPGATimestamp();
+
       cameraIOs[cameraIndex].updateInputs(cameraInputs[cameraIndex]);
 
-      var result = processCameraData(cameraIndex, cameraInputs[cameraIndex]);
+      processCameraData(cameraIndex, cameraInputs[cameraIndex]);
 
-      // Efficient collection operations
-      // allTagPoses.addAll(result.tagPoses());
-      // allRobotPoses.addAll(result.robotPoses());
-      allRobotPosesAccepted.addAll(result.acceptedPoses());
-      // allRobotPosesRejected.addAll(result.rejectedPoses());
+      double cameraEndTime = Timer.getFPGATimestamp();
+      DogLog.log(cameraPerfKeys[cameraIndex], (cameraEndTime - cameraStartTime) * 1000.0);
     }
 
-    // DogLog.log("Vision/Summary/TagPoses", allTagPoses.toArray(Pose3d[]::new));
-    // DogLog.log("Vision/Summary/RobotPoses", allRobotPoses.toArray(Pose3d[]::new));
-    DogLog.log("Vision/Summary/RobotPosesAccepted", allRobotPosesAccepted.toArray(Pose3d[]::new));
-    // DogLog.log("Vision/Summary/RobotPosesRejected",
-    // allRobotPosesRejected.toArray(Pose3d[]::new));
+    // Log every cycle — use Arrays.copyOf only when we have poses (avoids full-buffer copy)
+    DogLog.log(
+        "Vision/Summary/RobotPosesAccepted",
+        acceptedPoseCount == 0
+            ? EMPTY_POSE3D_ARRAY
+            : Arrays.copyOf(acceptedPoseBuffer, acceptedPoseCount));
+
+    double periodicEndTime = Timer.getFPGATimestamp();
+    DogLog.log("Vision/Perf/TotalPeriodicMs", (periodicEndTime - periodicStartTime) * 1000.0);
   }
 
-  // Record for camera processing results
-  private record CameraProcessingResult(
-      LinkedList<Pose3d> tagPoses,
-      LinkedList<Pose3d> robotPoses,
-      LinkedList<Pose3d> acceptedPoses,
-      LinkedList<Pose3d> rejectedPoses) {}
-
-  private CameraProcessingResult processCameraData(int cameraIndex, VisionIOInputs inputs) {
+  private void processCameraData(int cameraIndex, VisionIOInputs inputs) {
     // Update disconnected alert
     disconnectedAlerts[cameraIndex].set(!inputs.isConnected());
 
-    var tagPoses = new LinkedList<Pose3d>();
-    var robotPoses = new LinkedList<Pose3d>();
-    var acceptedPoses = new LinkedList<Pose3d>();
-    var rejectedPoses = new LinkedList<Pose3d>();
-
-    // Add tag poses
-    for (int tagId : inputs.getTagIds()) {
-      APTAG_FIELD_LAYOUT.getTagPose(tagId).ifPresent(tagPoses::add);
-    }
-
-    // Process pose observations with sealed classes
+    // Process pose observations — no intermediate collections needed
     for (var observation : inputs.getPoseObservations()) {
-      robotPoses.add(observation.pose());
-
       // Use instanceof with pattern matching
       var validationResult = poseValidator.validatePose(observation);
-      String cameraIndexString = "Vision/Camera" + cameraIndex;
 
       if (validationResult instanceof AcceptedPose accepted) {
-        handleAcceptedPose(accepted, cameraIndexString, cameraIndex, acceptedPoses);
+        handleAcceptedPose(accepted);
       } else if (validationResult instanceof RejectedPose rejected) {
-        handleRejectedPose(rejected, cameraIndexString, rejectedPoses);
+        handleRejectedPose(rejected);
       }
     }
-
-    return new CameraProcessingResult(tagPoses, robotPoses, acceptedPoses, rejectedPoses);
   }
 
-  private void handleAcceptedPose(
-      AcceptedPose accepted,
-      String cameraIndexString,
-      int cameraIndex,
-      LinkedList<Pose3d> acceptedPoses) {
-    acceptedPoses.add(accepted.poseObservation().pose());
+  private void handleAcceptedPose(AcceptedPose accepted) {
+    // Cache the poseObservation record accessor to avoid repeated calls
+    var poseObs = accepted.poseObservation();
+
+    // Write directly into pre-allocated buffer — grow if needed (rare)
+    if (acceptedPoseCount >= acceptedPoseBuffer.length) {
+      acceptedPoseBuffer = Arrays.copyOf(acceptedPoseBuffer, acceptedPoseBuffer.length * 2);
+    }
+    acceptedPoseBuffer[acceptedPoseCount++] = poseObs.pose();
 
     // Check if odometry is initialized
     if (!odometryInitialized) {
       stablePoseCounter--;
       if (stablePoseCounter <= 0) {
-        swerve.resetPose(accepted.poseObservation().pose().toPose2d());
+        swerve.resetPose(poseObs.pose().toPose2d());
         odometryInitialized = true;
         DogLog.log("Vision/OdometryInitialized", true);
       }
@@ -165,27 +161,22 @@ public class VisionSubsystem extends SubsystemBase {
     // Add to pose estimator
     var stdDevs = calculateStandardDeviations(accepted);
     consumer.accept(
-        accepted.poseObservation().pose().toPose2d(),
-        Utils.fpgaToCurrentTime(accepted.poseObservation().timestamp()),
-        stdDevs);
+        poseObs.pose().toPose2d(), Utils.fpgaToCurrentTime(poseObs.timestamp()), stdDevs);
   }
 
-  private void handleRejectedPose(
-      RejectedPose rejected, String cameraIndexString, LinkedList<Pose3d> rejectedPoses) {
+  private void handleRejectedPose(RejectedPose rejected) {
     // If odometry not initialized, reset stable pose counter
     if (!odometryInitialized) {
       stablePoseCounter = 5;
     }
-
-    rejectedPoses.add(rejected.poseObservation().pose());
   }
 
   private Matrix<N3, N1> calculateStandardDeviations(AcceptedPose accepted) {
-    // Your existing standard deviation calculation logic
+    var poseObs = accepted.poseObservation();
     double stdDevFactor =
-        (1 + accepted.poseObservation().averageTagDistance())
-            * (1 + accepted.poseObservation().ambiguity())
-            / Math.sqrt(Math.max(accepted.poseObservation().tagCount(), 1));
+        (1 + poseObs.averageTagDistance())
+            * (1 + poseObs.ambiguity())
+            / Math.sqrt(Math.max(poseObs.tagCount(), 1));
     double linearStdDev = LINEAR_STDDEV_BASELINE * stdDevFactor;
     double angularStdDev = ANGULAR_STDDEV_BASELINE * stdDevFactor;
 
