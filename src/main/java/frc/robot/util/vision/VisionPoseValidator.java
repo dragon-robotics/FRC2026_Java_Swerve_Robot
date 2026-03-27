@@ -2,15 +2,17 @@ package frc.robot.util.vision;
 
 import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
 import static frc.robot.util.constants.VisionConstants.MAX_AMBIGUITY;
+import static frc.robot.util.constants.VisionConstants.MAX_Z_ERROR;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.subsystems.vision.VisionIO.PoseObservation;
 
 public class VisionPoseValidator {
   private static final double MAX_TAG_DISTANCE = 8.0;
 
-  // private static final double MAX_POSE_CHANGE = 3.0;
+  private static final double MAX_POSE_CHANGE = 3.0;
 
-  // private Pose2d m_lastAcceptedPose = null;
+  private Pose2d m_lastAcceptedPose = null;
 
   public PoseValidationResult validatePose(PoseObservation observation) {
     var pose = observation.pose();
@@ -29,13 +31,13 @@ public class VisionPoseValidator {
           "Ambiguity: %.3f > %.3f".formatted(observation.ambiguity(), MAX_AMBIGUITY));
     }
 
-    // // Check Z coordinate
-    // if (Math.abs(pose.getZ()) > MAX_Z_ERROR) {
-    //   return new RejectedPose(
-    //       observation,
-    //       RejectionReason.INVALID_Z_COORDINATE,
-    //       "Z: %.3f > %.3f".formatted(Math.abs(pose.getZ()), MAX_Z_ERROR));
-    // }
+    // Check Z coordinate
+    if (Math.abs(pose.getZ()) > MAX_Z_ERROR) {
+      return new RejectedPose(
+          observation,
+          RejectionReason.INVALID_Z_COORDINATE,
+          "Z: %.3f > %.3f".formatted(Math.abs(pose.getZ()), MAX_Z_ERROR));
+    }
 
     // Check field boundaries
     var pose2d = pose.toPose2d();
@@ -57,18 +59,22 @@ public class VisionPoseValidator {
           "Distance: %.2f > %.2f".formatted(observation.averageTagDistance(), MAX_TAG_DISTANCE));
     }
 
-    // // Check large pose change
-    // if (m_lastAcceptedPose != null) {
-    // double poseChange = m_lastAcceptedPose.getTranslation()
-    // .getDistance(pose2d.getTranslation());
-    // if (poseChange > MAX_POSE_CHANGE) {
-    // return new RejectedPose(observation, RejectionReason.LARGE_POSE_CHANGE,
-    // "Change: %.2f > %.2f".formatted(poseChange, MAX_POSE_CHANGE));
-    // }
-    // }
+    // Check large pose change
+    if (m_lastAcceptedPose != null) {
+      double poseChange =
+        m_lastAcceptedPose
+            .getTranslation()
+            .getDistance(pose2d.getTranslation());
+      if (poseChange > MAX_POSE_CHANGE) {
+        return new RejectedPose(
+            observation,
+            RejectionReason.LARGE_POSE_CHANGE,
+            "Change: %.2f > %.2f".formatted(poseChange, MAX_POSE_CHANGE));
+      }
+    }
 
     // Pose accepted - update last accepted pose
-    // m_lastAcceptedPose = pose2d;
+    m_lastAcceptedPose = pose2d;
     return new AcceptedPose(observation);
   }
 }
