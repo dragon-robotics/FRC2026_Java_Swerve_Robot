@@ -156,19 +156,19 @@ public class RobotContainer {
                 new VisionIOPhotonVision(
                     APTAG_CAMERA_NAMES[0],
                     VisionConstants.APTAG_POSE_EST_CAM_F_POS,
-                    swerveSubsystem::getState),
-                new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[1],
-                    VisionConstants.APTAG_POSE_EST_CAM_R_POS,
-                    swerveSubsystem::getState),
-                new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[2],
-                    VisionConstants.APTAG_POSE_EST_CAM_B_POS,
-                    swerveSubsystem::getState),
-                new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[3],
-                    VisionConstants.APTAG_POSE_EST_CAM_L_POS,
                     swerveSubsystem::getState));
+                // new VisionIOPhotonVision(
+                //     APTAG_CAMERA_NAMES[1],
+                //     VisionConstants.APTAG_POSE_EST_CAM_R_POS,
+                //     swerveSubsystem::getState),
+                // new VisionIOPhotonVision(
+                //     APTAG_CAMERA_NAMES[2],
+                //     VisionConstants.APTAG_POSE_EST_CAM_B_POS,
+                //     swerveSubsystem::getState),
+                // new VisionIOPhotonVision(
+                //     APTAG_CAMERA_NAMES[3],
+                //     VisionConstants.APTAG_POSE_EST_CAM_L_POS,
+                //     swerveSubsystem::getState));
         break;
       case SIM:
         intakeSubsystem =
