@@ -33,6 +33,11 @@ public class ShooterSubsystem extends SubsystemBase {
   protected double targetRPM;
   protected ShooterHoodSettings hoodSetting;
 
+  // protected DoubleSubscriber kickerPercentageSub = DogLog.tunable("Shooter/Kicker Percentage",
+  // 0.0);
+  // protected DoubleSubscriber targetRPMSub = DogLog.tunable("Shooter/Target RPM", 0.0);
+  // protected DoubleSubscriber hoodSettingSub = DogLog.tunable("Shooter/Hood Setting", 0.0);
+
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem(
       MotorIO shooterLeadIO,
@@ -71,10 +76,12 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void runKickerMotorPercentage(double percentage) {
     shooterKickerIO.setMotorPercentage(percentage);
+    // shooterKickerIO.setMotorPercentage(kickerPercentageSub.get());
   }
 
   public void runShooter() {
     shooterLeadIO.setMotorRPM(targetRPM);
+    // shooterLeadIO.setMotorRPM(targetRPMSub.get());
   }
 
   // runs the shooter at half speed
@@ -203,6 +210,9 @@ public class ShooterSubsystem extends SubsystemBase {
 
     // Set Hood Angle every loop to ensure it reaches the desired position
     // setHoodAngle();
+
+    // DogLog.tunable("Shooter/Target RPM", targetRPM);
+    // DogLog.tunable("Shooter/Hood Setting", hoodSetting.getSetting());
 
     // This method will be called once per scheduler run
     handleStateTransition();

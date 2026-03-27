@@ -28,6 +28,9 @@ public class HopperSubsystem extends SubsystemBase {
   private final MotorIOInputs leadRollerMotorIOInputs;
   private final MotorIOInputs followRollerMotorIOInputs;
 
+  // protected DoubleSubscriber hopperPercentageSub = DogLog.tunable("Hopper/Hopper Percentage",
+  // 0.0);
+
   /* Creates new HopperSubsystem */
   public HopperSubsystem(MotorIO leadRollerMotorIO, MotorIO followRollerMotorIO) {
 

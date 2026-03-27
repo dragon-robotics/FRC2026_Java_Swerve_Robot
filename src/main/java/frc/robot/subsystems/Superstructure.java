@@ -2,6 +2,8 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import dev.doglog.DogLog;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -17,6 +19,7 @@ import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem.ShooterState;
 import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.util.Telemetry;
+import frc.robot.util.constants.FieldConstants;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -245,6 +248,14 @@ public class Superstructure extends SubsystemBase {
   @Override
   public void periodic() {
     // Updates where the robot is //
+    Pose2d currentPose = swerve.getState().Pose;
+
+    // Check the distance of the robot pose to the center of the blue hub
+    double distanceToBlueHub =
+        currentPose.getTranslation().getDistance(FieldConstants.Hub.BLUE_HUB_CENTER_POSE);
+
+    DogLog.log("Superstructure/Distance to Blue Hub", distanceToBlueHub);
+
     // Based on where the robot is, update the shooting location the robot should point towards
   }
 }
