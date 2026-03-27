@@ -43,7 +43,7 @@ public final class ShooterConstants {
   public static final double SHOOTER_KICKER_RPM = 3000.0;
   public static final double SHOOTER_LEAD_DUTY_CYCLE = 1.0;
   public static final double SHOOTER_LEAD_VOLTAGE = 12.0;
-  public static final double SHOOTER_LEAD_RPM = 3000.0;
+  public static final double SHOOTER_LEAD_RPM = 2500.0;
 
   public static enum ShooterHoodSettings {
     HOME(0),
@@ -180,7 +180,7 @@ public final class ShooterConstants {
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(3)
+                  .withKP(6)
                   .withKI(0.0)
                   .withKD(0.0)
                   .withKS(4.325)

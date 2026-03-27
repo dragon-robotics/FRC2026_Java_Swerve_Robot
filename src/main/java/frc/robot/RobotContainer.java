@@ -36,11 +36,13 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -50,6 +52,7 @@ import frc.robot.io.TalonFXMotorIOSim;
 import frc.robot.io.TalonFXMotorIOTunable;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Superstructure;
+import frc.robot.subsystems.Superstructure.SuperState;
 import frc.robot.subsystems.hopper.HopperSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystemSim;
@@ -106,6 +109,8 @@ public class RobotContainer {
     /* Setup DogLog */
     DogLog.setOptions(new DogLogOptions().withCaptureDs(true));
     DogLog.setPdh(new PowerDistribution());
+
+    DriverStation.silenceJoystickConnectionWarning(true);
 
     /* Initialize Joysticks */
     driverController = new CommandXboxController(OperatorConstants.DRIVER_PORT);
@@ -417,6 +422,9 @@ public class RobotContainer {
     driverController.start().onTrue(seedFieldCentricCommand);
 
     /* Intake */
+    // driverController.leftTrigger(0.2)
+    //     .whileTrue(intakeCommand)
+    //     .onFalse(new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
     driverController
         .leftTrigger(0.2)
         .whileTrue(intakeCommand)
@@ -428,6 +436,9 @@ public class RobotContainer {
     driverController.pov(90).whileTrue(wokTossIntakeCommand).onFalse(deployIntakeCommand);
 
     /* Outtake */
+    // driverController.rightBumper()
+    //     .whileTrue(outtakeCommand)
+    //     .onFalse(new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
     driverController
         .rightBumper()
         .whileTrue(outtakeCommand)
@@ -439,6 +450,10 @@ public class RobotContainer {
     driverController.pov(180).whileTrue(indexToShooterCommand).onFalse(stopHopperCommand);
 
     /* Shoot */
+    // driverController.rightTrigger(0.2)
+    //     .whileTrue(shootCommand)
+    //     .onFalse(new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
+    
     driverController
         .rightTrigger(0.2)
         .whileTrue(shootCommand)

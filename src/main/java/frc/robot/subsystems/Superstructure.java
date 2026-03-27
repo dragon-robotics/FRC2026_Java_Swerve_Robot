@@ -149,10 +149,12 @@ public class Superstructure extends SubsystemBase {
 
   public Command intakeCommand() {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.INTAKE), intake);
+    // return new InstantCommand(() -> setDesiredSuperState(SuperState.INTAKE));
   }
 
   public Command outtakeCommand() {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.OUTTAKE), intake);
+    // return new InstantCommand(() -> setDesiredSuperState(SuperState.OUTTAKE));
   }
 
   public Command deployIntakeCommand() {
@@ -189,10 +191,15 @@ public class Superstructure extends SubsystemBase {
 
   public Command shootCommand() {
     return new InstantCommand(() -> shooter.setDesiredState(ShooterState.SHOOT), shooter);
+    // return new InstantCommand(() -> setDesiredSuperState(SuperState.SHOOT));
   }
 
   public Command prepFuelCommand() {
     return new InstantCommand(() -> shooter.setDesiredState(ShooterState.PREPFUEL), shooter);
+  }
+
+  public Command driveSuperstateCommand() {
+    return new InstantCommand(() -> setDesiredSuperState(SuperState.DRIVE));
   }
 
   /* State handling */
@@ -255,6 +262,8 @@ public class Superstructure extends SubsystemBase {
         currentPose.getTranslation().getDistance(FieldConstants.Hub.BLUE_HUB_CENTER_POSE);
 
     DogLog.log("Superstructure/Distance to Blue Hub", distanceToBlueHub);
+
+    // handleStateTransition();
 
     // Based on where the robot is, update the shooting location the robot should point towards
   }

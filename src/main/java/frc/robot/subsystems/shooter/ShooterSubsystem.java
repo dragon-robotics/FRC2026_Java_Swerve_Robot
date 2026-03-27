@@ -171,7 +171,7 @@ public class ShooterSubsystem extends SubsystemBase {
       case SHOOT:
         runShooter();
         runKicker();
-        setHoodAngle(hoodSetting.getSetting());
+        setHoodAngle(0);
         break;
       case TRANSITION:
         switch (desiredShooterState) {
@@ -192,7 +192,7 @@ public class ShooterSubsystem extends SubsystemBase {
             break;
           case SHOOT:
             runShooter();
-            setHoodAngle(hoodSetting.getSetting());
+            setHoodAngle(0);
             if (MathUtil.isNear(targetRPM, getShooterSpeed(), 60)
                 && MathUtil.isNear(
                     hoodSetting.getSetting(), shooterHoodInputs.getMotorPosition(), 0.05)) {
