@@ -132,6 +132,8 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
             .in(RotationsPerSecond);
 
     if (intakeArmIO instanceof TalonFXMotorIOSim talonIO) {
+      DogLog.log("Intake/Simulated Motor Position (rotations)", motorPosition);
+      DogLog.log("Intake/Simulated Motor Velocity (rotations/s)", motorVelocity);
       talonIO.getSimState().setRawRotorPosition(motorPosition);
       talonIO.getSimState().setRotorVelocity(motorVelocity);
     } else {
