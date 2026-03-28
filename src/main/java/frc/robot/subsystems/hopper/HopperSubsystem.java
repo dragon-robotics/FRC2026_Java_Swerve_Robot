@@ -89,21 +89,22 @@ public class HopperSubsystem extends SubsystemBase {
 
   /* State Managemeent */
   public void setDesiredState(HopperState state) {
-    this.desiredHopperState = state;
+    this.currHopperState = state;
+    DogLog.log("Hopper/Current Hopper State", currHopperState.toString());
 
-    switch (desiredHopperState) {
-      case STOP:
-        currHopperState = HopperState.STOP;
-        break;
-      case INDEXTOINTAKE:
-        currHopperState = HopperState.INDEXTOINTAKE;
-        break;
-      case INDEXTOSHOOTER:
-        currHopperState = HopperState.INDEXTOSHOOTER;
-        break;
-      default:
-        break;
-    }
+    // switch (desiredHopperState) {
+    //   case STOP:
+    //     currHopperState = HopperState.STOP;
+    //     break;
+    //   case INDEXTOINTAKE:
+    //     currHopperState = HopperState.INDEXTOINTAKE;
+    //     break;
+    //   case INDEXTOSHOOTER:
+    //     currHopperState = HopperState.INDEXTOSHOOTER;
+    //     break;
+    //   default:
+    //     break;
+    // }
   }
 
   public void handleStateTransition() {

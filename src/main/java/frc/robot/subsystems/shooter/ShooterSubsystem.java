@@ -4,6 +4,7 @@ import static frc.robot.util.constants.ShooterConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
@@ -32,6 +33,11 @@ public class ShooterSubsystem extends SubsystemBase {
 
   protected double targetRPM;
   protected ShooterHoodSettings hoodSetting;
+
+  // Timer to keep kicker running after shooting stops
+  private final Timer kickerStopTimer = new Timer();
+  private boolean kickerStopTimerRunning = false;
+  private static final double KICKER_STOP_DELAY = 1.0; // seconds
 
   // protected DoubleSubscriber kickerPercentageSub = DogLog.tunable("Shooter/Kicker Percentage",
   // 0.0);
@@ -99,7 +105,7 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void prepKicker() {
-    shooterKickerIO.setMotorPercentage(0.3); // Run kicker at 30% of full RPM for prep
+    shooterKickerIO.setMotorPercentage(0.15); // Run kicker at 30% of full RPM for prep
   }
 
   public void stopKicker() {
@@ -142,6 +148,10 @@ public class ShooterSubsystem extends SubsystemBase {
   public void setDesiredState(ShooterState state) {
     this.desiredShooterState = state;
 
+    if (desiredShooterState == currShooterState) {
+      return;
+    }
+
     switch (desiredShooterState) {
       case STOP:
         currShooterState = ShooterState.TRANSITION;
@@ -158,15 +168,31 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void handleStateTransition() {
-    // Handle the state transitions
     switch (currShooterState) {
       case STOP:
         stopShooter();
-        stopKicker();
+        // Keep kicker running for 1 second after stopping
+        if (kickerStopTimerRunning) {
+          if (kickerStopTimer.hasElapsed(KICKER_STOP_DELAY)) {
+            stopKicker();
+            kickerStopTimerRunning = false;
+            kickerStopTimer.stop();
+            kickerStopTimer.reset();
+          } else {
+            runKicker(); // Keep kicker running during delay
+          }
+        } else {
+          stopKicker();
+        }
         setHoodAngle(0);
         break;
       case PREPFUEL:
+        // Reset kicker stop timer if we go back to prep
+        kickerStopTimerRunning = false;
+        kickerStopTimer.stop();
+        kickerStopTimer.reset();
         prepShooter();
+        prepKicker();
         break;
       case SHOOT:
         runShooter();
@@ -177,7 +203,17 @@ public class ShooterSubsystem extends SubsystemBase {
         switch (desiredShooterState) {
           case STOP:
             stopShooter();
-            stopKicker();
+            // Start kicker stop timer when transitioning to STOP
+            if (!kickerStopTimerRunning) {
+              kickerStopTimer.reset();
+              kickerStopTimer.start();
+              kickerStopTimerRunning = true;
+            }
+            if (kickerStopTimerRunning && !kickerStopTimer.hasElapsed(KICKER_STOP_DELAY)) {
+              runKicker(); // Keep kicker running during delay
+            } else {
+              stopKicker();
+            }
             setHoodAngle(0);
             if (isShooterStopped()) {
               currShooterState = ShooterState.STOP;

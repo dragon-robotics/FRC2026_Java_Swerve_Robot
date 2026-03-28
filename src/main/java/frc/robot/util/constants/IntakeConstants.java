@@ -74,7 +74,9 @@ public final class IntakeConstants {
                   .withStatorCurrentLimitEnable(true)
                   .withStatorCurrentLimit(Amps.of(60))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(40)))
+                  .withSupplyCurrentLimit(Amps.of(40))
+                  .withSupplyCurrentLowerLimit(20)
+                  .withSupplyCurrentLowerTime(1))
           .withVoltage(
               new VoltageConfigs()
                   .withPeakForwardVoltage(Volts.of(12))
@@ -147,7 +149,7 @@ public final class IntakeConstants {
           /* Slow profile for deploying the intake to overcome the constant force spring of the extending hopper */
           .withSlot1(
               new Slot1Configs()
-                  .withKP(12)
+                  .withKP(7)
                   .withKI(0)
                   .withKD(0)
                   .withKS(0)

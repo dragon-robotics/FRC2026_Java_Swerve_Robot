@@ -5,26 +5,21 @@
 package frc.robot;
 
 import static frc.robot.util.constants.GeneralConstants.*;
-import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_DUTY_CYCLE;
 import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_FOLLOW_MOTOR_ID;
 import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG;
 import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_LEAD_MOTOR_ID;
 import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_LEAD_TALONFX_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_CANCODER_CONFIG;
-import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_MOTOR_ID;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_TALONFX_CONFIG;
-import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_DUTY_CYCLE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_MOTOR_ID;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TALONFX_CONFIG;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_TALONFX_CONFIG;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_TALONFX_CONFIG;
-import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_DUTY_CYCLE;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_TALONFX_CONFIG;
-import static frc.robot.util.constants.ShooterConstants.SHOOTER_LEAD_DUTY_CYCLE;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_LEAD_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_LEAD_TALONFX_CONFIG;
 import static frc.robot.util.constants.VisionConstants.APTAG_CAMERA_NAMES;
@@ -43,7 +38,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.generated.TunerConstants;
@@ -457,11 +451,25 @@ public class RobotContainer {
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.SHOOT),
                 superstructureSubsystem))
-        .whileTrue(shootDriveCommand)
+        // .whileTrue(shootDriveCommand)
         .onFalse(
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
                 superstructureSubsystem));
+
+    /* Shoot */
+    driverController
+        .rightTrigger(0.2)
+        .and(driverController.a())
+        .whileTrue(
+            new InstantCommand(
+                () -> superstructureSubsystem.setDesiredSuperState(SuperState.SHOOT_JUICER),
+                superstructureSubsystem));
+    // .whileTrue(shootDriveCommand)
+    // .onFalse(
+    //     new InstantCommand(
+    //         () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
+    //         superstructureSubsystem));
 
     /* Operator Controls */
 
@@ -470,91 +478,95 @@ public class RobotContainer {
     // If left or right d-pad, shooter is trench shot
     // If down d-pad, shooter is tower shot
 
-    /* Manual Intake Arm */
-    operatorController
-        .a()
-        .whileTrue(
-            new RunCommand(
-                () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION, 0),
-                intakeSubsystem));
+    // /* Manual Intake Arm */
+    // operatorController
+    //     .a()
+    //     .whileTrue(
+    //         new RunCommand(
+    //             () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION, 0),
+    //             intakeSubsystem));
 
-    operatorController.b().whileTrue(wokTossIntakeCommand).onFalse(deployIntakeCommand);
+    // operatorController.b().whileTrue(wokTossIntakeCommand).onFalse(deployIntakeCommand);
 
-    /* Manual Intake Roller */
-    operatorController
-        .leftBumper()
-        .whileTrue(
-            new RunCommand(
-                () -> intakeSubsystem.runIntakeRollerPercentage(INTAKE_ROLLER_DUTY_CYCLE),
-                intakeSubsystem))
-        .whileFalse(
-            new RunCommand(() -> intakeSubsystem.runIntakeRollerPercentage(0), intakeSubsystem));
+    // /* Manual Intake Roller */
+    // operatorController
+    //     .leftBumper()
+    //     .whileTrue(
+    //         new RunCommand(
+    //             () -> intakeSubsystem.runIntakeRollerPercentage(INTAKE_ROLLER_DUTY_CYCLE),
+    //             intakeSubsystem))
+    //     .whileFalse(
+    //         new RunCommand(() -> intakeSubsystem.runIntakeRollerPercentage(0), intakeSubsystem));
 
-    operatorController
-        .rightBumper()
-        .whileTrue(
-            new RunCommand(
-                () -> intakeSubsystem.runIntakeRollerPercentage(-INTAKE_ROLLER_DUTY_CYCLE),
-                intakeSubsystem))
-        .whileFalse(
-            new RunCommand(() -> intakeSubsystem.runIntakeRollerPercentage(0), intakeSubsystem));
+    // operatorController
+    //     .rightBumper()
+    //     .whileTrue(
+    //         new RunCommand(
+    //             () -> intakeSubsystem.runIntakeRollerPercentage(-INTAKE_ROLLER_DUTY_CYCLE),
+    //             intakeSubsystem))
+    //     .whileFalse(
+    //         new RunCommand(() -> intakeSubsystem.runIntakeRollerPercentage(0), intakeSubsystem));
 
-    /* Manual Hopper Roller */
-    operatorController
-        .leftStick()
-        .whileTrue(
-            new RunCommand(
-                () -> hopperSubsystem.runHopperRollerPercentage(HOPPER_ROLLER_DUTY_CYCLE),
-                hopperSubsystem))
-        .whileFalse(
-            new RunCommand(() -> hopperSubsystem.runHopperRollerPercentage(0), hopperSubsystem));
+    // /* Manual Hopper Roller */
+    // operatorController
+    //     .leftStick()
+    //     .whileTrue(
+    //         new RunCommand(
+    //             () -> hopperSubsystem.runHopperRollerPercentage(HOPPER_ROLLER_DUTY_CYCLE),
+    //             hopperSubsystem))
+    //     .whileFalse(
+    //         new RunCommand(() -> hopperSubsystem.runHopperRollerPercentage(0), hopperSubsystem));
 
-    operatorController
-        .rightStick()
-        .whileTrue(
-            new RunCommand(
-                () -> hopperSubsystem.runHopperRollerPercentage(-HOPPER_ROLLER_DUTY_CYCLE),
-                hopperSubsystem))
-        .whileFalse(
-            new RunCommand(() -> hopperSubsystem.runHopperRollerPercentage(0), hopperSubsystem));
+    // operatorController
+    //     .rightStick()
+    //     .whileTrue(
+    //         new RunCommand(
+    //             () -> hopperSubsystem.runHopperRollerPercentage(-HOPPER_ROLLER_DUTY_CYCLE),
+    //             hopperSubsystem))
+    //     .whileFalse(
+    //         new RunCommand(() -> hopperSubsystem.runHopperRollerPercentage(0), hopperSubsystem));
 
-    /* Manual Shooter Kicker */
-    operatorController
-        .leftTrigger(0.2)
-        .whileTrue(
-            new RunCommand(
-                () -> shooterSubsystem.runKickerMotorPercentage(SHOOTER_KICKER_DUTY_CYCLE),
-                shooterSubsystem))
-        .whileFalse(
-            new RunCommand(() -> shooterSubsystem.runKickerMotorPercentage(0), shooterSubsystem));
+    // /* Manual Shooter Kicker */
+    // operatorController
+    //     .leftTrigger(0.2)
+    //     .whileTrue(
+    //         new RunCommand(
+    //             () -> shooterSubsystem.runKickerMotorPercentage(SHOOTER_KICKER_DUTY_CYCLE),
+    //             shooterSubsystem))
+    //     .whileFalse(
+    //         new RunCommand(() -> shooterSubsystem.runKickerMotorPercentage(0),
+    // shooterSubsystem));
 
-    operatorController
-        .rightTrigger(0.2)
-        .whileTrue(
-            new RunCommand(
-                () -> shooterSubsystem.runKickerMotorPercentage(-SHOOTER_KICKER_DUTY_CYCLE),
-                shooterSubsystem))
-        .whileFalse(
-            new RunCommand(() -> shooterSubsystem.runKickerMotorPercentage(0), shooterSubsystem));
+    // operatorController
+    //     .rightTrigger(0.2)
+    //     .whileTrue(
+    //         new RunCommand(
+    //             () -> shooterSubsystem.runKickerMotorPercentage(-SHOOTER_KICKER_DUTY_CYCLE),
+    //             shooterSubsystem))
+    //     .whileFalse(
+    //         new RunCommand(() -> shooterSubsystem.runKickerMotorPercentage(0),
+    // shooterSubsystem));
 
-    /* Manual Shooter Flywheel */
-    operatorController
-        .x()
-        .whileTrue(
-            new RunCommand(
-                () -> shooterSubsystem.runShooterMotorPercentage(SHOOTER_LEAD_DUTY_CYCLE),
-                shooterSubsystem))
-        .whileFalse(
-            new RunCommand(() -> shooterSubsystem.runShooterMotorPercentage(0), shooterSubsystem));
+    // /* Manual Shooter Flywheel */
+    // operatorController
+    //     .x()
+    //     .whileTrue(
+    //         new RunCommand(
+    //             () -> shooterSubsystem.runShooterMotorPercentage(SHOOTER_LEAD_DUTY_CYCLE),
+    //             shooterSubsystem))
+    //     .whileFalse(
+    //         new RunCommand(() -> shooterSubsystem.runShooterMotorPercentage(0),
+    // shooterSubsystem));
 
-    operatorController
-        .y()
-        .whileTrue(
-            new RunCommand(
-                () -> shooterSubsystem.runShooterMotorPercentage(SHOOTER_LEAD_DUTY_CYCLE),
-                shooterSubsystem))
-        .whileFalse(
-            new RunCommand(() -> shooterSubsystem.runShooterMotorPercentage(0), shooterSubsystem));
+    // operatorController
+    //     .y()
+    //     .whileTrue(
+    //         new RunCommand(
+    //             () -> shooterSubsystem.runShooterMotorPercentage(SHOOTER_LEAD_DUTY_CYCLE),
+    //             shooterSubsystem))
+    //     .whileFalse(
+    //         new RunCommand(() -> shooterSubsystem.runShooterMotorPercentage(0),
+    // shooterSubsystem));
 
     // // Run SysId routines when holding back/start and X/Y.
     // // Note that each routine should be run exactly once in a single log.

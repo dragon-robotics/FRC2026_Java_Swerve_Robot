@@ -32,9 +32,11 @@ public class Superstructure extends SubsystemBase {
     INTAKE, // DRIVE, SHOOTER PREPFUEL, HOPPER INDEXTOSHOOTER, INTAKE INTAKE
     OUTTAKE, // DRIVE, SHOOTER PREPFUEL, HOPPER INDEXTOINTAKE, INTAKE OUTTAKE
     SHOOT, // DRIVE points towards target, SHOOTER SHOOT, HOPPER INDEXTOSHOOTER, INTAKE OFF
+    SHOOT_JUICER
   }
 
   private SuperState state;
+  private SuperState lastState = null; // ← Add this line
 
   private final CommandSwerveDrivetrain swerve;
   private final IntakeSubsystem intake;
@@ -206,6 +208,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   public void handleStateTransition() {
+
     // State machine logic
     switch (state) {
       case DRIVE:
@@ -214,15 +217,15 @@ public class Superstructure extends SubsystemBase {
         // Set Hopper to STOP
         hopper.setDesiredState(HopperState.STOP);
         // Set Shooter to PREPFUEL
-        shooter.setDesiredState(ShooterState.PREPFUEL);
+        shooter.setDesiredState(ShooterState.STOP);
         break;
       case INTAKE:
         // Set Intake to INTAKE
         intake.setDesiredState(IntakeState.INTAKE);
         // Set Hopper to INDEXTOSHOOTER
-        hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+        // hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
         // Set Shooter to PREPFUEL
-        shooter.setDesiredState(ShooterState.PREPFUEL);
+        shooter.setDesiredState(ShooterState.STOP);
         break;
       case OUTTAKE:
         // Set Drive to maintain heading at reduced speeds
@@ -231,7 +234,7 @@ public class Superstructure extends SubsystemBase {
         // Set Hopper to INDEXTOINTAKE
         hopper.setDesiredState(HopperState.INDEXTOINTAKE);
         // Set Shooter to PREPFUEL
-        shooter.setDesiredState(ShooterState.PREPFUEL);
+        shooter.setDesiredState(ShooterState.STOP);
         break;
       case SHOOT:
         // Set Shooter to SHOOT
@@ -242,11 +245,26 @@ public class Superstructure extends SubsystemBase {
           // Once the robot is in position, set to x-lock
           // TODO: In the future, set to hold position, or shoot on the move //
           // Set Intake to AUTO_WOKTOSSING
-          intake.setDesiredState(IntakeState.JUICER);
+          intake.setDesiredState(IntakeState.INTAKE);
           // Set Hopper to INDEXTOSHOOTER
+          // DogLog.log("Superstructure/Hopper State", hopper.getCurrentState().toString());
           hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
         }
         break;
+      case SHOOT_JUICER:
+        // Set Shooter to SHOOT
+        shooter.setDesiredState(ShooterState.SHOOT);
+
+        if (shooter.getCurrentState() == ShooterState.SHOOT) {
+          // Set Drive to point towards target
+          // Once the robot is in position, set to x-lock
+          // TODO: In the future, set to hold position, or shoot on the move //
+          // Set Intake to AUTO_WOKTOSSING
+          intake.setDesiredState(IntakeState.JUICER);
+          // Set Hopper to INDEXTOSHOOTER
+          // DogLog.log("Superstructure/Hopper State", hopper.getCurrentState().toString());
+          hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+        }
     }
   }
 
@@ -262,6 +280,8 @@ public class Superstructure extends SubsystemBase {
         currentPose.getTranslation().getDistance(FieldConstants.Hub.BLUE_HUB_CENTER_POSE);
 
     DogLog.log("Superstructure/Distance to Blue Hub (feet)", Units.metersToFeet(distanceToBlueHub));
+
+    DogLog.log("Superstructure/SuperState", state.toString());
 
     handleStateTransition();
 

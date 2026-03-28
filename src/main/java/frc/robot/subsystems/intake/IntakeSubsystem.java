@@ -7,7 +7,6 @@ package frc.robot.subsystems.intake;
 import static frc.robot.util.constants.IntakeConstants.*;
 
 import dev.doglog.DogLog;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
@@ -29,7 +28,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Sub-phases for the JUICER state's timed sequence. */
   public enum JuicerPhase {
-    WAIT,
     PRE_JUICE,
     SQUEEZE
   }
@@ -45,8 +43,7 @@ public class IntakeSubsystem extends SubsystemBase {
   protected boolean wokTossMovingToDeployed;
 
   // Juicer sub-phase tracking — always reset to WAIT on (re-)entry
-  private JuicerPhase juicerPhase = JuicerPhase.WAIT;
-  private final Timer juicerTimer = new Timer();
+  private JuicerPhase juicerPhase = JuicerPhase.PRE_JUICE;
 
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem(MotorIO intakeRollerIO, MotorIO intakeArmIO) {
@@ -75,10 +72,12 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void runIntakeRollerPercentage(double percentage) {
+    // DogLog.log("Intake/Roller_Debug", percentage);
     intakeRollerIO.setMotorPercentage(percentage);
   }
 
   public void runIntake() {
+    // runIntakeRollerPercentage(INTAKE_ROLLER_DUTY_CYCLE);
     intakeRollerIO.setMotorPercentage(INTAKE_ROLLER_DUTY_CYCLE);
   }
 
@@ -171,20 +170,28 @@ public class IntakeSubsystem extends SubsystemBase {
   public void setDesiredState(IntakeState state) {
     this.desiredIntakeState = state;
 
+    if (this.currIntakeState == state) {
+      return;
+    }
+
     // Handle state transitions
     switch (desiredIntakeState) {
       case HOME:
         currIntakeState = IntakeState.STOWING;
         break;
       case INTAKE:
-        if (currIntakeState == IntakeState.OUTTAKE || currIntakeState == IntakeState.DEPLOYED) {
+        if (currIntakeState == IntakeState.OUTTAKE
+            || currIntakeState == IntakeState.DEPLOYED
+            || currIntakeState == IntakeState.INTAKE) {
           currIntakeState = IntakeState.INTAKE;
         } else {
           currIntakeState = IntakeState.DEPLOYING;
         }
         break;
       case OUTTAKE:
-        if (currIntakeState == IntakeState.INTAKE || currIntakeState == IntakeState.DEPLOYED) {
+        if (currIntakeState == IntakeState.INTAKE
+            || currIntakeState == IntakeState.DEPLOYED
+            || currIntakeState == IntakeState.OUTTAKE) {
           currIntakeState = IntakeState.OUTTAKE;
         } else {
           currIntakeState = IntakeState.DEPLOYING;
@@ -204,8 +211,7 @@ public class IntakeSubsystem extends SubsystemBase {
       case JUICER:
         currIntakeState = IntakeState.JUICER;
         // Always restart the juicer sequence from WAIT on (re-)entry
-        juicerPhase = JuicerPhase.WAIT;
-        juicerTimer.restart();
+        juicerPhase = JuicerPhase.PRE_JUICE;
         break;
       default:
         break;
@@ -224,7 +230,8 @@ public class IntakeSubsystem extends SubsystemBase {
       case INTAKE:
         // Set intake arm to intake setpoint
         deployIntakeArm();
-        // Set intake rollers to intake speed
+        // // Set intake rollers to intake speed
+        // DogLog.log("Intake/Roller Debug", "STATE_TRANSITION");
         runIntake();
         break;
       case OUTTAKE:
@@ -258,6 +265,8 @@ public class IntakeSubsystem extends SubsystemBase {
             currIntakeState = IntakeState.INTAKE;
           } else if (desiredIntakeState == IntakeState.OUTTAKE) {
             currIntakeState = IntakeState.OUTTAKE;
+          } else {
+            currIntakeState = IntakeState.DEPLOYED;
           }
         }
         break;
@@ -298,12 +307,6 @@ public class IntakeSubsystem extends SubsystemBase {
       case JUICER:
         runIntake();
         switch (juicerPhase) {
-          case WAIT:
-            // Phase 1: Run rollers for 2 seconds while balls travel to the shooter
-            if (juicerTimer.hasElapsed(2.0)) {
-              juicerPhase = JuicerPhase.PRE_JUICE;
-            }
-            break;
           case PRE_JUICE:
             // Phase 2: Move arm quickly to pre-juice setpoint to clear hopper wall
             setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
