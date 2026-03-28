@@ -1,7 +1,6 @@
 package frc.robot.io;
 
 import com.ctre.phoenix6.BaseStatusSignal;
-import dev.doglog.DogLog;
 import java.util.ArrayList;
 import java.util.List;
 
