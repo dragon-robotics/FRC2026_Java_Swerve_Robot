@@ -183,12 +183,12 @@ public class RobotContainer {
                 new TalonFXMotorIOSim(
                     INTAKE_ROLLER_MOTOR_ID,
                     INTAKE_ROLLER_TALONFX_CONFIG,
-                    "KrakenX60_FOC",
+                    "KrakenX60",
                     "Intake Roller"),
                 new TalonFXMotorIOSim(
                     INTAKE_ARM_MOTOR_ID,
                     INTAKE_ARM_TALONFX_CONFIG,
-                    "KrakenX60_FOC",
+                    "KrakenX60",
                     "Intake Arm",
                     INTAKE_ARM_CANCODER_CONFIG));
         hopperSubsystem =
@@ -196,13 +196,13 @@ public class RobotContainer {
                 new TalonFXMotorIOSim(
                     HOPPER_ROLLER_LEAD_MOTOR_ID,
                     HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
-                    "KrakenX60_FOC",
+                    "KrakenX60",
                     "Hopper Lead Motor"),
                 new TalonFXMotorIOSim(
                     HOPPER_ROLLER_FOLLOW_MOTOR_ID,
                     HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
-                    "KrakenX60_FOC",
-                    "Shooter Follow",
+                    "KrakenX60",
+                    "Hopper Follow Motor",
                     new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)));
         shooterSubsystem =
             new ShooterSubsystem(
@@ -236,19 +236,20 @@ public class RobotContainer {
                 new VisionIOPhotonVisionSim(
                     APTAG_CAMERA_NAMES[0],
                     VisionConstants.APTAG_POSE_EST_CAM_F_POS,
-                    swerveSubsystem::getState),
-                new VisionIOPhotonVisionSim(
-                    APTAG_CAMERA_NAMES[1],
-                    VisionConstants.APTAG_POSE_EST_CAM_R_POS,
-                    swerveSubsystem::getState),
-                new VisionIOPhotonVisionSim(
-                    APTAG_CAMERA_NAMES[2],
-                    VisionConstants.APTAG_POSE_EST_CAM_B_POS,
-                    swerveSubsystem::getState),
-                new VisionIOPhotonVisionSim(
-                    APTAG_CAMERA_NAMES[3],
-                    VisionConstants.APTAG_POSE_EST_CAM_L_POS,
-                    swerveSubsystem::getState));
+                    swerveSubsystem::getState)
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[1],
+                //     VisionConstants.APTAG_POSE_EST_CAM_R_POS,
+                //     swerveSubsystem::getState),
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[2],
+                //     VisionConstants.APTAG_POSE_EST_CAM_B_POS,
+                //     swerveSubsystem::getState),
+                // new VisionIOPhotonVisionSim(
+                //     APTAG_CAMERA_NAMES[3],
+                //     VisionConstants.APTAG_POSE_EST_CAM_L_POS,
+                //     swerveSubsystem::getState)
+            );
         break;
       case TEST:
         intakeSubsystem =
@@ -423,47 +424,25 @@ public class RobotContainer {
     driverController.start().onTrue(seedFieldCentricCommand);
 
     /* Intake */
-    // driverController.leftTrigger(0.2)
-    //     .whileTrue(intakeCommand)
-    //     .onFalse(new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
     driverController
         .leftTrigger(0.2)
-        .whileTrue(intakeCommand)
-        // .whileTrue(indexToShooterCommand)
-        .onFalse(deployIntakeCommand)
-        .onFalse(stopHopperCommand);
+            .whileTrue(intakeCommand)
+            .onFalse(
+                new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
 
     /* Manual woktoss */
-    driverController.pov(90).whileTrue(wokTossIntakeCommand).onFalse(deployIntakeCommand);
+    // driverController.a().whileTrue(wokTossIntakeCommand).onFalse(deployIntakeCommand);
 
     /* Outtake */
-    // driverController.rightBumper()
-    //     .whileTrue(outtakeCommand)
-    //     .onFalse(new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
-    driverController
-        .rightBumper()
+    driverController.rightBumper()
         .whileTrue(outtakeCommand)
-        .whileTrue(indexToIntakeCommand)
-        .onFalse(stopHopperCommand)
-        .onFalse(deployIntakeCommand);
-
-    /* Hopper */
-    driverController.pov(180).whileTrue(indexToShooterCommand).onFalse(stopHopperCommand);
+        .onFalse(new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
 
     /* Shoot */
-    // driverController.rightTrigger(0.2)
-    //     .whileTrue(shootCommand)
-    //     .onFalse(new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
-    
-    driverController
-        .rightTrigger(0.2)
+    driverController.rightTrigger(0.2)
         .whileTrue(shootCommand)
-        // .whileTrue(shootDriveCommand)
-        // .whileTrue(wokTossCommand)
-        .onFalse(stopShooterCommand)
-        .onFalse(stopHopperCommand);
-    // .onFalse(stowIntakeCommand);
-
+        .onFalse(new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
+    
     /* Operator Controls */
 
     /* TODO: Add overrides to the shooter in case camera goes down */
