@@ -7,6 +7,7 @@ package frc.robot.subsystems.intake;
 import static frc.robot.util.constants.IntakeConstants.*;
 
 import dev.doglog.DogLog;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
@@ -22,7 +23,15 @@ public class IntakeSubsystem extends SubsystemBase {
     STOWING,
     WOKTOSS,
     WOKTOSSING,
-    AUTO_WOKTOSSING
+    AUTO_WOKTOSSING,
+    JUICER
+  }
+
+  /** Sub-phases for the JUICER state's timed sequence. */
+  public enum JuicerPhase {
+    WAIT,
+    PRE_JUICE,
+    SQUEEZE
   }
 
   protected IntakeState currIntakeState;
@@ -34,6 +43,10 @@ public class IntakeSubsystem extends SubsystemBase {
   protected final MotorIOInputs intakeArmInputs;
 
   protected boolean wokTossMovingToDeployed;
+
+  // Juicer sub-phase tracking — always reset to WAIT on (re-)entry
+  private JuicerPhase juicerPhase = JuicerPhase.WAIT;
+  private final Timer juicerTimer = new Timer();
 
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem(MotorIO intakeRollerIO, MotorIO intakeArmIO) {
@@ -131,6 +144,12 @@ public class IntakeSubsystem extends SubsystemBase {
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
+  public boolean isIntakeArmAtPreJuice() {
+    double positionError =
+        Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
+    return positionError < INTAKE_ARM_POSITION_TOLERANCE;
+  }
+
   public boolean isIntaking() {
     return getIntakeRollerSpeed() > 5;
   }
@@ -181,6 +200,12 @@ public class IntakeSubsystem extends SubsystemBase {
       case AUTO_WOKTOSSING:
         currIntakeState = IntakeState.AUTO_WOKTOSSING;
         wokTossMovingToDeployed = true;
+        break;
+      case JUICER:
+        currIntakeState = IntakeState.JUICER;
+        // Always restart the juicer sequence from WAIT on (re-)entry
+        juicerPhase = JuicerPhase.WAIT;
+        juicerTimer.restart();
         break;
       default:
         break;
@@ -255,20 +280,6 @@ public class IntakeSubsystem extends SubsystemBase {
         if (isIntakeArmAtWokToss()) {
           currIntakeState = IntakeState.WOKTOSS;
         }
-        // // Oscillate the arm between the woktoss setpoint and the deployed setpoint
-        // if (wokTossMovingToDeployed) {
-        //   intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
-        //   runOuttake();
-        //   if (isIntakeArmAtDeployed()) {
-        //     wokTossMovingToDeployed = false;
-        //   }
-        // } else {
-        //   intakeArmIO.setMotorPosition(INTAKE_ARM_WOKTOSS_POSITION, INTAKE_ARM_FAST_PID_SLOT);
-        //   runIntake();
-        //   if (isIntakeArmAtWokToss()) {
-        //     wokTossMovingToDeployed = true;
-        //   }
-        // }
         break;
       case AUTO_WOKTOSSING:
         // Intake arm oscillate between deployed and woktoss setpoints in a set sequence
@@ -284,18 +295,44 @@ public class IntakeSubsystem extends SubsystemBase {
         //   currIntakeState = IntakeState.WOKTOSS;
         // }
         break;
+      case JUICER:
+        runIntake();
+        switch (juicerPhase) {
+          case WAIT:
+            // Phase 1: Run rollers for 2 seconds while balls travel to the shooter
+            if (juicerTimer.hasElapsed(2.0)) {
+              juicerPhase = JuicerPhase.PRE_JUICE;
+            }
+            break;
+          case PRE_JUICE:
+            // Phase 2: Move arm quickly to pre-juice setpoint to clear hopper wall
+            setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
+            if (isIntakeArmAtPreJuice()) {
+              juicerPhase = JuicerPhase.SQUEEZE;
+            }
+            break;
+          case SQUEEZE:
+            // Phase 3: Slowly move arm to final juice position to squeeze remaining balls
+            setIntakeArmSetpoint(INTAKE_ARM_JUICER_FINAL_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
+            break;
+        }
+        break;
     }
   }
 
   @Override
   public void periodic() {
+    DogLog.time("Perf/Intake");
 
     handleStateTransition();
 
     DogLog.log("Intake/Intake State", currIntakeState.toString());
+    DogLog.log("Intake/Juicer Phase", juicerPhase.toString());
 
     // This method will be called once per scheduler run
     intakeRollerIO.updateInputs(intakeRollerInputs);
     intakeArmIO.updateInputs(intakeArmInputs);
+
+    DogLog.timeEnd("Perf/Intake");
   }
 }

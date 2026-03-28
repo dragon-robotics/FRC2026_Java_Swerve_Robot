@@ -16,7 +16,6 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
@@ -72,7 +71,7 @@ public class VisionSubsystem extends SubsystemBase {
     // Pre-compute camera log key strings (avoids string concat each cycle)
     cameraPerfKeys = new String[io.length];
     for (int i = 0; i < io.length; i++) {
-      cameraPerfKeys[i] = "Vision/Perf/Camera" + i + "Ms";
+      cameraPerfKeys[i] = "Vision/Perf/Camera" + i;
     }
 
     // Pre-allocate pose buffer: each camera can produce ~2 poses max per cycle
@@ -89,7 +88,7 @@ public class VisionSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    double periodicStartTime = Timer.getFPGATimestamp();
+    DogLog.time("Vision/Perf/TotalPeriodic");
 
     // Use local variables to reduce field access (optimization)
     final var cameraIOs = io;
@@ -100,14 +99,13 @@ public class VisionSubsystem extends SubsystemBase {
 
     // This method will be called once per scheduler run
     for (int cameraIndex = 0; cameraIndex < cameraIOs.length; cameraIndex++) {
-      double cameraStartTime = Timer.getFPGATimestamp();
+      DogLog.time(cameraPerfKeys[cameraIndex]);
 
       cameraIOs[cameraIndex].updateInputs(cameraInputs[cameraIndex]);
 
       processCameraData(cameraIndex, cameraInputs[cameraIndex]);
 
-      double cameraEndTime = Timer.getFPGATimestamp();
-      DogLog.log(cameraPerfKeys[cameraIndex], (cameraEndTime - cameraStartTime) * 1000.0);
+      DogLog.timeEnd(cameraPerfKeys[cameraIndex]);
     }
 
     // Log every cycle — use Arrays.copyOf only when we have poses (avoids full-buffer copy)
@@ -117,8 +115,7 @@ public class VisionSubsystem extends SubsystemBase {
             ? EMPTY_POSE3D_ARRAY
             : Arrays.copyOf(acceptedPoseBuffer, acceptedPoseCount));
 
-    double periodicEndTime = Timer.getFPGATimestamp();
-    DogLog.log("Vision/Perf/TotalPeriodicMs", (periodicEndTime - periodicStartTime) * 1000.0);
+    DogLog.timeEnd("Vision/Perf/TotalPeriodic");
   }
 
   private void processCameraData(int cameraIndex, VisionIOInputs inputs) {

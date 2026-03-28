@@ -249,7 +249,7 @@ public class RobotContainer {
                 //     APTAG_CAMERA_NAMES[3],
                 //     VisionConstants.APTAG_POSE_EST_CAM_L_POS,
                 //     swerveSubsystem::getState)
-            );
+                );
         break;
       case TEST:
         intakeSubsystem =
@@ -417,8 +417,8 @@ public class RobotContainer {
 
     /* Driver Controls */
 
-    // Brake the drivetrain on pressing the back button.
-    driverController.back().whileTrue(swerveBrakeCommand);
+    // // Brake the drivetrain on pressing the back button.
+    // driverController.back().whileTrue(swerveBrakeCommand);
 
     // Reset the field-centric heading on start button press.
     driverController.start().onTrue(seedFieldCentricCommand);
@@ -426,7 +426,10 @@ public class RobotContainer {
     /* Intake */
     driverController
         .leftTrigger(0.2)
-        .whileTrue(intakeCommand)
+        .whileTrue(
+            new InstantCommand(
+                () -> superstructureSubsystem.setDesiredSuperState(SuperState.INTAKE),
+                superstructureSubsystem))
         .onFalse(
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
@@ -438,7 +441,10 @@ public class RobotContainer {
     /* Outtake */
     driverController
         .rightBumper()
-        .whileTrue(outtakeCommand)
+        .whileTrue(
+            new InstantCommand(
+                () -> superstructureSubsystem.setDesiredSuperState(SuperState.OUTTAKE),
+                superstructureSubsystem))
         .onFalse(
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
@@ -447,7 +453,11 @@ public class RobotContainer {
     /* Shoot */
     driverController
         .rightTrigger(0.2)
-        .whileTrue(shootCommand)
+        .whileTrue(
+            new InstantCommand(
+                () -> superstructureSubsystem.setDesiredSuperState(SuperState.SHOOT),
+                superstructureSubsystem))
+        .whileTrue(shootDriveCommand)
         .onFalse(
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),

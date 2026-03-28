@@ -60,6 +60,10 @@ public final class IntakeConstants {
 
   public static final double INTAKE_ARM_STOWED_POSITION = 0.37;
   public static final double INTAKE_ARM_WOKTOSS_POSITION = 0.15;
+  public static final double INTAKE_ARM_JUICER_PRE_POSITION =
+      0.15; // Intake arm moves quickly to prevent the intake from getting stuck on the hopper wall,
+  // then moves slowly to the final juicer position to ensure the ball is fully intaken
+  public static final double INTAKE_ARM_JUICER_FINAL_POSITION = 0.28;
   public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0;
   public static final double INTAKE_ARM_POSITION_TOLERANCE = 0.025;
 

@@ -4,7 +4,6 @@ import static frc.robot.util.constants.ShooterConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
@@ -96,11 +95,11 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void runKicker() {
-    shooterKickerIO.setMotorPercentage(0.75); // Run kicker at full RPM for shooting
+    shooterKickerIO.setMotorPercentage(0.75); // Run kicker at 75% of full RPM for shooting
   }
 
   public void prepKicker() {
-    shooterKickerIO.setMotorPercentage(0.75 * 0.3); // Run kicker at 30% of full RPM for prep
+    shooterKickerIO.setMotorPercentage(0.3); // Run kicker at 30% of full RPM for prep
   }
 
   public void stopKicker() {
@@ -186,6 +185,7 @@ public class ShooterSubsystem extends SubsystemBase {
             break;
           case PREPFUEL:
             prepShooter();
+            prepKicker();
             setHoodAngle(0);
             if (MathUtil.isNear(targetRPM * 0.3, getShooterSpeed(), 60)) {
               currShooterState = ShooterState.PREPFUEL;
@@ -208,6 +208,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    DogLog.time("Perf/Shooter");
 
     // Set Hood Angle every loop to ensure it reaches the desired position
     // setHoodAngle();
@@ -222,5 +223,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     shooterLeadIO.updateInputs(shooterLeadInputs);
     shooterFollowIO.updateInputs(shooterFollowInputs);
+
+    DogLog.timeEnd("Perf/Shooter");
   }
 }

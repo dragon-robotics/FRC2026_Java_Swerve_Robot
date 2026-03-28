@@ -61,10 +61,7 @@ public class VisionPoseValidator {
 
     // Check large pose change
     if (m_lastAcceptedPose != null) {
-      double poseChange =
-        m_lastAcceptedPose
-            .getTranslation()
-            .getDistance(pose2d.getTranslation());
+      double poseChange = m_lastAcceptedPose.getTranslation().getDistance(pose2d.getTranslation());
       if (poseChange > MAX_POSE_CHANGE) {
         return new RejectedPose(
             observation,

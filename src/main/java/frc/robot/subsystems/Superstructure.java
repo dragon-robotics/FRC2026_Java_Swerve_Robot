@@ -1,13 +1,11 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-
-import dev.doglog.DogLog;
-
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -23,7 +21,6 @@ import frc.robot.subsystems.shooter.ShooterSubsystem.ShooterState;
 import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.util.Telemetry;
 import frc.robot.util.constants.FieldConstants;
-
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -153,12 +150,10 @@ public class Superstructure extends SubsystemBase {
 
   public Command intakeCommand() {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.INTAKE), intake);
-    // return new InstantCommand(() -> setDesiredSuperState(SuperState.INTAKE));
   }
 
   public Command outtakeCommand() {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.OUTTAKE), intake);
-    // return new InstantCommand(() -> setDesiredSuperState(SuperState.OUTTAKE));
   }
 
   public Command deployIntakeCommand() {
@@ -195,7 +190,6 @@ public class Superstructure extends SubsystemBase {
 
   public Command shootCommand() {
     return new InstantCommand(() -> shooter.setDesiredState(ShooterState.SHOOT), shooter);
-    // return new InstantCommand(() -> setDesiredSuperState(SuperState.SHOOT));
   }
 
   public Command prepFuelCommand() {
@@ -247,8 +241,8 @@ public class Superstructure extends SubsystemBase {
           // Set Drive to point towards target
           // Once the robot is in position, set to x-lock
           // TODO: In the future, set to hold position, or shoot on the move //
-          // Set Intake to INTAKE
-          intake.setDesiredState(IntakeState.INTAKE);
+          // Set Intake to AUTO_WOKTOSSING
+          intake.setDesiredState(IntakeState.JUICER);
           // Set Hopper to INDEXTOSHOOTER
           hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
         }
@@ -258,6 +252,8 @@ public class Superstructure extends SubsystemBase {
 
   @Override
   public void periodic() {
+    DogLog.time("Perf/Superstructure");
+
     // Updates where the robot is //
     Pose2d currentPose = swerve.getState().Pose;
 
@@ -265,10 +261,12 @@ public class Superstructure extends SubsystemBase {
     double distanceToBlueHub =
         currentPose.getTranslation().getDistance(FieldConstants.Hub.BLUE_HUB_CENTER_POSE);
 
-    DogLog.log("Superstructure/Distance to Blue Hub", distanceToBlueHub);
+    DogLog.log("Superstructure/Distance to Blue Hub (feet)", Units.metersToFeet(distanceToBlueHub));
 
-    // handleStateTransition();
+    handleStateTransition();
 
     // Based on where the robot is, update the shooting location the robot should point towards
+
+    DogLog.timeEnd("Perf/Superstructure");
   }
 }

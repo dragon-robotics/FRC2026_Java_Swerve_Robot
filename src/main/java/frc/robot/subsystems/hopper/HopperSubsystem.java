@@ -3,7 +3,6 @@ package frc.robot.subsystems.hopper;
 import static frc.robot.util.constants.HopperConstants.*;
 
 import dev.doglog.DogLog;
-import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
@@ -130,6 +129,7 @@ public class HopperSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    DogLog.time("Perf/Hopper");
 
     /* This method will be called once per scheduler run */
     handleStateTransition();
@@ -138,5 +138,7 @@ public class HopperSubsystem extends SubsystemBase {
 
     leadRollerMotorIO.updateInputs(leadRollerMotorIOInputs);
     followRollerMotorIO.updateInputs(followRollerMotorIOInputs);
+
+    DogLog.timeEnd("Perf/Hopper");
   }
 }

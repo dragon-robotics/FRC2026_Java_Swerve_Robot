@@ -4,15 +4,26 @@
 
 package frc.robot;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.io.SignalRegistry;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.List;
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
+
+  // GC tracking for per-cycle delta logging
+  private final List<GarbageCollectorMXBean> gcBeans =
+      ManagementFactory.getGarbageCollectorMXBeans();
+
+  private long lastGcCount = 0;
+  private long lastGcTimeMs = 0;
 
   public Robot() {
     m_robotContainer = new RobotContainer();
@@ -20,9 +31,35 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotPeriodic() {
+    DogLog.time("Perf/Total");
+
     // Batch-refresh all CTRE motor signals BEFORE the scheduler runs subsystem periodics
+    DogLog.time("Perf/SignalRefresh");
     SignalRegistry.getInstance().refreshAll();
+    DogLog.timeEnd("Perf/SignalRefresh");
+
+    DogLog.time("Perf/Scheduler");
     CommandScheduler.getInstance().run();
+    DogLog.timeEnd("Perf/Scheduler");
+
+    // Total cycle time
+    DogLog.timeEnd("Perf/Total");
+
+    // Heap stats
+    Runtime rt = Runtime.getRuntime();
+    DogLog.log("Perf/HeapUsedMB", (rt.totalMemory() - rt.freeMemory()) / (1024.0 * 1024.0));
+
+    // GC delta stats
+    long totalGcCount = 0;
+    long totalGcTimeMs = 0;
+    for (GarbageCollectorMXBean gc : gcBeans) {
+      totalGcCount += gc.getCollectionCount();
+      totalGcTimeMs += gc.getCollectionTime();
+    }
+    DogLog.log("Perf/GCDeltaCount", totalGcCount - lastGcCount);
+    DogLog.log("Perf/GCDeltaTimeMs", totalGcTimeMs - lastGcTimeMs);
+    lastGcCount = totalGcCount;
+    lastGcTimeMs = totalGcTimeMs;
   }
 
   @Override
