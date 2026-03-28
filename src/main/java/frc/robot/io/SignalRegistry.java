@@ -32,9 +32,6 @@ public class SignalRegistry {
     }
 
     signalArray = allSignals.toArray(new BaseStatusSignal[0]);
-
-    DogLog.log(
-        "SignalRegistry/" + motorIO.getMotorName(), "Registered " + signals.length + " signals");
   }
 
   /**
