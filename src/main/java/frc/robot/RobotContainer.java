@@ -426,23 +426,33 @@ public class RobotContainer {
     /* Intake */
     driverController
         .leftTrigger(0.2)
-            .whileTrue(intakeCommand)
-            .onFalse(
-                new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
+        .whileTrue(intakeCommand)
+        .onFalse(
+            new InstantCommand(
+                () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
+                superstructureSubsystem));
 
     /* Manual woktoss */
     // driverController.a().whileTrue(wokTossIntakeCommand).onFalse(deployIntakeCommand);
 
     /* Outtake */
-    driverController.rightBumper()
+    driverController
+        .rightBumper()
         .whileTrue(outtakeCommand)
-        .onFalse(new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
+        .onFalse(
+            new InstantCommand(
+                () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
+                superstructureSubsystem));
 
     /* Shoot */
-    driverController.rightTrigger(0.2)
+    driverController
+        .rightTrigger(0.2)
         .whileTrue(shootCommand)
-        .onFalse(new InstantCommand(() -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE), superstructureSubsystem));
-    
+        .onFalse(
+            new InstantCommand(
+                () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
+                superstructureSubsystem));
+
     /* Operator Controls */
 
     /* TODO: Add overrides to the shooter in case camera goes down */
