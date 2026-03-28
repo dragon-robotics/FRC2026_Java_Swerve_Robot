@@ -44,12 +44,12 @@ public final class IntakeConstants {
   public static final int INTAKE_ARM_FAST_PID_SLOT = 0;
   public static final int INTAKE_ARM_SLOW_PID_SLOT = 1;
 
-  public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(18);
+  public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(13.370);
   public static final double INTAKE_ARM_MASS_KG = Units.lbsToKilograms(10);
   public static final double INTAKE_ARM_GEAR_RATIO = 36;
   public static final double INTAKE_MIN_ANGLE_RADIANS = Units.degreesToRadians(0);
   public static final double INTAKE_MAX_ANGLE_RADIANS = Units.degreesToRadians(90);
-  public static final double INTAKE_STARTING_ANGLE_RADIANS = INTAKE_MAX_ANGLE_RADIANS;
+  public static final double INTAKE_STARTING_ANGLE_RADIANS = INTAKE_MIN_ANGLE_RADIANS;
 
   public static final double INTAKE_ROLLER_DUTY_CYCLE = 1.0;
   public static final double INTAKE_ROLLER_VOLTAGE = 12;
@@ -59,7 +59,7 @@ public final class IntakeConstants {
   public static final double OUTTAKE_ROLLER_RPM = -6000.0;
 
   public static final double INTAKE_ARM_STOWED_POSITION = 0.37;
-  public static final double INTAKE_ARM_WOKTOSS_POSITION = 0.25;
+  public static final double INTAKE_ARM_WOKTOSS_POSITION = 0.15;
   public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0;
   public static final double INTAKE_ARM_POSITION_TOLERANCE = 0.025;
 
