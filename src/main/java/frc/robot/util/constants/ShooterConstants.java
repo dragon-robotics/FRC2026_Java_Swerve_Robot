@@ -26,6 +26,8 @@ import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import java.util.List;
 
@@ -43,124 +45,45 @@ public final class ShooterConstants {
   public static final double SHOOTER_KICKER_RPM = 3000.0;
   public static final double SHOOTER_LEAD_DUTY_CYCLE = 1.0;
   public static final double SHOOTER_LEAD_VOLTAGE = 12.0;
-  public static final double SHOOTER_LEAD_RPM = 2500.0;
+  public static final double SHOOTER_LEAD_RPM = 3000.0;
 
-  public static enum ShooterHoodSettings {
-    HOME(0),
-    MIDDLE_CLOSE(0.75),
-    MIDDLE(1.5),
-    MIDDLE_FAR(2.25),
-    FAR(3);
+  public record ShooterSetpoint(double shooterRPM, double hoodAngle) {}
 
-    private final double setpoint;
+  /** Interpolating table for shooter RPM based on distance in meters */
+  public static final InterpolatingDoubleTreeMap SHOOTER_RPM_MAP =
+      new InterpolatingDoubleTreeMap();
 
-    ShooterHoodSettings(double setpoint) {
-      this.setpoint = setpoint;
-    }
+  /** Interpolating table for hood angle (rotations) based on distance in meters */
+  public static final InterpolatingDoubleTreeMap SHOOTER_HOOD_MAP =
+      new InterpolatingDoubleTreeMap();
 
-    public double getSetting() {
-      return setpoint;
-    }
+  static {
+    // Distance (ft) -> RPM
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(5),  2450.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(6),  2500.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(7),  2550.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(8),  2700.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(9),  2800.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(10), 2850.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(11), 2900.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(12), 3000.0);
+
+    // Distance (ft) -> Hood angle (rotations)
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(5),  0.00);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(6),  0.00);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(7),  0.00);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(8),  0.00);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(9),  0.00);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(10), 0.75);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(11), 0.75);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(12), 1.25);
   }
 
-  public record ShooterSetpoint(double shooterRPM, ShooterHoodSettings hoodSetting) {}
-
-  public record ShooterZone(
-      double minDistanceMeters, double maxDistanceMeters, ShooterSetpoint setpoint) {
-    public boolean contains(double distanceMeters) {
-      return distanceMeters >= minDistanceMeters && distanceMeters < maxDistanceMeters;
-    }
-  }
-
-  // Example 3 zones (TODO: Tune these values in real world testing)
-  public static final List<ShooterZone> SHOOTER_ZONES =
-      List.of(
-          new ShooterZone(
-              0.0, Units.feetToMeters(2), new ShooterSetpoint(2500, ShooterHoodSettings.HOME)),
-          new ShooterZone(
-              Units.feetToMeters(2),
-              Units.feetToMeters(3),
-              new ShooterSetpoint(2550.0, ShooterHoodSettings.HOME)),
-          new ShooterZone(
-              Units.feetToMeters(3),
-              Units.feetToMeters(4),
-              new ShooterSetpoint(2600.0, ShooterHoodSettings.HOME)),
-          new ShooterZone(
-              Units.feetToMeters(4),
-              Units.feetToMeters(5),
-              new ShooterSetpoint(2650.0, ShooterHoodSettings.HOME)),
-          new ShooterZone(
-              Units.feetToMeters(5),
-              Units.feetToMeters(6),
-              new ShooterSetpoint(2700.0, ShooterHoodSettings.HOME)),
-          new ShooterZone(
-              Units.feetToMeters(6),
-              Units.feetToMeters(7),
-              new ShooterSetpoint(2750.0, ShooterHoodSettings.HOME)),
-          new ShooterZone(
-              Units.feetToMeters(7),
-              Units.feetToMeters(8),
-              new ShooterSetpoint(2800.0, ShooterHoodSettings.HOME)),
-          new ShooterZone(
-              Units.feetToMeters(8),
-              Units.feetToMeters(9),
-              new ShooterSetpoint(2850.0, ShooterHoodSettings.HOME)),
-          new ShooterZone(
-              Units.feetToMeters(9),
-              Units.feetToMeters(10),
-              new ShooterSetpoint(2900.0, ShooterHoodSettings.HOME)),
-          new ShooterZone(
-              Units.feetToMeters(10),
-              Units.feetToMeters(11),
-              new ShooterSetpoint(2950.0, ShooterHoodSettings.HOME)),
-          new ShooterZone(
-              Units.feetToMeters(11),
-              Units.feetToMeters(12),
-              new ShooterSetpoint(3000.0, ShooterHoodSettings.MIDDLE_CLOSE)),
-          new ShooterZone(
-              Units.feetToMeters(12),
-              Units.feetToMeters(13),
-              new ShooterSetpoint(3050.0, ShooterHoodSettings.MIDDLE_CLOSE)),
-          new ShooterZone(
-              Units.feetToMeters(13),
-              Units.feetToMeters(14),
-              new ShooterSetpoint(3100.0, ShooterHoodSettings.MIDDLE_CLOSE)),
-          new ShooterZone(
-              Units.feetToMeters(14),
-              Units.feetToMeters(15),
-              new ShooterSetpoint(3150.0, ShooterHoodSettings.MIDDLE_CLOSE)),
-          new ShooterZone(
-              Units.feetToMeters(15),
-              Units.feetToMeters(16),
-              new ShooterSetpoint(3200.0, ShooterHoodSettings.MIDDLE_CLOSE)),
-          new ShooterZone(
-              Units.feetToMeters(16),
-              Units.feetToMeters(17),
-              new ShooterSetpoint(3250.0, ShooterHoodSettings.MIDDLE_CLOSE)),
-          new ShooterZone(
-              Units.feetToMeters(17),
-              Units.feetToMeters(18),
-              new ShooterSetpoint(3300.0, ShooterHoodSettings.MIDDLE)),
-          new ShooterZone(
-              Units.feetToMeters(18),
-              Units.feetToMeters(19),
-              new ShooterSetpoint(3350.0, ShooterHoodSettings.MIDDLE)),
-          new ShooterZone(
-              Units.feetToMeters(19),
-              Units.feetToMeters(20),
-              new ShooterSetpoint(3400.0, ShooterHoodSettings.MIDDLE)),
-          new ShooterZone(
-              Units.feetToMeters(20),
-              Double.POSITIVE_INFINITY,
-              new ShooterSetpoint(4500.0, ShooterHoodSettings.FAR)));
-
+  /** Returns interpolated RPM and hood angle for a given distance in meters */
   public static ShooterSetpoint getSetpointForDistance(double distanceMeters) {
-    for (ShooterZone zone : SHOOTER_ZONES) {
-      if (zone.contains(distanceMeters)) {
-        return zone.setpoint();
-      }
-    }
-    return SHOOTER_ZONES.get(SHOOTER_ZONES.size() - 1).setpoint();
+    return new ShooterSetpoint(
+        SHOOTER_RPM_MAP.get(distanceMeters),
+        SHOOTER_HOOD_MAP.get(distanceMeters));
   }
 
   public static final TalonFXConfiguration SHOOTER_LEAD_TALONFX_CONFIG =
@@ -168,7 +91,7 @@ public final class ShooterConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(100))
+                  .withStatorCurrentLimit(Amps.of(80))
                   .withSupplyCurrentLimitEnable(true)
                   .withSupplyCurrentLimit(Amps.of(60))
                   .withSupplyCurrentLowerLimit(Amps.of(40))
@@ -180,7 +103,7 @@ public final class ShooterConstants {
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(6)
+                  .withKP(8)
                   .withKI(0.0)
                   .withKD(0.0)
                   .withKS(4.325)

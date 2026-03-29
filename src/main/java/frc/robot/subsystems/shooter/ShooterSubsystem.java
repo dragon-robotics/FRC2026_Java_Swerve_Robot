@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
 import frc.robot.util.constants.ShooterConstants;
-import frc.robot.util.constants.ShooterConstants.ShooterHoodSettings;
 import frc.robot.util.constants.ShooterConstants.ShooterSetpoint;
 
 public class ShooterSubsystem extends SubsystemBase {
@@ -32,17 +31,12 @@ public class ShooterSubsystem extends SubsystemBase {
       shooterHoodInputs;
 
   protected double targetRPM;
-  protected ShooterHoodSettings hoodSetting;
+  protected double hoodAngle;
 
   // Timer to keep kicker running after shooting stops
   private final Timer kickerStopTimer = new Timer();
   private boolean kickerStopTimerRunning = false;
   private static final double KICKER_STOP_DELAY = 1.0; // seconds
-
-  // protected DoubleSubscriber kickerPercentageSub = DogLog.tunable("Shooter/Kicker Percentage",
-  // 0.0);
-  // protected DoubleSubscriber targetRPMSub = DogLog.tunable("Shooter/Target RPM", 0.0);
-  // protected DoubleSubscriber hoodSettingSub = DogLog.tunable("Shooter/Hood Setting", 0.0);
 
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem(
@@ -65,7 +59,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     // Initialize target RPM and hood angle to default values
     this.targetRPM = ShooterConstants.SHOOTER_LEAD_RPM;
-    this.hoodSetting = ShooterHoodSettings.HOME;
+    this.hoodAngle = 0.0; // ← default to home position
   }
 
   public ShooterState getCurrentState() {
@@ -82,12 +76,10 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void runKickerMotorPercentage(double percentage) {
     shooterKickerIO.setMotorPercentage(percentage);
-    // shooterKickerIO.setMotorPercentage(kickerPercentageSub.get());
   }
 
   public void runShooter() {
     shooterLeadIO.setMotorRPM(targetRPM);
-    // shooterLeadIO.setMotorRPM(targetRPMSub.get());
   }
 
   // runs the shooter at half speed
@@ -109,7 +101,6 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void stopKicker() {
-    // shooterKickerIO.setMotorRPM(0);
     shooterKickerIO.setMotorPercentage(0);
   }
 
@@ -120,10 +111,9 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void setSetpointForDistance(double distanceToTarget) {
-    /* TODO: Switch based on distance and where we are on the field */
     ShooterSetpoint setpoint = getSetpointForDistance(distanceToTarget);
     targetRPM = setpoint.shooterRPM();
-    hoodSetting = setpoint.hoodSetting();
+    hoodAngle = setpoint.hoodAngle();
   }
 
   /* Returns the speed in RPM */
@@ -148,30 +138,28 @@ public class ShooterSubsystem extends SubsystemBase {
   public void setDesiredState(ShooterState state) {
     this.desiredShooterState = state;
 
-    if (desiredShooterState == currShooterState) {
-      return;
+    if (desiredShooterState != currShooterState) {
+      switch (desiredShooterState) {
+        case STOP:
+          currShooterState = ShooterState.TRANSITION;
+          break;
+        case PREPFUEL:
+          currShooterState = ShooterState.TRANSITION;
+          break;
+        case SHOOT:
+          currShooterState = ShooterState.TRANSITION;
+          break;
+        default:
+          break;
+      }
     }
 
-    switch (desiredShooterState) {
-      case STOP:
-        currShooterState = ShooterState.TRANSITION;
-        break;
-      case PREPFUEL:
-        currShooterState = ShooterState.TRANSITION;
-        break;
-      case SHOOT:
-        currShooterState = ShooterState.TRANSITION;
-        break;
-      default:
-        break;
-    }
   }
 
   public void handleStateTransition() {
     switch (currShooterState) {
       case STOP:
         stopShooter();
-        // Keep kicker running for 1 second after stopping
         if (kickerStopTimerRunning) {
           if (kickerStopTimer.hasElapsed(KICKER_STOP_DELAY)) {
             stopKicker();
@@ -179,7 +167,7 @@ public class ShooterSubsystem extends SubsystemBase {
             kickerStopTimer.stop();
             kickerStopTimer.reset();
           } else {
-            runKicker(); // Keep kicker running during delay
+            runKicker();
           }
         } else {
           stopKicker();
@@ -187,7 +175,6 @@ public class ShooterSubsystem extends SubsystemBase {
         setHoodAngle(0);
         break;
       case PREPFUEL:
-        // Reset kicker stop timer if we go back to prep
         kickerStopTimerRunning = false;
         kickerStopTimer.stop();
         kickerStopTimer.reset();
@@ -197,20 +184,19 @@ public class ShooterSubsystem extends SubsystemBase {
       case SHOOT:
         runShooter();
         runKicker();
-        setHoodAngle(0);
+        setHoodAngle(hoodAngle); // ← was hoodSetting.getSetting()
         break;
       case TRANSITION:
         switch (desiredShooterState) {
           case STOP:
             stopShooter();
-            // Start kicker stop timer when transitioning to STOP
             if (!kickerStopTimerRunning) {
               kickerStopTimer.reset();
               kickerStopTimer.start();
               kickerStopTimerRunning = true;
             }
             if (kickerStopTimerRunning && !kickerStopTimer.hasElapsed(KICKER_STOP_DELAY)) {
-              runKicker(); // Keep kicker running during delay
+              runKicker();
             } else {
               stopKicker();
             }
@@ -229,10 +215,11 @@ public class ShooterSubsystem extends SubsystemBase {
             break;
           case SHOOT:
             runShooter();
-            setHoodAngle(0);
+            setHoodAngle(hoodAngle); // ← was hoodSetting.getSetting()
             if (MathUtil.isNear(targetRPM, getShooterSpeed(), 60)
                 && MathUtil.isNear(
-                    hoodSetting.getSetting(), shooterHoodInputs.getMotorPosition(), 0.05)) {
+                    hoodAngle, shooterHoodInputs.getMotorPosition(), 0.125)) // ← was hoodSetting.getSetting()
+            {
               currShooterState = ShooterState.SHOOT;
             }
             break;
@@ -246,19 +233,12 @@ public class ShooterSubsystem extends SubsystemBase {
   public void periodic() {
     DogLog.time("Perf/Shooter");
 
-    // Set Hood Angle every loop to ensure it reaches the desired position
-    // setHoodAngle();
-
-    // DogLog.tunable("Shooter/Target RPM", targetRPM);
-    // DogLog.tunable("Shooter/Hood Setting", hoodSetting.getSetting());
-
-    // This method will be called once per scheduler run
-    handleStateTransition();
-
-    DogLog.log("Shooter/Shooter State", currShooterState.toString());
-
     shooterLeadIO.updateInputs(shooterLeadInputs);
-    shooterFollowIO.updateInputs(shooterFollowInputs);
+    // shooterFollowIO.updateInputs(shooterFollowInputs);
+    // shooterKickerIO.updateInputs(shooterKickerInputs);
+    shooterHoodIO.updateInputs(shooterHoodInputs);
+
+    handleStateTransition();
 
     DogLog.timeEnd("Perf/Shooter");
   }
