@@ -72,15 +72,15 @@ public final class IntakeConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(60))
+                  .withStatorCurrentLimit(Amps.of(40))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(40))
+                  .withSupplyCurrentLimit(Amps.of(30))
                   .withSupplyCurrentLowerLimit(20)
                   .withSupplyCurrentLowerTime(1))
           .withVoltage(
               new VoltageConfigs()
-                  .withPeakForwardVoltage(Volts.of(12))
-                  .withPeakReverseVoltage(Volts.of(-12)))
+                  .withPeakForwardVoltage(Volts.of(11))
+                  .withPeakReverseVoltage(Volts.of(-11)))
           .withOpenLoopRamps(
               new OpenLoopRampsConfigs()
                   .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.1))
@@ -116,11 +116,11 @@ public final class IntakeConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(80))
+                  .withStatorCurrentLimit(Amps.of(60))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(60))
-                  .withSupplyCurrentLowerLimit(40)
-                  .withSupplyCurrentLowerTime(1))
+                  .withSupplyCurrentLimit(Amps.of(40))
+                  .withSupplyCurrentLowerLimit(Amps.of(20))
+                  .withSupplyCurrentLowerTime(Seconds.of(1)))
           .withVoltage(
               new VoltageConfigs()
                   .withPeakForwardVoltage(Volts.of(12))

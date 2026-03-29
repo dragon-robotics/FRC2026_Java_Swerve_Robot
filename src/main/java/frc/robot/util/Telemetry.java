@@ -17,7 +17,7 @@ public class Telemetry {
     // DogLog.log("ModuleStates", state.ModuleStates);
     // DogLog.log("ModuleTargets", state.ModuleTargets);
     // DogLog.log("ModulePositions", state.ModulePositions);
-    DogLog.log("Timestamp", state.Timestamp);
+    // DogLog.log("Timestamp", state.Timestamp);
     // DogLog.log("OdometryFrequency", 1.0 / state.OdometryPeriod);
 
     // DogLog.log(
