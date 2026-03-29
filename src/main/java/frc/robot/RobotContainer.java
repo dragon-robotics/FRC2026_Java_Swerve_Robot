@@ -451,7 +451,7 @@ public class RobotContainer {
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.SHOOT),
                 superstructureSubsystem))
-        // .whileTrue(shootDriveCommand)
+        .whileTrue(shootDriveCommand)
         .onFalse(
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),

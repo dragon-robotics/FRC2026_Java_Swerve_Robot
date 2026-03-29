@@ -78,11 +78,6 @@ public class TunerConstants {
                   .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.15))
                   .withTorqueOpenLoopRampPeriod(Seconds.of(0.15))
                   .withVoltageOpenLoopRampPeriod(Seconds.of(0.15)))
-          .withClosedLoopRamps(
-              new ClosedLoopRampsConfigs()
-                  .withDutyCycleClosedLoopRampPeriod(Seconds.of(0.05))
-                  .withTorqueClosedLoopRampPeriod(Seconds.of(0.05))
-                  .withVoltageClosedLoopRampPeriod(Seconds.of(0.05)))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
   private static final TalonFXConfiguration steerInitialConfigs =
       new TalonFXConfiguration()
