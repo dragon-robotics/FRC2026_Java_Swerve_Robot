@@ -1,0 +1,31 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S1 Swipe 1 Intake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S1 Swipe 1 Shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S1 Swipe 2 Intake"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}
