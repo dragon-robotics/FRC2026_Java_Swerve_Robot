@@ -61,7 +61,7 @@ public final class VisionConstants {
   public static final Matrix<N3, N1> DEFAULT_TAG_STDDEV = VecBuilder.fill(0.9, 0.9, 0.9);
 
   public static double MAX_AMBIGUITY = 0.1;
-  public static double MAX_Z_ERROR = Units.inchesToMeters(0.5);
+  public static double MAX_Z_ERROR = Units.inchesToMeters(1.5);
 
   public static double LINEAR_STDDEV_BASELINE = Units.inchesToMeters(1);
   public static double ANGULAR_STDDEV_BASELINE = Units.degreesToRadians(5);

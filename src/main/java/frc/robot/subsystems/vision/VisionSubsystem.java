@@ -48,8 +48,8 @@ public class VisionSubsystem extends SubsystemBase {
   // Pre-computed log key strings — avoid string concatenation each cycle
   private final String[] cameraPerfKeys;
 
-  // Static empty Pose3d array to avoid allocation
-  private static final Pose3d[] EMPTY_POSE3D_ARRAY = new Pose3d[0];
+  // Static empty Pose3d array (kept for future use)
+  // private static final Pose3d[] EMPTY_POSE3D_ARRAY = new Pose3d[0];
 
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(CommandSwerveDrivetrain swerve, VisionConsumer consumer, VisionIO... io) {
@@ -109,11 +109,11 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     // Log every cycle — use Arrays.copyOf only when we have poses (avoids full-buffer copy)
-    DogLog.log(
-        "Vision/Summary/RobotPosesAccepted",
-        acceptedPoseCount == 0
-            ? EMPTY_POSE3D_ARRAY
-            : Arrays.copyOf(acceptedPoseBuffer, acceptedPoseCount));
+    // DogLog.log(
+    //     "Vision/Summary/RobotPosesAccepted",
+    //     acceptedPoseCount == 0
+    //         ? EMPTY_POSE3D_ARRAY
+    //         : Arrays.copyOf(acceptedPoseBuffer, acceptedPoseCount));
 
     DogLog.timeEnd("Vision/Perf/TotalPeriodic");
   }
@@ -124,6 +124,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     // Process pose observations — no intermediate collections needed
     for (var observation : inputs.getPoseObservations()) {
+
       // Use instanceof with pattern matching
       var validationResult = poseValidator.validatePose(observation);
 

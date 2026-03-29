@@ -59,16 +59,17 @@ public class VisionPoseValidator {
           "Distance: %.2f > %.2f".formatted(observation.averageTagDistance(), MAX_TAG_DISTANCE));
     }
 
-    // Check large pose change
-    if (m_lastAcceptedPose != null) {
-      double poseChange = m_lastAcceptedPose.getTranslation().getDistance(pose2d.getTranslation());
-      if (poseChange > MAX_POSE_CHANGE) {
-        return new RejectedPose(
-            observation,
-            RejectionReason.LARGE_POSE_CHANGE,
-            "Change: %.2f > %.2f".formatted(poseChange, MAX_POSE_CHANGE));
-      }
-    }
+    // // Check large pose change
+    // if (m_lastAcceptedPose != null) {
+    //   double poseChange =
+    // m_lastAcceptedPose.getTranslation().getDistance(pose2d.getTranslation());
+    //   if (poseChange > MAX_POSE_CHANGE) {
+    //     return new RejectedPose(
+    //         observation,
+    //         RejectionReason.LARGE_POSE_CHANGE,
+    //         "Change: %.2f > %.2f".formatted(poseChange, MAX_POSE_CHANGE));
+    //   }
+    // }
 
     // Pose accepted - update last accepted pose
     m_lastAcceptedPose = pose2d;

@@ -14,6 +14,7 @@ import java.util.function.Supplier;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class VisionIOPhotonVision implements VisionIO {
@@ -48,7 +49,10 @@ public class VisionIOPhotonVision implements VisionIO {
     this.camera = new PhotonCamera(name);
     this.robotToCamera = robotToCamera;
     this.swerveDriveStateSupplier = swerveDriveStateSupplier;
-    poseEstimator = new PhotonPoseEstimator(APTAG_FIELD_LAYOUT, robotToCamera);
+    poseEstimator =
+        new PhotonPoseEstimator(
+            APTAG_FIELD_LAYOUT, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCamera);
+    poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
     // Reset heading data before pose initialization //
     poseEstimator.resetHeadingData(
@@ -62,7 +66,6 @@ public class VisionIOPhotonVision implements VisionIO {
 
   @Override
   public String getCameraName() {
-    // Get the camera object
     return camera.getName();
   }
 
@@ -79,13 +82,20 @@ public class VisionIOPhotonVision implements VisionIO {
     tagIds.clear();
     poseObservations.clear();
 
-    for (var result : camera.getAllUnreadResults()) {
-      // Use static constant when no target
-      inputs.setLatestTargetObservation(NO_TARGET);
-      if (!result.hasTargets()) {
-        continue;
-      }
+    // Get all unread results — only process the latest one to prevent backlog spikes
+    var allResults = camera.getAllUnreadResults();
+    if (allResults.isEmpty()) {
+      inputs.setPoseObservations(EMPTY_POSE_OBSERVATIONS);
+      inputs.setTagIds(EMPTY_TAG_IDS);
+      return;
+    }
 
+    // Only process the LATEST result — discard all stale frames
+    var result = allResults.get(allResults.size() - 1);
+
+    inputs.setLatestTargetObservation(NO_TARGET);
+
+    if (result.hasTargets()) {
       PhotonTrackedTarget bestTarget = result.getBestTarget();
 
       inputs.setLatestTargetObservation(
@@ -93,14 +103,21 @@ public class VisionIOPhotonVision implements VisionIO {
               Rotation2d.fromDegrees(bestTarget.getYaw()),
               Rotation2d.fromDegrees(bestTarget.getPitch())));
 
-      // Replace ifPresent lambda with isPresent+get to avoid lambda capture allocation
-      EstimatedRobotPose visionEst = poseEstimator.estimateCoprocMultiTagPose(result).orElse(null);
+      // Try coprocessor multi-tag first, fall back to standard estimator
+      var coprocResult = poseEstimator.estimateCoprocMultiTagPose(result);
+      EstimatedRobotPose visionEst;
+      if (coprocResult.isPresent()) {
+        visionEst = coprocResult.get();
+      } else if (result.getTargets().size() >= 2) {
+        visionEst = poseEstimator.update(result).orElse(null);
+      } else {
+        visionEst = null;
+      }
 
       if (visionEst != null) {
         List<PhotonTrackedTarget> targets = result.getTargets();
         int targetCount = targets.size();
 
-        // Single-pass computation
         double totalDistance = 0;
         double totalAmbiguity = 0;
 
@@ -121,13 +138,11 @@ public class VisionIOPhotonVision implements VisionIO {
       }
     }
 
-    // Save pose observations to inputs object — use cached empty array when possible
     inputs.setPoseObservations(
         poseObservations.isEmpty()
             ? EMPTY_POSE_OBSERVATIONS
             : poseObservations.toArray(EMPTY_POSE_OBSERVATIONS));
 
-    // Save tag IDs to inputs objects — use cached empty array when possible
     if (tagIds.isEmpty()) {
       inputs.setTagIds(EMPTY_TAG_IDS);
     } else {
