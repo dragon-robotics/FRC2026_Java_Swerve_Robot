@@ -296,6 +296,8 @@ public class Superstructure extends SubsystemBase {
       case SHOOT:
         shooter.setDesiredState(ShooterState.SHOOT);
         if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
+          // Target acquired — X-lock wheels and feed the ball
+          swerve.setControl(brake);
           intake.setDesiredState(IntakeState.INTAKE);
           hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
         } else {
@@ -307,6 +309,8 @@ public class Superstructure extends SubsystemBase {
       case SHOOT_JUICER:
         shooter.setDesiredState(ShooterState.SHOOT);
         if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
+          // Target acquired — X-lock wheels and feed the ball
+          swerve.setControl(brake);
           intake.setDesiredState(IntakeState.JUICER);
           hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
         } else {
