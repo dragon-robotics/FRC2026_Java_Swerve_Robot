@@ -464,15 +464,10 @@ public class RobotContainer {
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.SHOOT_JUICER),
                 superstructureSubsystem));
-    // .whileTrue(shootDriveCommand)
-    // .onFalse(
-    //     new InstantCommand(
-    //         () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
-    //         superstructureSubsystem));
 
     /* Operator Controls */
 
-    /* TODO: Add overrides to the shooter in case camera goes down */
+    /* TODO: Add overrides to the shooter in case vision goes down */
     // If up d-pad, shooter is close up bumper shot
     // If left or right d-pad, shooter is trench shot
     // If down d-pad, shooter is tower shot
