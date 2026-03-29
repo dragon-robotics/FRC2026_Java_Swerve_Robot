@@ -6,7 +6,6 @@ package frc.robot.subsystems.intake;
 
 import static frc.robot.util.constants.IntakeConstants.*;
 
-import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
@@ -351,14 +350,10 @@ public class IntakeSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    DogLog.time("Perf/Intake");
-
     handleStateTransition();
 
     // This method will be called once per scheduler run
     // intakeRollerIO.updateInputs(intakeRollerInputs);
     intakeArmIO.updateInputs(intakeArmInputs);
-
-    DogLog.timeEnd("Perf/Intake");
   }
 }

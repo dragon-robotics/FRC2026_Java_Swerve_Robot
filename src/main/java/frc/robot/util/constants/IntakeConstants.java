@@ -72,11 +72,11 @@ public final class IntakeConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(40))
+                  .withStatorCurrentLimit(Amps.of(60))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(30))
-                  .withSupplyCurrentLowerLimit(20)
-                  .withSupplyCurrentLowerTime(1))
+                  .withSupplyCurrentLimit(Amps.of(40))
+                  .withSupplyCurrentLowerLimit(Amps.of(20))
+                  .withSupplyCurrentLowerTime(Seconds.of(1)))
           .withVoltage(
               new VoltageConfigs()
                   .withPeakForwardVoltage(Volts.of(11))

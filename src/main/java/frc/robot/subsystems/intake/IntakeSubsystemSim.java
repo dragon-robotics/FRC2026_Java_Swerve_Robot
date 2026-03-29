@@ -145,8 +145,6 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
 
   @Override
   public void periodic() {
-    DogLog.time("Perf/Intake");
-
     // Update arm angle
     double currentAngleRad = intakeArmSim.getAngleRads();
     armMech.setAngle(Units.radiansToDegrees(currentAngleRad));
@@ -165,7 +163,5 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
     // This method will be called once per scheduler run
     intakeRollerIO.updateInputs(intakeRollerInputs);
     intakeArmIO.updateInputs(intakeArmInputs);
-
-    DogLog.timeEnd("Perf/Intake");
   }
 }

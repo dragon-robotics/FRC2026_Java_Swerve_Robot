@@ -286,8 +286,6 @@ public class Superstructure extends SubsystemBase {
 
   @Override
   public void periodic() {
-    DogLog.time("Perf/Superstructure");
-
     // Updates where the robot is //
     Pose2d currentPose = swerve.getState().Pose;
 
@@ -302,9 +300,5 @@ public class Superstructure extends SubsystemBase {
     DogLog.log("Superstructure/Distance to Blue Hub (feet)", Units.metersToFeet(distanceToBlueHub));
 
     handleStateTransition();
-
-    // Based on where the robot is, update the shooting location the robot should point towards
-
-    DogLog.timeEnd("Perf/Superstructure");
   }
 }

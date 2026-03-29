@@ -2,7 +2,6 @@ package frc.robot.subsystems.shooter;
 
 import static frc.robot.util.constants.ShooterConstants.*;
 
-import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -59,7 +58,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     // Initialize target RPM and hood angle to default values
     this.targetRPM = ShooterConstants.SHOOTER_LEAD_RPM;
-    this.hoodAngle = 0.0; // ← default to home position
+    this.hoodAngle = 0.0; // default to home position
   }
 
   public ShooterState getCurrentState() {
@@ -182,7 +181,7 @@ public class ShooterSubsystem extends SubsystemBase {
       case SHOOT:
         runShooter();
         runKicker();
-        setHoodAngle(hoodAngle); // ← was hoodSetting.getSetting()
+        setHoodAngle(hoodAngle);
         break;
       case TRANSITION:
         switch (desiredShooterState) {
@@ -213,13 +212,9 @@ public class ShooterSubsystem extends SubsystemBase {
             break;
           case SHOOT:
             runShooter();
-            setHoodAngle(hoodAngle); // ← was hoodSetting.getSetting()
+            setHoodAngle(hoodAngle);
             if (MathUtil.isNear(targetRPM, getShooterSpeed(), 60)
-                && MathUtil.isNear(
-                    hoodAngle,
-                    shooterHoodInputs.getMotorPosition(),
-                    0.125)) // ← was hoodSetting.getSetting()
-            {
+                && MathUtil.isNear(hoodAngle, shooterHoodInputs.getMotorPosition(), 0.125)) {
               currShooterState = ShooterState.SHOOT;
             }
             break;
@@ -231,15 +226,11 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    DogLog.time("Perf/Shooter");
-
     shooterLeadIO.updateInputs(shooterLeadInputs);
     // shooterFollowIO.updateInputs(shooterFollowInputs);
     // shooterKickerIO.updateInputs(shooterKickerInputs);
     shooterHoodIO.updateInputs(shooterHoodInputs);
 
     handleStateTransition();
-
-    DogLog.timeEnd("Perf/Shooter");
   }
 }

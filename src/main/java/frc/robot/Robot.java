@@ -15,6 +15,7 @@ public class Robot extends TimedRobot {
   private final RobotContainer m_robotContainer;
 
   public Robot() {
+    super(0.025); // 25ms loop period — gives 5ms headroom over default 20ms
     m_robotContainer = new RobotContainer();
   }
 

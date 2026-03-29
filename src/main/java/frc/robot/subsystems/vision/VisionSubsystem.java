@@ -45,12 +45,6 @@ public class VisionSubsystem extends SubsystemBase {
   private Pose3d[] acceptedPoseBuffer;
   private int acceptedPoseCount = 0;
 
-  // Pre-computed log key strings — avoid string concatenation each cycle
-  private final String[] cameraPerfKeys;
-
-  // Static empty Pose3d array (kept for future use)
-  // private static final Pose3d[] EMPTY_POSE3D_ARRAY = new Pose3d[0];
-
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(CommandSwerveDrivetrain swerve, VisionConsumer consumer, VisionIO... io) {
     this.swerve = swerve;
@@ -68,12 +62,6 @@ public class VisionSubsystem extends SubsystemBase {
               "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
     }
 
-    // Pre-compute camera log key strings (avoids string concat each cycle)
-    cameraPerfKeys = new String[io.length];
-    for (int i = 0; i < io.length; i++) {
-      cameraPerfKeys[i] = "Vision/Perf/Camera" + i;
-    }
-
     // Pre-allocate pose buffer: each camera can produce ~2 poses max per cycle
     acceptedPoseBuffer = new Pose3d[io.length * 2];
   }
@@ -88,8 +76,6 @@ public class VisionSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    DogLog.time("Vision/Perf/TotalPeriodic");
-
     // Use local variables to reduce field access (optimization)
     final var cameraIOs = io;
     final var cameraInputs = inputs;
@@ -99,23 +85,10 @@ public class VisionSubsystem extends SubsystemBase {
 
     // This method will be called once per scheduler run
     for (int cameraIndex = 0; cameraIndex < cameraIOs.length; cameraIndex++) {
-      DogLog.time(cameraPerfKeys[cameraIndex]);
-
       cameraIOs[cameraIndex].updateInputs(cameraInputs[cameraIndex]);
 
       processCameraData(cameraIndex, cameraInputs[cameraIndex]);
-
-      DogLog.timeEnd(cameraPerfKeys[cameraIndex]);
     }
-
-    // Log every cycle — use Arrays.copyOf only when we have poses (avoids full-buffer copy)
-    // DogLog.log(
-    //     "Vision/Summary/RobotPosesAccepted",
-    //     acceptedPoseCount == 0
-    //         ? EMPTY_POSE3D_ARRAY
-    //         : Arrays.copyOf(acceptedPoseBuffer, acceptedPoseCount));
-
-    DogLog.timeEnd("Vision/Perf/TotalPeriodic");
   }
 
   private void processCameraData(int cameraIndex, VisionIOInputs inputs) {
