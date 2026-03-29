@@ -26,10 +26,8 @@ import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
-
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
-import java.util.List;
 
 public final class ShooterConstants {
 
@@ -50,8 +48,7 @@ public final class ShooterConstants {
   public record ShooterSetpoint(double shooterRPM, double hoodAngle) {}
 
   /** Interpolating table for shooter RPM based on distance in meters */
-  public static final InterpolatingDoubleTreeMap SHOOTER_RPM_MAP =
-      new InterpolatingDoubleTreeMap();
+  public static final InterpolatingDoubleTreeMap SHOOTER_RPM_MAP = new InterpolatingDoubleTreeMap();
 
   /** Interpolating table for hood angle (rotations) based on distance in meters */
   public static final InterpolatingDoubleTreeMap SHOOTER_HOOD_MAP =
@@ -59,21 +56,21 @@ public final class ShooterConstants {
 
   static {
     // Distance (ft) -> RPM
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(5),  2450.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(6),  2500.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(7),  2550.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(8),  2700.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(9),  2800.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(5), 2450.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(6), 2500.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(7), 2550.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(8), 2700.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(9), 2800.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(10), 2850.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(11), 2900.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(12), 3000.0);
 
     // Distance (ft) -> Hood angle (rotations)
-    SHOOTER_HOOD_MAP.put(Units.feetToMeters(5),  0.00);
-    SHOOTER_HOOD_MAP.put(Units.feetToMeters(6),  0.00);
-    SHOOTER_HOOD_MAP.put(Units.feetToMeters(7),  0.00);
-    SHOOTER_HOOD_MAP.put(Units.feetToMeters(8),  0.00);
-    SHOOTER_HOOD_MAP.put(Units.feetToMeters(9),  0.00);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(5), 0.00);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(6), 0.00);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(7), 0.00);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(8), 0.00);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(9), 0.00);
     SHOOTER_HOOD_MAP.put(Units.feetToMeters(10), 0.75);
     SHOOTER_HOOD_MAP.put(Units.feetToMeters(11), 0.75);
     SHOOTER_HOOD_MAP.put(Units.feetToMeters(12), 1.25);
@@ -82,8 +79,7 @@ public final class ShooterConstants {
   /** Returns interpolated RPM and hood angle for a given distance in meters */
   public static ShooterSetpoint getSetpointForDistance(double distanceMeters) {
     return new ShooterSetpoint(
-        SHOOTER_RPM_MAP.get(distanceMeters),
-        SHOOTER_HOOD_MAP.get(distanceMeters));
+        SHOOTER_RPM_MAP.get(distanceMeters), SHOOTER_HOOD_MAP.get(distanceMeters));
   }
 
   public static final TalonFXConfiguration SHOOTER_LEAD_TALONFX_CONFIG =

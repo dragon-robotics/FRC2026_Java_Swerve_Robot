@@ -32,7 +32,6 @@ import com.pathplanner.lib.commands.FollowPathCommand;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -101,8 +100,8 @@ public class RobotContainer {
   public RobotContainer() {
 
     /* Setup DogLog */
-    DogLog.setOptions(new DogLogOptions().withCaptureDs(true));
-    DogLog.setPdh(new PowerDistribution());
+    DogLog.setOptions(new DogLogOptions());
+    // DogLog.setPdh(new PowerDistribution());
 
     /* Disable warnings */
     DriverStation.silenceJoystickConnectionWarning(true);

@@ -42,8 +42,15 @@ public class IntakeSubsystem extends SubsystemBase {
 
   protected boolean wokTossMovingToDeployed;
 
+  /**
+   * Tracks the last state for which CAN commands were sent, so we can skip redundant writes when
+   * the state hasn't changed. Reset to null on any state transition.
+   */
+  private IntakeState lastCommandedState = null;
+
   // Juicer sub-phase tracking — always reset to WAIT on (re-)entry
   private JuicerPhase juicerPhase = JuicerPhase.PRE_JUICE;
+  private JuicerPhase lastJuicerPhase = null;
 
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem(MotorIO intakeRollerIO, MotorIO intakeArmIO) {
@@ -173,6 +180,9 @@ public class IntakeSubsystem extends SubsystemBase {
       return;
     }
 
+    // State is changing — reset the guard so the new state sends CAN commands on entry
+    lastCommandedState = null;
+
     // Handle state transitions
     switch (desiredIntakeState) {
       case HOME:
@@ -209,8 +219,9 @@ public class IntakeSubsystem extends SubsystemBase {
         break;
       case JUICER:
         currIntakeState = IntakeState.JUICER;
-        // Always restart the juicer sequence from WAIT on (re-)entry
+        // Always restart the juicer sequence from PRE_JUICE on (re-)entry
         juicerPhase = JuicerPhase.PRE_JUICE;
+        lastJuicerPhase = null;
         break;
       default:
         break;
@@ -220,45 +231,57 @@ public class IntakeSubsystem extends SubsystemBase {
   public void handleStateTransition() {
     // Handle the state transitions
     switch (currIntakeState) {
+        // ── Steady states: only send CAN commands on state entry ──
       case HOME:
-        // Set intake arm to home setpoint
-        stowIntakeArm();
-        // Set intake rollers off
-        stopIntake();
+        if (lastCommandedState != currIntakeState) {
+          stowIntakeArm();
+          stopIntake();
+          lastCommandedState = currIntakeState;
+        }
         break;
       case INTAKE:
-        // Set intake arm to intake setpoint
-        deployIntakeArm();
-        // Set intake rollers to intake speed
-        runIntake();
+        if (lastCommandedState != currIntakeState) {
+          deployIntakeArm();
+          runIntake();
+          lastCommandedState = currIntakeState;
+        }
         break;
       case OUTTAKE:
-        // Set intake arm to intake setpoint
-        deployIntakeArm();
-        // Set intake rollers to outtake speed
-        runOuttake();
+        if (lastCommandedState != currIntakeState) {
+          deployIntakeArm();
+          runOuttake();
+          lastCommandedState = currIntakeState;
+        }
         break;
       case DEPLOYED:
-        // Set intake arm to intake setpoint
-        deployIntakeArm();
-        // Set intake rollers off
-        stopIntake();
+        if (lastCommandedState != currIntakeState) {
+          deployIntakeArm();
+          stopIntake();
+          lastCommandedState = currIntakeState;
+        }
         break;
       case WOKTOSS:
-        // Set intake arm to home setpoint
-        wokTossIntakeArm();
-        // Set intake rollers off
-        runIntake();
+        if (lastCommandedState != currIntakeState) {
+          wokTossIntakeArm();
+          runIntake();
+          lastCommandedState = currIntakeState;
+        }
         break;
+
+        // ── Transition states: send arm + roller commands once on entry ──
+        //    TalonFX maintains its onboard PID loop once commanded,
+        //    so we only need to send the position setpoint once.
+        //    We still check feedback each loop to know when to transition.
       case DEPLOYING:
-        // Set intake arm to intake setpoint
-        deployIntakeArm();
-        // Set intake rollers off
-        stopIntake();
+        if (lastCommandedState != currIntakeState) {
+          deployIntakeArm();
+          stopIntake();
+          lastCommandedState = currIntakeState;
+        }
         // When intake arm reaches setpoint, transition to INTAKE or OUTTAKE state
-        // depending on
-        // desired state
+        // depending on desired state
         if (isIntakeArmAtDeployed()) {
+          lastCommandedState = null; // Reset so next state sends commands
           if (desiredIntakeState == IntakeState.INTAKE) {
             currIntakeState = IntakeState.INTAKE;
           } else if (desiredIntakeState == IntakeState.OUTTAKE) {
@@ -269,22 +292,26 @@ public class IntakeSubsystem extends SubsystemBase {
         }
         break;
       case STOWING:
-        // Set intake arm to home setpoint
-        stowIntakeArm();
-        // Set intake rollers off
-        stopIntake();
+        if (lastCommandedState != currIntakeState) {
+          stowIntakeArm();
+          stopIntake();
+          lastCommandedState = currIntakeState;
+        }
         // When intake arm reaches setpoint, transition to HOME state
         if (isIntakeArmAtStowed()) {
+          lastCommandedState = null; // Reset so next state sends commands
           currIntakeState = IntakeState.HOME;
         }
         break;
       case WOKTOSSING:
-        // Set intake arm to home setpoint
-        wokTossIntakeArm();
-        // Set intake rollers off
-        runIntake();
-        // When intake arm reaches setpoint, transition to HOME state
+        if (lastCommandedState != currIntakeState) {
+          wokTossIntakeArm();
+          runIntake();
+          lastCommandedState = currIntakeState;
+        }
+        // When intake arm reaches setpoint, transition to WOKTOSS state
         if (isIntakeArmAtWokToss()) {
+          lastCommandedState = null; // Reset so next state sends commands
           currIntakeState = IntakeState.WOKTOSS;
         }
         break;
@@ -292,29 +319,30 @@ public class IntakeSubsystem extends SubsystemBase {
         // Intake arm oscillate between deployed and woktoss setpoints in a set sequence
         // 1. Do nothing for the first 3 seconds
         // 2. Then oscillate between deployed and woktoss setpoints every 0.5 seconds
-
-        // // Set intake arm to home setpoint
-        // wokTossIntakeArm();
-        // // Set intake rollers off
-        // runIntake();
-        // // When intake arm reaches setpoint, transition to HOME state
-        // if (isIntakeArmAtWokToss()) {
-        //   currIntakeState = IntakeState.WOKTOSS;
-        // }
         break;
       case JUICER:
-        runIntake();
+        if (lastCommandedState != currIntakeState) {
+          runIntake();
+          lastCommandedState = currIntakeState;
+          lastJuicerPhase = null; // Reset so first phase sends its arm command
+        }
         switch (juicerPhase) {
           case PRE_JUICE:
-            // Phase 2: Move arm quickly to pre-juice setpoint to clear hopper wall
-            setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
+            if (lastJuicerPhase != juicerPhase) {
+              // Move arm quickly to pre-juice setpoint to clear hopper wall
+              setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
+              lastJuicerPhase = juicerPhase;
+            }
             if (isIntakeArmAtPreJuice()) {
               juicerPhase = JuicerPhase.SQUEEZE;
             }
             break;
           case SQUEEZE:
-            // Phase 3: Slowly move arm to final juice position to squeeze remaining balls
-            setIntakeArmSetpoint(INTAKE_ARM_JUICER_FINAL_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
+            if (lastJuicerPhase != juicerPhase) {
+              // Slowly move arm to final juice position to squeeze remaining balls
+              setIntakeArmSetpoint(INTAKE_ARM_JUICER_FINAL_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
+              lastJuicerPhase = juicerPhase;
+            }
             break;
         }
         break;

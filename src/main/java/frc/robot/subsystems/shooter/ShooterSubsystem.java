@@ -89,7 +89,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void stopShooter() {
     shooterLeadIO.setMotorRPM(0);
-    shooterKickerIO.setMotorRPM(0);
+    // Kicker is managed separately by stopKicker()/runKicker() — don't send conflicting commands
   }
 
   public void runKicker() {
@@ -153,13 +153,13 @@ public class ShooterSubsystem extends SubsystemBase {
           break;
       }
     }
-
   }
 
   public void handleStateTransition() {
     switch (currShooterState) {
       case STOP:
-        stopShooter();
+        // Only send CAN commands while kicker timer is active;
+        // once fully stopped, motors hold their last command — no need to re-send every loop
         if (kickerStopTimerRunning) {
           if (kickerStopTimer.hasElapsed(KICKER_STOP_DELAY)) {
             stopKicker();
@@ -169,10 +169,8 @@ public class ShooterSubsystem extends SubsystemBase {
           } else {
             runKicker();
           }
-        } else {
-          stopKicker();
         }
-        setHoodAngle(0);
+        // Motors are already stopped from the TRANSITION→STOP path; no redundant writes needed
         break;
       case PREPFUEL:
         kickerStopTimerRunning = false;
@@ -218,7 +216,9 @@ public class ShooterSubsystem extends SubsystemBase {
             setHoodAngle(hoodAngle); // ← was hoodSetting.getSetting()
             if (MathUtil.isNear(targetRPM, getShooterSpeed(), 60)
                 && MathUtil.isNear(
-                    hoodAngle, shooterHoodInputs.getMotorPosition(), 0.125)) // ← was hoodSetting.getSetting()
+                    hoodAngle,
+                    shooterHoodInputs.getMotorPosition(),
+                    0.125)) // ← was hoodSetting.getSetting()
             {
               currShooterState = ShooterState.SHOOT;
             }

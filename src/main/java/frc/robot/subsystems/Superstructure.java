@@ -36,7 +36,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   private SuperState state;
-  private SuperState lastState = null; // ← Add this line
+  private SuperState lastState = null;
 
   private final CommandSwerveDrivetrain swerve;
   private final IntakeSubsystem intake;
@@ -57,7 +57,7 @@ public class Superstructure extends SubsystemBase {
   private Optional<Rotation2d> currentHeading; // Keeps track of current heading
   private double rotationLastTriggered; // Keeps track of the last time the rotation was triggered
 
-  private static final double ALIGNMENT_TOLERANCE_DEGREES = 3.0; // ← tune this
+  private static final double ALIGNMENT_TOLERANCE_DEGREES = 3.0; // tune this
   // Cache alignment result to avoid computing twice per cycle
   private boolean alignedToTarget = false;
 
@@ -206,9 +206,7 @@ public class Superstructure extends SubsystemBase {
     return new InstantCommand(() -> setDesiredSuperState(SuperState.DRIVE));
   }
 
-  /**
-   * Returns true if the robot heading is within tolerance of the angle to the blue hub.
-   */
+  /** Returns true if the robot heading is within tolerance of the angle to the blue hub. */
   public boolean isAlignedToTarget() {
     return alignedToTarget;
   }
@@ -217,15 +215,13 @@ public class Superstructure extends SubsystemBase {
     Pose2d currentPose = swerve.getState().Pose;
 
     Rotation2d angleToTarget =
-        FieldConstants.Hub.BLUE_HUB_CENTER_POSE
-            .minus(currentPose.getTranslation())
-            .getAngle();
+        FieldConstants.Hub.BLUE_HUB_CENTER_POSE.minus(currentPose.getTranslation()).getAngle();
 
     double headingErrorDegrees =
         Math.abs(currentPose.getRotation().minus(angleToTarget).getDegrees());
 
     alignedToTarget = headingErrorDegrees < ALIGNMENT_TOLERANCE_DEGREES;
-  }  
+  }
 
   /* State handling */
   public void setDesiredSuperState(SuperState state) {

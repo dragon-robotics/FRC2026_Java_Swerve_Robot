@@ -97,7 +97,15 @@ public class HopperSubsystem extends SubsystemBase {
     // }
   }
 
+  // Track the last state we sent CAN commands for to avoid redundant writes
+  private HopperState lastCommandedState = null;
+
   public void handleStateTransition() {
+    // Skip redundant CAN writes if state hasn't changed
+    if (currHopperState == lastCommandedState) {
+      return;
+    }
+    lastCommandedState = currHopperState;
 
     /* Handle the state transitions */
     switch (currHopperState) {
