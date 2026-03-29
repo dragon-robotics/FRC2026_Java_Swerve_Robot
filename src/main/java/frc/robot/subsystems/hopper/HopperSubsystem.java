@@ -28,9 +28,6 @@ public class HopperSubsystem extends SubsystemBase {
   private final MotorIOInputs leadRollerMotorIOInputs;
   private final MotorIOInputs followRollerMotorIOInputs;
 
-  // protected DoubleSubscriber hopperPercentageSub = DogLog.tunable("Hopper/Hopper Percentage",
-  // 0.0);
-
   /* Creates new HopperSubsystem */
   public HopperSubsystem(MotorIO leadRollerMotorIO, MotorIO followRollerMotorIO) {
 
@@ -71,27 +68,20 @@ public class HopperSubsystem extends SubsystemBase {
   }
 
   public void indexToShooter() {
-    // leadRollerMotorIO.setMotorRPM(HOPPER_ROLLER_RPM);
     leadRollerMotorIO.setMotorPercentage(HOPPER_ROLLER_DUTY_CYCLE);
-    // leadRollerMotorIO.setMotorPercentage(hopperPercentageSub.get());
   }
 
   public void indexToIntake() {
-    // leadRollerMotorIO.setMotorRPM(-HOPPER_ROLLER_RPM);
     leadRollerMotorIO.setMotorPercentage(-HOPPER_ROLLER_DUTY_CYCLE);
-    // leadRollerMotorIO.setMotorPercentage(-hopperPercentageSub.get());
   }
 
   public void stopHopperRoller() {
-    // leadRollerMotorIO.setMotorRPM(0);
     leadRollerMotorIO.setMotorPercentage(0);
   }
 
   /* State Managemeent */
   public void setDesiredState(HopperState state) {
     this.currHopperState = state;
-    DogLog.log("Hopper/Current Hopper State", currHopperState.toString());
-
     // switch (desiredHopperState) {
     //   case STOP:
     //     currHopperState = HopperState.STOP;
@@ -135,10 +125,8 @@ public class HopperSubsystem extends SubsystemBase {
     /* This method will be called once per scheduler run */
     handleStateTransition();
 
-    DogLog.log("Hopper/Hopper State", currHopperState.toString());
-
-    leadRollerMotorIO.updateInputs(leadRollerMotorIOInputs);
-    followRollerMotorIO.updateInputs(followRollerMotorIOInputs);
+    // leadRollerMotorIO.updateInputs(leadRollerMotorIOInputs);
+    // followRollerMotorIO.updateInputs(followRollerMotorIOInputs);
 
     DogLog.timeEnd("Perf/Hopper");
   }

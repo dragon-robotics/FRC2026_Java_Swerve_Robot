@@ -72,7 +72,6 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void runIntakeRollerPercentage(double percentage) {
-    // DogLog.log("Intake/Roller_Debug", percentage);
     intakeRollerIO.setMotorPercentage(percentage);
   }
 
@@ -230,8 +229,7 @@ public class IntakeSubsystem extends SubsystemBase {
       case INTAKE:
         // Set intake arm to intake setpoint
         deployIntakeArm();
-        // // Set intake rollers to intake speed
-        // DogLog.log("Intake/Roller Debug", "STATE_TRANSITION");
+        // Set intake rollers to intake speed
         runIntake();
         break;
       case OUTTAKE:
@@ -329,11 +327,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
     handleStateTransition();
 
-    DogLog.log("Intake/Intake State", currIntakeState.toString());
-    DogLog.log("Intake/Juicer Phase", juicerPhase.toString());
-
     // This method will be called once per scheduler run
-    intakeRollerIO.updateInputs(intakeRollerInputs);
+    // intakeRollerIO.updateInputs(intakeRollerInputs);
     intakeArmIO.updateInputs(intakeArmInputs);
 
     DogLog.timeEnd("Perf/Intake");
