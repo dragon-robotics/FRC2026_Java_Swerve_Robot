@@ -75,6 +75,7 @@ public class RobotContainer {
   /* Swerve Commands */
   private Command defaultDriveCommand;
   private Command shootDriveCommand;
+  private Command aimAtTargetPoseCommand;
   private Command swerveBrakeCommand;
   private Command seedFieldCentricCommand;
 
@@ -367,6 +368,8 @@ public class RobotContainer {
         superstructureSubsystem.shootDrive(
             () -> -driverController.getLeftY(), () -> -driverController.getLeftX());
 
+    aimAtTargetPoseCommand = superstructureSubsystem.aimAtTargetPose();
+
     swerveBrakeCommand = superstructureSubsystem.swerveBrakeCmd();
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
 
@@ -450,7 +453,7 @@ public class RobotContainer {
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.SHOOT),
                 superstructureSubsystem))
-        .whileTrue(shootDriveCommand)
+        .whileTrue(aimAtTargetPoseCommand)
         .onFalse(
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),

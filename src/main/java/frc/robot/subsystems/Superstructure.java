@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotContainer;
+import frc.robot.commands.AimAtTargetPoseCmd;
 import frc.robot.commands.DefaultDriveCmd;
 import frc.robot.commands.ShootDriveCmd;
 import frc.robot.subsystems.hopper.HopperSubsystem;
@@ -166,6 +167,10 @@ public class Superstructure extends SubsystemBase {
 
   public Command shootDrive(DoubleSupplier translationSup, DoubleSupplier strafeSup) {
     return new ShootDriveCmd(swerve, translationSup, strafeSup, this::setCurrentHeading);
+  }
+
+  public Command aimAtTargetPose() {
+    return new AimAtTargetPoseCmd(swerve, this::setCurrentHeading);
   }
 
   public Command swerveBrakeCmd() {
