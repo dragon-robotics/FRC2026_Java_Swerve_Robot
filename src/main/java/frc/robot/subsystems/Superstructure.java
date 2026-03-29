@@ -5,7 +5,10 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -27,16 +30,21 @@ import java.util.function.DoubleSupplier;
 
 public class Superstructure extends SubsystemBase {
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // State Enum
+  // ──────────────────────────────────────────────────────────────────────────
+
   public enum SuperState {
-    DRIVE, // DRIVE
-    INTAKE, // DRIVE, SHOOTER PREPFUEL, HOPPER INDEXTOSHOOTER, INTAKE INTAKE
-    OUTTAKE, // DRIVE, SHOOTER PREPFUEL, HOPPER INDEXTOINTAKE, INTAKE OUTTAKE
-    SHOOT, // DRIVE points towards target, SHOOTER SHOOT, HOPPER INDEXTOSHOOTER, INTAKE OFF
+    DRIVE,
+    INTAKE,
+    OUTTAKE,
+    SHOOT,
     SHOOT_JUICER
   }
 
-  private SuperState state;
-  private SuperState lastState = null;
+  // ──────────────────────────────────────────────────────────────────────────
+  // Subsystem References
+  // ──────────────────────────────────────────────────────────────────────────
 
   private final CommandSwerveDrivetrain swerve;
   private final IntakeSubsystem intake;
@@ -46,20 +54,40 @@ public class Superstructure extends SubsystemBase {
   private final RobotContainer container;
   private final Telemetry logger;
 
-  /* Setting up bindings for necessary control of the swerve drive platform */
+  // ──────────────────────────────────────────────────────────────────────────
+  // Swerve Requests
+  // ──────────────────────────────────────────────────────────────────────────
+
   private final SwerveRequest.SwerveDriveBrake brake;
   private final SwerveRequest.PointWheelsAt point;
-
-  /* Used for path following */
   private final SwerveRequest.ApplyFieldSpeeds applyFieldSpeeds;
   private final SwerveRequest.ApplyRobotSpeeds applyRobotSpeeds;
 
-  private Optional<Rotation2d> currentHeading; // Keeps track of current heading
-  private double rotationLastTriggered; // Keeps track of the last time the rotation was triggered
+  // ──────────────────────────────────────────────────────────────────────────
+  // Heading Tracking
+  // ──────────────────────────────────────────────────────────────────────────
 
-  private static final double ALIGNMENT_TOLERANCE_DEGREES = 3.0; // tune this
-  // Cache alignment result to avoid computing twice per cycle
+  private Optional<Rotation2d> currentHeading;
+  private double rotationLastTriggered;
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Alignment & Targeting
+  // ──────────────────────────────────────────────────────────────────────────
+
+  private static final double ALIGNMENT_TOLERANCE_DEGREES = 3.0;
   private boolean alignedToTarget = false;
+  private Translation2d cachedHubTarget = null;
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // State Machine
+  // ──────────────────────────────────────────────────────────────────────────
+
+  private SuperState state;
+  private SuperState lastState = null;
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Constructor
+  // ──────────────────────────────────────────────────────────────────────────
 
   public Superstructure(
       CommandSwerveDrivetrain swerve,
@@ -75,16 +103,10 @@ public class Superstructure extends SubsystemBase {
     this.vision = vision;
     this.container = container;
 
-    /* Initialize superstate */
     state = SuperState.DRIVE;
 
-    /* Instantiate brake (X-lock swerve wheels) */
     brake = new SwerveRequest.SwerveDriveBrake();
-
-    /* Instantiate point (point swerve wheels in a specific direction) */
     point = new SwerveRequest.PointWheelsAt();
-
-    /* Instantiate the Field and Robot Speeds Swerve Requests */
     applyFieldSpeeds =
         new SwerveRequest.ApplyFieldSpeeds()
             .withDesaturateWheelSpeeds(true)
@@ -94,18 +116,16 @@ public class Superstructure extends SubsystemBase {
             .withDesaturateWheelSpeeds(true)
             .withDriveRequestType(DriveRequestType.Velocity);
 
-    /* Instantiate current heading as empty */
-    currentHeading = Optional.empty(); // Keeps track of current heading
-
-    /* Instantiate the rotation last triggered as 0 */
+    currentHeading = Optional.empty();
     rotationLastTriggered = 0.0;
 
-    /* Instantiate the logger for telemetry */
     logger = new Telemetry();
-
-    /* Register the telemetry for the swerve drive */
     swerve.registerTelemetry(logger::telemeterize);
   }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Heading Accessors (used by DefaultDriveCmd)
+  // ──────────────────────────────────────────────────────────────────────────
 
   public Optional<Rotation2d> getCurrentHeading() {
     return currentHeading;
@@ -122,6 +142,10 @@ public class Superstructure extends SubsystemBase {
   public void setRotationLastTriggered(double t) {
     this.rotationLastTriggered = t;
   }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Drive Commands
+  // ──────────────────────────────────────────────────────────────────────────
 
   public Command defaultDrive(
       DoubleSupplier translationSup,
@@ -152,7 +176,9 @@ public class Superstructure extends SubsystemBase {
     return swerve.runOnce(swerve::seedFieldCentric);
   }
 
-  /* Intake Commands */
+  // ──────────────────────────────────────────────────────────────────────────
+  // Intake Commands
+  // ──────────────────────────────────────────────────────────────────────────
 
   public Command intakeCommand() {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.INTAKE), intake);
@@ -174,7 +200,9 @@ public class Superstructure extends SubsystemBase {
     return new InstantCommand(() -> intake.setDesiredState(IntakeState.WOKTOSS), intake);
   }
 
-  /* Hopper Commands */
+  // ──────────────────────────────────────────────────────────────────────────
+  // Hopper Commands
+  // ──────────────────────────────────────────────────────────────────────────
 
   public Command indexToIntakeCommand() {
     return new InstantCommand(() -> hopper.setDesiredState(HopperState.INDEXTOINTAKE), hopper);
@@ -188,7 +216,9 @@ public class Superstructure extends SubsystemBase {
     return new InstantCommand(() -> hopper.setDesiredState(HopperState.STOP), hopper);
   }
 
-  /* Shooter Commands */
+  // ──────────────────────────────────────────────────────────────────────────
+  // Shooter Commands
+  // ──────────────────────────────────────────────────────────────────────────
 
   public Command stopShooterCommand() {
     return new InstantCommand(() -> shooter.setDesiredState(ShooterState.STOP), shooter);
@@ -202,69 +232,68 @@ public class Superstructure extends SubsystemBase {
     return new InstantCommand(() -> shooter.setDesiredState(ShooterState.PREPFUEL), shooter);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // SuperState Commands
+  // ──────────────────────────────────────────────────────────────────────────
+
   public Command driveSuperstateCommand() {
     return new InstantCommand(() -> setDesiredSuperState(SuperState.DRIVE));
   }
 
-  /** Returns true if the robot heading is within tolerance of the angle to the blue hub. */
+  // ──────────────────────────────────────────────────────────────────────────
+  // Alignment
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /** Returns true if the robot heading is within tolerance of the angle to the hub. */
   public boolean isAlignedToTarget() {
     return alignedToTarget;
   }
 
-  private void updateAlignmentStatus() {
-    Pose2d currentPose = swerve.getState().Pose;
+  /** Zero-allocation alignment check using raw atan2 math. */
+  private void updateAlignmentStatus(Pose2d currentPose, Translation2d hubTarget) {
+    double dx = hubTarget.getX() - currentPose.getX();
+    double dy = hubTarget.getY() - currentPose.getY();
+    double targetAngleRad = Math.atan2(dy, dx);
 
-    Rotation2d angleToTarget =
-        FieldConstants.Hub.BLUE_HUB_CENTER_POSE.minus(currentPose.getTranslation()).getAngle();
+    double headingErrorRad = currentPose.getRotation().getRadians() - targetAngleRad;
+    headingErrorRad = Math.IEEEremainder(headingErrorRad, 2.0 * Math.PI);
 
-    double headingErrorDegrees =
-        Math.abs(currentPose.getRotation().minus(angleToTarget).getDegrees());
-
-    alignedToTarget = headingErrorDegrees < ALIGNMENT_TOLERANCE_DEGREES;
+    alignedToTarget = Math.abs(Math.toDegrees(headingErrorRad)) < ALIGNMENT_TOLERANCE_DEGREES;
   }
 
-  /* State handling */
+  // ──────────────────────────────────────────────────────────────────────────
+  // State Machine
+  // ──────────────────────────────────────────────────────────────────────────
+
   public void setDesiredSuperState(SuperState state) {
     this.state = state;
   }
 
   public void handleStateTransition() {
-
-    // State machine logic
     switch (state) {
       case DRIVE:
-        // Intake remains deployed
         intake.setDesiredState(IntakeState.DEPLOYED);
-        // Set Hopper to STOP
         hopper.setDesiredState(HopperState.STOP);
-        // Set Shooter to PREPFUEL
         shooter.setDesiredState(ShooterState.STOP);
         break;
+
       case INTAKE:
-        // Set Intake to INTAKE
         intake.setDesiredState(IntakeState.INTAKE);
-        // Set Hopper to INDEXTOSHOOTER
-        // hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-        // Set Shooter to PREPFUEL
         shooter.setDesiredState(ShooterState.STOP);
         break;
+
       case OUTTAKE:
-        // Set Drive to maintain heading at reduced speeds
-        // Set Intake to OUTTAKE
         intake.setDesiredState(IntakeState.OUTTAKE);
-        // Set Hopper to INDEXTOINTAKE
         hopper.setDesiredState(HopperState.INDEXTOINTAKE);
-        // Set Shooter to PREPFUEL
         shooter.setDesiredState(ShooterState.STOP);
         break;
+
       case SHOOT:
         shooter.setDesiredState(ShooterState.SHOOT);
-
         if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
           intake.setDesiredState(IntakeState.INTAKE);
           hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
         } else {
-          // Shooter is ramping up or not aligned — hold hopper
           hopper.setDesiredState(HopperState.STOP);
           intake.setDesiredState(IntakeState.DEPLOYED);
         }
@@ -272,7 +301,6 @@ public class Superstructure extends SubsystemBase {
 
       case SHOOT_JUICER:
         shooter.setDesiredState(ShooterState.SHOOT);
-
         if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
           intake.setDesiredState(IntakeState.JUICER);
           hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
@@ -284,21 +312,37 @@ public class Superstructure extends SubsystemBase {
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Periodic
+  // ──────────────────────────────────────────────────────────────────────────
+
   @Override
   public void periodic() {
-    // Updates where the robot is //
-    Pose2d currentPose = swerve.getState().Pose;
+    DogLog.time("Perf/Superstructure");
 
-    // Check the distance of the robot pose to the center of the blue hub
-    double distanceToBlueHub =
-        currentPose.getTranslation().getDistance(FieldConstants.Hub.BLUE_HUB_CENTER_POSE);
+    // Cache the hub target once alliance is known (doesn't change mid-match)
+    if (cachedHubTarget == null) {
+      if (DriverStation.getAlliance().isPresent()) {
+        cachedHubTarget =
+            DriverStation.getAlliance().get() == Alliance.Red
+                ? FieldConstants.Hub.RED_HUB_CENTER_POSE
+                : FieldConstants.Hub.BLUE_HUB_CENTER_POSE;
+      }
+    }
 
-    shooter.setSetpointForDistance(distanceToBlueHub);
+    // Compute distance and alignment when alliance is known
+    if (cachedHubTarget != null) {
+      Pose2d currentPose = swerve.getState().Pose;
 
-    updateAlignmentStatus();
+      double distanceToHub = currentPose.getTranslation().getDistance(cachedHubTarget);
+      DogLog.log("Superstructure/Distance to Hub (feet)", Units.metersToFeet(distanceToHub));
 
-    DogLog.log("Superstructure/Distance to Blue Hub (feet)", Units.metersToFeet(distanceToBlueHub));
+      shooter.setSetpointForDistance(distanceToHub);
+      updateAlignmentStatus(currentPose, cachedHubTarget);
+    }
 
     handleStateTransition();
+
+    DogLog.timeEnd("Perf/Superstructure");
   }
 }
