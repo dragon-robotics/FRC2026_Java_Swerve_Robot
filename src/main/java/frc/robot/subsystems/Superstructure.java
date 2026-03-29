@@ -57,6 +57,10 @@ public class Superstructure extends SubsystemBase {
   private Optional<Rotation2d> currentHeading; // Keeps track of current heading
   private double rotationLastTriggered; // Keeps track of the last time the rotation was triggered
 
+  private static final double ALIGNMENT_TOLERANCE_DEGREES = 3.0; // ← tune this
+  // Cache alignment result to avoid computing twice per cycle
+  private boolean alignedToTarget = false;
+
   public Superstructure(
       CommandSwerveDrivetrain swerve,
       IntakeSubsystem intake,
@@ -202,6 +206,27 @@ public class Superstructure extends SubsystemBase {
     return new InstantCommand(() -> setDesiredSuperState(SuperState.DRIVE));
   }
 
+  /**
+   * Returns true if the robot heading is within tolerance of the angle to the blue hub.
+   */
+  public boolean isAlignedToTarget() {
+    return alignedToTarget;
+  }
+
+  private void updateAlignmentStatus() {
+    Pose2d currentPose = swerve.getState().Pose;
+
+    Rotation2d angleToTarget =
+        FieldConstants.Hub.BLUE_HUB_CENTER_POSE
+            .minus(currentPose.getTranslation())
+            .getAngle();
+
+    double headingErrorDegrees =
+        Math.abs(currentPose.getRotation().minus(angleToTarget).getDegrees());
+
+    alignedToTarget = headingErrorDegrees < ALIGNMENT_TOLERANCE_DEGREES;
+  }  
+
   /* State handling */
   public void setDesiredSuperState(SuperState state) {
     this.state = state;
@@ -237,34 +262,29 @@ public class Superstructure extends SubsystemBase {
         shooter.setDesiredState(ShooterState.STOP);
         break;
       case SHOOT:
-        // Set Shooter to SHOOT
         shooter.setDesiredState(ShooterState.SHOOT);
 
-        if (shooter.getCurrentState() == ShooterState.SHOOT) {
-          // Set Drive to point towards target
-          // Once the robot is in position, set to x-lock
-          // TODO: In the future, set to hold position, or shoot on the move //
-          // Set Intake to AUTO_WOKTOSSING
+        if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
           intake.setDesiredState(IntakeState.INTAKE);
-          // Set Hopper to INDEXTOSHOOTER
-          // DogLog.log("Superstructure/Hopper State", hopper.getCurrentState().toString());
           hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+        } else {
+          // Shooter is ramping up or not aligned — hold hopper
+          hopper.setDesiredState(HopperState.STOP);
+          intake.setDesiredState(IntakeState.DEPLOYED);
         }
         break;
+
       case SHOOT_JUICER:
-        // Set Shooter to SHOOT
         shooter.setDesiredState(ShooterState.SHOOT);
 
-        if (shooter.getCurrentState() == ShooterState.SHOOT) {
-          // Set Drive to point towards target
-          // Once the robot is in position, set to x-lock
-          // TODO: In the future, set to hold position, or shoot on the move //
-          // Set Intake to AUTO_WOKTOSSING
+        if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
           intake.setDesiredState(IntakeState.JUICER);
-          // Set Hopper to INDEXTOSHOOTER
-          // DogLog.log("Superstructure/Hopper State", hopper.getCurrentState().toString());
           hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+        } else {
+          hopper.setDesiredState(HopperState.STOP);
+          intake.setDesiredState(IntakeState.DEPLOYED);
         }
+        break;
     }
   }
 
@@ -279,9 +299,11 @@ public class Superstructure extends SubsystemBase {
     double distanceToBlueHub =
         currentPose.getTranslation().getDistance(FieldConstants.Hub.BLUE_HUB_CENTER_POSE);
 
-    DogLog.log("Superstructure/Distance to Blue Hub (feet)", Units.metersToFeet(distanceToBlueHub));
+    shooter.setSetpointForDistance(distanceToBlueHub);
 
-    DogLog.log("Superstructure/SuperState", state.toString());
+    updateAlignmentStatus();
+
+    DogLog.log("Superstructure/Distance to Blue Hub (feet)", Units.metersToFeet(distanceToBlueHub));
 
     handleStateTransition();
 
