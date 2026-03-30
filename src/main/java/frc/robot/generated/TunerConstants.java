@@ -64,20 +64,20 @@ public class TunerConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(50))
+                  .withStatorCurrentLimit(Amps.of(40))
                   .withSupplyCurrentLimitEnable(true)
                   .withSupplyCurrentLowerLimit(Amps.of(35))
                   .withSupplyCurrentLowerTime(Seconds.of(1))
                   .withSupplyCurrentLimit(Amps.of(30)))
           .withVoltage(
               new VoltageConfigs()
-                  .withPeakForwardVoltage(Volts.of(12))
-                  .withPeakReverseVoltage(Volts.of(-12)))
-          .withOpenLoopRamps(
-              new OpenLoopRampsConfigs()
-                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.15))
-                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.15))
-                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.15)))
+                  .withPeakForwardVoltage(Volts.of(10))
+                  .withPeakReverseVoltage(Volts.of(-10)))
+          .withClosedLoopRamps(
+              new ClosedLoopRampsConfigs()
+                  .withDutyCycleClosedLoopRampPeriod(Seconds.of(0.2))
+                  .withTorqueClosedLoopRampPeriod(Seconds.of(0.2))
+                  .withVoltageClosedLoopRampPeriod(Seconds.of(0.2)))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
   private static final TalonFXConfiguration steerInitialConfigs =
       new TalonFXConfiguration()
@@ -94,16 +94,11 @@ public class TunerConstants {
               new VoltageConfigs()
                   .withPeakForwardVoltage(Volts.of(12))
                   .withPeakReverseVoltage(Volts.of(-12)))
-          .withOpenLoopRamps(
-              new OpenLoopRampsConfigs()
-                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.15))
-                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.15))
-                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.15)))
           .withClosedLoopRamps(
               new ClosedLoopRampsConfigs()
-                  .withDutyCycleClosedLoopRampPeriod(Seconds.of(0.05))
-                  .withTorqueClosedLoopRampPeriod(Seconds.of(0.05))
-                  .withVoltageClosedLoopRampPeriod(Seconds.of(0.05)))
+                  .withDutyCycleClosedLoopRampPeriod(Seconds.of(0.2))
+                  .withTorqueClosedLoopRampPeriod(Seconds.of(0.2))
+                  .withVoltageClosedLoopRampPeriod(Seconds.of(0.2)))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake));
   private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
   // Configs for the Pigeon 2; leave this null to skip applying Pigeon 2 configs

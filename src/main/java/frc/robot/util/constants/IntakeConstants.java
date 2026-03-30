@@ -116,7 +116,7 @@ public final class IntakeConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(31))
+                  .withStatorCurrentLimit(Amps.of(30))
                   .withSupplyCurrentLimitEnable(true)
                   .withSupplyCurrentLimit(Amps.of(25))
                   .withSupplyCurrentLowerLimit(Amps.of(20))
