@@ -20,34 +20,30 @@ public final class VisionConstants {
   public static final Transform3d APTAG_POSE_EST_CAM_F_POS =
       new Transform3d(
           new Translation3d(
-              Units.inchesToMeters(-11.152),
-              Units.inchesToMeters(-7.579),
-              Units.inchesToMeters(20.930)),
-          new Rotation3d(0, Units.degreesToRadians(-12), 0));
+              Units.inchesToMeters(-11.4), Units.inchesToMeters(-7.7), Units.inchesToMeters(21.25)),
+          new Rotation3d(0, Units.degreesToRadians(-15), 0));
 
   public static final Transform3d APTAG_POSE_EST_CAM_R_POS =
       new Transform3d(
           new Translation3d(
-              Units.inchesToMeters(-11.652),
-              Units.inchesToMeters(-8.779),
-              Units.inchesToMeters(20.930)),
-          new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(-90)));
+              Units.inchesToMeters(-8.64),
+              Units.inchesToMeters(-13.35),
+              Units.inchesToMeters(15.9)),
+          new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(-90)));
 
   public static final Transform3d APTAG_POSE_EST_CAM_B_POS =
       new Transform3d(
           new Translation3d(
-              Units.inchesToMeters(-11.152),
-              Units.inchesToMeters(11.329),
-              Units.inchesToMeters(20.930)),
-          new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(180)));
+              Units.inchesToMeters(-9.42), Units.inchesToMeters(12.5), Units.inchesToMeters(20.84)),
+          new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(180)));
 
   public static final Transform3d APTAG_POSE_EST_CAM_L_POS =
       new Transform3d(
           new Translation3d(
-              Units.inchesToMeters(-10.152),
-              Units.inchesToMeters(12.529),
-              Units.inchesToMeters(20.930)),
-          new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(90)));
+              Units.inchesToMeters(-8.64),
+              Units.inchesToMeters(13.36),
+              Units.inchesToMeters(15.93)),
+          new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(90)));
 
   public static final Transform3d[] APTAG_POSE_EST_CAM_POSITIONS = {
     APTAG_POSE_EST_CAM_F_POS,

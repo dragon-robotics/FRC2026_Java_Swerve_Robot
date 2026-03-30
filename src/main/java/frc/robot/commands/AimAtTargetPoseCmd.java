@@ -4,12 +4,8 @@
 
 package frc.robot.commands;
 
-import java.util.Optional;
-import java.util.function.Consumer;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -18,6 +14,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.util.constants.FieldConstants;
 import frc.robot.util.constants.SwerveConstants;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class AimAtTargetPoseCmd extends Command {
@@ -28,12 +26,11 @@ public class AimAtTargetPoseCmd extends Command {
   private double maxSpeed;
   private double maxAngularRate;
 
-  private final SwerveRequest.FieldCentricFacingAngle driveMaintainHeading;  
+  private final SwerveRequest.FieldCentricFacingAngle driveMaintainHeading;
 
   /** Creates a new AimAtTargetPoseCmd. */
   public AimAtTargetPoseCmd(
-    CommandSwerveDrivetrain swerve,
-    Consumer<Optional<Rotation2d>> setCurrentHeading) {
+      CommandSwerveDrivetrain swerve, Consumer<Optional<Rotation2d>> setCurrentHeading) {
     this.swerve = swerve;
     this.setCurrentHeading = setCurrentHeading;
 
@@ -82,9 +79,7 @@ public class AimAtTargetPoseCmd extends Command {
     setCurrentHeading.accept(Optional.of(angleToPointAt));
 
     swerve.setControl(
-        driveMaintainHeading
-            .withTargetDirection(angleToPointAt)
-            .withTargetRateFeedforward(0.1));
+        driveMaintainHeading.withTargetDirection(angleToPointAt).withTargetRateFeedforward(0.1));
   }
 
   // Called once the command ends or is interrupted.

@@ -116,15 +116,15 @@ public final class IntakeConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(60))
+                  .withStatorCurrentLimit(Amps.of(31))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(40))
+                  .withSupplyCurrentLimit(Amps.of(25))
                   .withSupplyCurrentLowerLimit(Amps.of(20))
                   .withSupplyCurrentLowerTime(Seconds.of(1)))
           .withVoltage(
               new VoltageConfigs()
-                  .withPeakForwardVoltage(Volts.of(12))
-                  .withPeakReverseVoltage(Volts.of(-12)))
+                  .withPeakForwardVoltage(Volts.of(10))
+                  .withPeakReverseVoltage(Volts.of(-10)))
           .withOpenLoopRamps(
               new OpenLoopRampsConfigs()
                   .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.1))
@@ -179,7 +179,7 @@ public final class IntakeConstants {
               new MagnetSensorConfigs()
                   .withAbsoluteSensorDiscontinuityPoint(0.5)
                   .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
-                  .withMagnetOffset(-0.028802734375));
+                  .withMagnetOffset(0.015869546875));
 
   public static final SparkBaseConfig INTAKE_ARM_SPARKMAX_CONFIG =
       new SparkMaxConfig()

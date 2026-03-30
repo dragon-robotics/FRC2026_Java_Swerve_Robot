@@ -34,30 +34,8 @@ deploy {
                     // SerialGC: single-threaded, no background threads stealing CPU
                     jvmArgs.add("-XX:+UseSerialGC")
 
-                    // Fixed heap size — eliminates heap resize pauses entirely
-                    // Setting Xms == Xmx means the heap never grows or shrinks
-                    // 80MB leaves ~100MB for OS, CAN daemon, cameras, NT server
-                    jvmArgs.add("-Xms80m")
-                    jvmArgs.add("-Xmx80m")
-
-                    // New generation sizing — this is where short-lived objects go
-                    // Larger new gen = fewer minor GCs = fewer pauses
-                    // 40MB new gen means minor GC only when 40MB of temp objects accumulate
-                    jvmArgs.add("-XX:NewSize=40m")
-                    jvmArgs.add("-XX:MaxNewSize=40m")
-
-                    // Survivor ratio: Eden:S0:S1 = 6:1:1
-                    // Eden = 30MB, each survivor = 5MB
-                    // Most FRC objects die immediately → large Eden reduces GC frequency
-                    jvmArgs.add("-XX:SurvivorRatio=6")
-
-                    // Tenuring threshold: promote to old gen after 2 GC cycles
-                    // FRC objects are either permanent (subsystems) or garbage (per-cycle)
-                    // Low threshold moves permanent objects to old gen quickly
+                    // Promote long-lived objects quickly to old gen
                     jvmArgs.add("-XX:MaxTenuringThreshold=2")
-
-                    // Metaspace cap — prevent unbounded class metadata growth
-                    jvmArgs.add("-XX:MaxMetaspaceSize=20m")
 
                     // Ignore any System.gc() calls from libraries (e.g. RMI)
                     // Prevents unexpected full GC pauses mid-match

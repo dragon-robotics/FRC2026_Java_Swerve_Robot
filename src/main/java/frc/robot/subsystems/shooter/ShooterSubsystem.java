@@ -58,7 +58,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     // Initialize target RPM and hood angle to default values
     this.targetRPM = ShooterConstants.SHOOTER_LEAD_RPM;
-    this.hoodAngle = 0.0; // default to home position
+    this.hoodAngle = ShooterConstants.SHOOTER_HOOD_SETTING; // default to home position
   }
 
   public ShooterState getCurrentState() {
@@ -193,7 +193,7 @@ public class ShooterSubsystem extends SubsystemBase {
               kickerStopTimerRunning = true;
             }
             if (kickerStopTimerRunning && !kickerStopTimer.hasElapsed(KICKER_STOP_DELAY)) {
-              runKicker();
+              runKickerMotorPercentage(0.5);
             } else {
               stopKicker();
             }

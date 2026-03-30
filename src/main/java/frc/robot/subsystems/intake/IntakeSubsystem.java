@@ -47,6 +47,9 @@ public class IntakeSubsystem extends SubsystemBase {
    */
   private IntakeState lastCommandedState = null;
 
+  /** True once the arm has reached stow in HOME and we've switched to coast. */
+  private boolean homeCoasting = false;
+
   // Juicer sub-phase tracking — always reset to WAIT on (re-)entry
   private JuicerPhase juicerPhase = JuicerPhase.PRE_JUICE;
   private JuicerPhase lastJuicerPhase = null;
@@ -101,6 +104,14 @@ public class IntakeSubsystem extends SubsystemBase {
   public void deployIntakeArm() {
     intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_FAST_PID_SLOT);
     // intakeRollerIO.setMotorPercentage(0.5);
+  }
+
+  /**
+   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity holds the arm down
+   * once deployed — no PID needed to maintain the down position.
+   */
+  public void coastIntakeArm() {
+    intakeArmIO.setMotorPercentage(0.0);
   }
 
   public void stowIntakeArm() {
@@ -233,28 +244,35 @@ public class IntakeSubsystem extends SubsystemBase {
         // ── Steady states: only send CAN commands on state entry ──
       case HOME:
         if (lastCommandedState != currIntakeState) {
+          // First entry -- command arm to stow via PID and stop rollers
           stowIntakeArm();
           stopIntake();
           lastCommandedState = currIntakeState;
+          homeCoasting = false;
+        } else if (!homeCoasting && isIntakeArmAtStowed()) {
+          // Arm has arrived at stow -- coast to save 8-14A of stator current.
+          // Gravity + mechanical stops hold the arm in place; PID is unnecessary.
+          coastIntakeArm();
+          homeCoasting = true;
         }
         break;
       case INTAKE:
         if (lastCommandedState != currIntakeState) {
-          deployIntakeArm();
+          coastIntakeArm();
           runIntake();
           lastCommandedState = currIntakeState;
         }
         break;
       case OUTTAKE:
         if (lastCommandedState != currIntakeState) {
-          deployIntakeArm();
+          coastIntakeArm();
           runOuttake();
           lastCommandedState = currIntakeState;
         }
         break;
       case DEPLOYED:
         if (lastCommandedState != currIntakeState) {
-          deployIntakeArm();
+          coastIntakeArm();
           stopIntake();
           lastCommandedState = currIntakeState;
         }

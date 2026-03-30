@@ -23,25 +23,32 @@ import frc.robot.util.vision.AcceptedPose;
 import frc.robot.util.vision.RejectedPose;
 import frc.robot.util.vision.VisionPoseValidator;
 import java.util.Arrays;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class VisionSubsystem extends SubsystemBase {
 
   private final CommandSwerveDrivetrain swerve;
   private final VisionConsumer consumer;
   private final VisionIO[] io;
-  private final VisionIOInputs[] inputs;
   private final Alert[] disconnectedAlerts;
 
-  // Check for odometry initialization and use about //
+  // -- Threading: double-buffered inputs --
+  // The background thread writes into 'threadInputs', then copies to 'latestInputs' under lock.
+  // The main thread copies 'latestInputs' into 'mainInputs' under lock, then processes freely.
+  private final VisionIOInputs[] threadInputs; // owned by background thread only
+  private final VisionIOInputs[] latestInputs; // shared, protected by lock
+  private final VisionIOInputs[] mainInputs; // owned by main thread only
+  private final ReentrantLock inputsLock = new ReentrantLock();
+  private final Thread visionThread;
+
+  // Check for odometry initialization
   private int stablePoseCounter = 5;
   private boolean odometryInitialized = false;
 
-  // Import VisionPoseValidator to validate our vision observations //
+  // Vision pose validator
   private final VisionPoseValidator poseValidator = new VisionPoseValidator();
 
-  // Pre-allocated pose buffer — avoids ArrayList and toArray() allocation each cycle.
-  // Max capacity = io.length cameras * ~2 poses each (generous upper bound).
-  // acceptedPoseCount tracks how many slots are filled this cycle.
+  // Pre-allocated pose buffer -- avoids ArrayList and toArray() allocation each cycle.
   private Pose3d[] acceptedPoseBuffer;
   private int acceptedPoseCount = 0;
 
@@ -51,12 +58,16 @@ public class VisionSubsystem extends SubsystemBase {
     this.consumer = consumer;
     this.io = io;
 
-    // Initialize the the inputs
-    inputs = new VisionIOInputs[io.length];
+    // Initialize triple-buffered inputs and alerts
+    threadInputs = new VisionIOInputs[io.length];
+    latestInputs = new VisionIOInputs[io.length];
+    mainInputs = new VisionIOInputs[io.length];
     disconnectedAlerts = new Alert[io.length];
 
-    for (int i = 0; i < inputs.length; i++) {
-      inputs[i] = new VisionIOInputs();
+    for (int i = 0; i < io.length; i++) {
+      threadInputs[i] = new VisionIOInputs();
+      latestInputs[i] = new VisionIOInputs();
+      mainInputs[i] = new VisionIOInputs();
       disconnectedAlerts[i] =
           new Alert(
               "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
@@ -64,6 +75,11 @@ public class VisionSubsystem extends SubsystemBase {
 
     // Pre-allocate pose buffer: each camera can produce ~2 poses max per cycle
     acceptedPoseBuffer = new Pose3d[io.length * 2];
+
+    // Start background vision thread -- iterates all cameras in a loop
+    visionThread = new Thread(this::visionThreadLoop, "VisionThread");
+    visionThread.setDaemon(true);
+    visionThread.start();
   }
 
   @FunctionalInterface
@@ -74,20 +90,59 @@ public class VisionSubsystem extends SubsystemBase {
         Matrix<N3, N1> visionMeasurementStdDevs);
   }
 
+  /**
+   * Background thread loop: continuously polls all cameras and publishes results. Runs as fast as
+   * cameras produce frames (~30fps). The thread owns 'threadInputs' exclusively and only touches
+   * 'latestInputs' under the lock for a fast memcpy.
+   */
+  private void visionThreadLoop() {
+    while (!Thread.currentThread().isInterrupted()) {
+      try {
+        // Poll every camera sequentially on this thread
+        for (int i = 0; i < io.length; i++) {
+          io[i].updateInputs(threadInputs[i]);
+        }
+
+        // Publish results to shared buffer under lock (fast -- just field copies)
+        inputsLock.lock();
+        try {
+          for (int i = 0; i < io.length; i++) {
+            latestInputs[i].copyFrom(threadInputs[i]);
+          }
+        } finally {
+          inputsLock.unlock();
+        }
+
+        // Yield briefly to avoid busy-spinning if cameras have no new data
+        Thread.sleep(5);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        break;
+      } catch (Exception e) {
+        // Log but don't crash the thread on transient errors
+        DogLog.log("Vision/ThreadError", e.getMessage());
+      }
+    }
+  }
+
   @Override
   public void periodic() {
-    // Use local variables to reduce field access (optimization)
-    final var cameraIOs = io;
-    final var cameraInputs = inputs;
+    // Snapshot latest camera results from background thread (fast lock)
+    inputsLock.lock();
+    try {
+      for (int i = 0; i < io.length; i++) {
+        mainInputs[i].copyFrom(latestInputs[i]);
+      }
+    } finally {
+      inputsLock.unlock();
+    }
 
-    // Reset pose count — no clearing needed, just overwrite slots
+    // Reset pose count -- no clearing needed, just overwrite slots
     acceptedPoseCount = 0;
 
-    // This method will be called once per scheduler run
-    for (int cameraIndex = 0; cameraIndex < cameraIOs.length; cameraIndex++) {
-      cameraIOs[cameraIndex].updateInputs(cameraInputs[cameraIndex]);
-
-      processCameraData(cameraIndex, cameraInputs[cameraIndex]);
+    // Process all camera data on the main thread (validation + pose estimator updates)
+    for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
+      processCameraData(cameraIndex, mainInputs[cameraIndex]);
     }
   }
 
@@ -95,7 +150,7 @@ public class VisionSubsystem extends SubsystemBase {
     // Update disconnected alert
     disconnectedAlerts[cameraIndex].set(!inputs.isConnected());
 
-    // Process pose observations — no intermediate collections needed
+    // Process pose observations -- no intermediate collections needed
     for (var observation : inputs.getPoseObservations()) {
 
       // Use instanceof with pattern matching
@@ -113,7 +168,7 @@ public class VisionSubsystem extends SubsystemBase {
     // Cache the poseObservation record accessor to avoid repeated calls
     var poseObs = accepted.poseObservation();
 
-    // Write directly into pre-allocated buffer — grow if needed (rare)
+    // Write directly into pre-allocated buffer -- grow if needed (rare)
     if (acceptedPoseCount >= acceptedPoseBuffer.length) {
       acceptedPoseBuffer = Arrays.copyOf(acceptedPoseBuffer, acceptedPoseBuffer.length * 2);
     }

@@ -17,6 +17,15 @@ public interface VisionIO {
 
     @Getter @Setter private PoseObservation[] poseObservations = new PoseObservation[0];
     @Getter @Setter private int[] tagIds = new int[0];
+
+    /** Copy all fields from another VisionIOInputs into this one (for thread-safe handoff). */
+    public void copyFrom(VisionIOInputs other) {
+      this.cameraName = other.cameraName;
+      this.connected = other.connected;
+      this.latestTargetObservation = other.latestTargetObservation;
+      this.poseObservations = other.poseObservations;
+      this.tagIds = other.tagIds;
+    }
   }
 
   /** Represents the angle to a simple target, not used for pose estimation. */

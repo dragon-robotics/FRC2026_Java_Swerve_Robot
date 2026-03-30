@@ -43,7 +43,8 @@ public final class ShooterConstants {
   public static final double SHOOTER_KICKER_RPM = 3000.0;
   public static final double SHOOTER_LEAD_DUTY_CYCLE = 1.0;
   public static final double SHOOTER_LEAD_VOLTAGE = 12.0;
-  public static final double SHOOTER_LEAD_RPM = 3000.0;
+  public static final double SHOOTER_LEAD_RPM = 2500.0;
+  public static final double SHOOTER_HOOD_SETTING = 0.0;
 
   public record ShooterSetpoint(double shooterRPM, double hoodAngle) {}
 
@@ -87,10 +88,10 @@ public final class ShooterConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(80))
+                  .withStatorCurrentLimit(Amps.of(40))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(60))
-                  .withSupplyCurrentLowerLimit(Amps.of(40))
+                  .withSupplyCurrentLimit(Amps.of(30))
+                  .withSupplyCurrentLowerLimit(Amps.of(20))
                   .withSupplyCurrentLowerTime(Seconds.of(1)))
           .withVoltage(new VoltageConfigs().withPeakForwardVoltage(12).withPeakReverseVoltage(-12))
           .withMotorOutput(
@@ -131,10 +132,10 @@ public final class ShooterConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(100))
+                  .withStatorCurrentLimit(Amps.of(40))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(60))
-                  .withSupplyCurrentLowerLimit(Amps.of(40))
+                  .withSupplyCurrentLimit(Amps.of(30))
+                  .withSupplyCurrentLowerLimit(Amps.of(20))
                   .withSupplyCurrentLowerTime(Seconds.of(1)))
           .withVoltage(
               new VoltageConfigs()
@@ -158,15 +159,15 @@ public final class ShooterConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(80))
+                  .withStatorCurrentLimit(Amps.of(60))
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(60))
-                  .withSupplyCurrentLowerLimit(Amps.of(40))
+                  .withSupplyCurrentLimit(Amps.of(40))
+                  .withSupplyCurrentLowerLimit(Amps.of(30))
                   .withSupplyCurrentLowerTime(Seconds.of(1)))
           .withVoltage(
               new VoltageConfigs()
-                  .withPeakForwardVoltage(Volts.of(12))
-                  .withPeakReverseVoltage(Volts.of(-12)))
+                  .withPeakForwardVoltage(Volts.of(11))
+                  .withPeakReverseVoltage(Volts.of(-11)))
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
