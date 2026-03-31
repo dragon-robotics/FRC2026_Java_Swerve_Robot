@@ -33,8 +33,10 @@ public class VisionSubsystem extends SubsystemBase {
   private final Alert[] disconnectedAlerts;
 
   // -- Threading: double-buffered inputs --
-  // The background thread writes into 'threadInputs', then copies to 'latestInputs' under lock.
-  // The main thread copies 'latestInputs' into 'mainInputs' under lock, then processes freely.
+  // The background thread writes into 'threadInputs', then copies to
+  // 'latestInputs' under lock.
+  // The main thread copies 'latestInputs' into 'mainInputs' under lock, then
+  // processes freely.
   private final VisionIOInputs[] threadInputs; // owned by background thread only
   private final VisionIOInputs[] latestInputs; // shared, protected by lock
   private final VisionIOInputs[] mainInputs; // owned by main thread only
@@ -48,7 +50,12 @@ public class VisionSubsystem extends SubsystemBase {
   // Vision pose validator
   private final VisionPoseValidator poseValidator = new VisionPoseValidator();
 
-  // Pre-allocated pose buffer -- avoids ArrayList and toArray() allocation each cycle.
+  // Tracks the name of the camera being processed, so handleAcceptedPose can log
+  // per-camera keys
+  private String currentCameraName = "";
+
+  // Pre-allocated pose buffer -- avoids ArrayList and toArray() allocation each
+  // cycle.
   private Pose3d[] acceptedPoseBuffer;
   private int acceptedPoseCount = 0;
 
@@ -68,9 +75,8 @@ public class VisionSubsystem extends SubsystemBase {
       threadInputs[i] = new VisionIOInputs();
       latestInputs[i] = new VisionIOInputs();
       mainInputs[i] = new VisionIOInputs();
-      disconnectedAlerts[i] =
-          new Alert(
-              "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
+      disconnectedAlerts[i] = new Alert(
+          "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
     }
 
     // Pre-allocate pose buffer: each camera can produce ~2 poses max per cycle
@@ -91,8 +97,10 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Background thread loop: continuously polls all cameras and publishes results. Runs as fast as
-   * cameras produce frames (~30fps). The thread owns 'threadInputs' exclusively and only touches
+   * Background thread loop: continuously polls all cameras and publishes results.
+   * Runs as fast as
+   * cameras produce frames (~30fps). The thread owns 'threadInputs' exclusively
+   * and only touches
    * 'latestInputs' under the lock for a fast memcpy.
    */
   private void visionThreadLoop() {
@@ -140,8 +148,10 @@ public class VisionSubsystem extends SubsystemBase {
     // Reset pose count -- no clearing needed, just overwrite slots
     acceptedPoseCount = 0;
 
-    // Process all camera data on the main thread (validation + pose estimator updates)
+    // Process all camera data on the main thread (validation + pose estimator
+    // updates)
     for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
+      currentCameraName = mainInputs[cameraIndex].getCameraName();
       processCameraData(cameraIndex, mainInputs[cameraIndex]);
     }
   }
@@ -167,6 +177,21 @@ public class VisionSubsystem extends SubsystemBase {
   private void handleAcceptedPose(AcceptedPose accepted) {
     // Cache the poseObservation record accessor to avoid repeated calls
     var poseObs = accepted.poseObservation();
+    Pose2d visionPose = poseObs.pose().toPose2d();
+    Pose2d odometryPose = swerve.getState().Pose;
+    String camKey = "Vision/" + currentCameraName;
+
+    // Reject if vision pose disagrees with odometry by more than threshold.
+    // Prevents a misidentified tag from snapping the pose estimator across the
+    // field.
+    double poseDiscrepancy = odometryPose.getTranslation().getDistance(visionPose.getTranslation());
+    if (poseDiscrepancy > MAX_POSE_DISCREPANCY_METERS) {
+      DogLog.log(camKey + "/RejectedDiscrepancyM", poseDiscrepancy);
+      if (!odometryInitialized) {
+        stablePoseCounter = 5;
+      }
+      return;
+    }
 
     // Write directly into pre-allocated buffer -- grow if needed (rare)
     if (acceptedPoseCount >= acceptedPoseBuffer.length) {
@@ -178,7 +203,7 @@ public class VisionSubsystem extends SubsystemBase {
     if (!odometryInitialized) {
       stablePoseCounter--;
       if (stablePoseCounter <= 0) {
-        swerve.resetPose(poseObs.pose().toPose2d());
+        swerve.resetPose(visionPose);
         odometryInitialized = true;
         DogLog.log("Vision/OdometryInitialized", true);
       }
@@ -186,8 +211,17 @@ public class VisionSubsystem extends SubsystemBase {
 
     // Add to pose estimator
     var stdDevs = calculateStandardDeviations(accepted);
-    consumer.accept(
-        poseObs.pose().toPose2d(), Utils.fpgaToCurrentTime(poseObs.timestamp()), stdDevs);
+    consumer.accept(visionPose, Utils.fpgaToCurrentTime(poseObs.timestamp()), stdDevs);
+
+    // ── Logging ────────────────────────────────────────────────────────────
+    DogLog.log(camKey + "/AcceptedVisionPose", visionPose);
+    DogLog.log(camKey + "/OdometryPose", odometryPose);
+    DogLog.log(camKey + "/PoseDiscrepancyM", poseDiscrepancy);
+    DogLog.log(camKey + "/TagCount", poseObs.tagCount());
+    DogLog.log(camKey + "/AvgTagDistanceM", poseObs.averageTagDistance());
+    DogLog.log(camKey + "/Ambiguity", poseObs.ambiguity());
+    DogLog.log(camKey + "/XYStdDev", stdDevs.get(0, 0));
+    DogLog.log(camKey + "/ThetaStdDev", stdDevs.get(2, 0));
   }
 
   private void handleRejectedPose(RejectedPose rejected) {
@@ -199,12 +233,20 @@ public class VisionSubsystem extends SubsystemBase {
 
   private Matrix<N3, N1> calculateStandardDeviations(AcceptedPose accepted) {
     var poseObs = accepted.poseObservation();
-    double stdDevFactor =
-        (1 + poseObs.averageTagDistance())
-            * (1 + poseObs.ambiguity())
-            / Math.sqrt(Math.max(poseObs.tagCount(), 1));
-    double linearStdDev = LINEAR_STDDEV_BASELINE * stdDevFactor;
-    double angularStdDev = ANGULAR_STDDEV_BASELINE * stdDevFactor;
+    double dist = poseObs.averageTagDistance();
+    int tagCount = Math.max(poseObs.tagCount(), 1);
+
+    // Quadratic distance scaling: trust drops sharply with range.
+    // Divide by tagCount so multiple tags reduce uncertainty.
+    // (1 + ambiguity) penalises ambiguous single-tag solutions.
+    double distanceFactor = (dist * dist) / tagCount;
+    double linearStdDev = LINEAR_STDDEV_BASELINE * (1.0 + distanceFactor) * (1.0 + poseObs.ambiguity());
+
+    // Never trust rotation from a single tag — ambiguity means we can't know which
+    // of the two possible solutions is correct.
+    double angularStdDev = (poseObs.tagCount() >= 2)
+        ? ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor)
+        : Double.MAX_VALUE;
 
     return VecBuilder.fill(linearStdDev, linearStdDev, angularStdDev);
   }
