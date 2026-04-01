@@ -4,15 +4,27 @@
 
 package frc.robot;
 
+import dev.doglog.DogLog;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.io.SignalRegistry;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.List;
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
+
+  // ── GC tracking ───────────────────────────────────────────────────────────
+  private final List<GarbageCollectorMXBean> gcBeans =
+      ManagementFactory.getGarbageCollectorMXBeans();
+
+  private long lastGcCount = 0;
+  private long lastGcTimeMs = 0;
 
   public Robot() {
     super(0.025); // 25ms loop period — gives 5ms headroom over default 20ms
@@ -21,10 +33,42 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotPeriodic() {
-    // Batch-refresh all CTRE motor signals BEFORE the scheduler runs subsystem periodics
-    SignalRegistry.getInstance().refreshAll();
+    DogLog.time("Perf/Total");
 
+    // Batch-refresh all CTRE motor signals BEFORE the scheduler runs subsystem
+    // periodics
+    DogLog.time("Perf/SignalRefresh");
+    SignalRegistry.getInstance().refreshAll();
+    DogLog.timeEnd("Perf/SignalRefresh");
+
+    DogLog.time("Perf/Scheduler");
     CommandScheduler.getInstance().run();
+    DogLog.timeEnd("Perf/Scheduler");
+
+    DogLog.timeEnd("Perf/Total");
+
+    // ── Heap ────────────────────────────────────────────────────────────────
+    Runtime rt = Runtime.getRuntime();
+    DogLog.log("Perf/HeapUsedMB", (rt.totalMemory() - rt.freeMemory()) / (1024.0 * 1024.0));
+
+    // ── GC deltas ───────────────────────────────────────────────────────────
+    long totalGcCount = 0;
+    long totalGcTimeMs = 0;
+    for (GarbageCollectorMXBean bean : gcBeans) {
+      long c = bean.getCollectionCount();
+      long t = bean.getCollectionTime();
+      if (c >= 0) totalGcCount += c;
+      if (t >= 0) totalGcTimeMs += t;
+    }
+    DogLog.log("Perf/GCDeltaCount", (int) (totalGcCount - lastGcCount));
+    DogLog.log("Perf/GCDeltaTimeMs", (double) (totalGcTimeMs - lastGcTimeMs));
+    lastGcCount = totalGcCount;
+    lastGcTimeMs = totalGcTimeMs;
+
+    // ── Power ───────────────────────────────────────────────────────────────
+    DogLog.log("Perf/BatteryVoltage", RobotController.getBatteryVoltage());
+    DogLog.log("Perf/BrownoutVoltage", RobotController.getBrownoutVoltage());
+    DogLog.log("Perf/IsBrownedOut", RobotController.isBrownedOut());
   }
 
   @Override
