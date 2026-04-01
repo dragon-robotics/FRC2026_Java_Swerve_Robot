@@ -59,8 +59,15 @@ public final class VisionConstants {
   public static double MAX_AMBIGUITY = 0.1;
   public static double MAX_Z_ERROR = Units.inchesToMeters(1.5);
 
-  public static double LINEAR_STDDEV_BASELINE = Units.inchesToMeters(1);
-  public static double ANGULAR_STDDEV_BASELINE = Units.degreesToRadians(5);
+  // Maximum allowable discrepancy between a vision pose and the current odometry
+  // estimate. Readings further than this are rejected to prevent pose snapping.
+  public static double MAX_POSE_DISCREPANCY_METERS = 1.0;
+
+  // Baseline std devs before distance/ambiguity scaling.
+  // Higher = less trust in vision = less jitter.
+  // At 1m, 1 tag, 0 ambiguity: linear ≈ 0.3m, angular ≈ 10deg
+  public static double LINEAR_STDDEV_BASELINE = 0.3;
+  public static double ANGULAR_STDDEV_BASELINE = Units.degreesToRadians(10);
 
   public static final double CAMERA_FOV_HORIZONTAL_DEGREES = 73.0;
   public static final double CAMERA_ASPECT_RATIO_WIDTH = 4.0;

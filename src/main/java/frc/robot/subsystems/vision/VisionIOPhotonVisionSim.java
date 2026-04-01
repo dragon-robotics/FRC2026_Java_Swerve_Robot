@@ -18,7 +18,7 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
   /**
    * Creates a new VisionIOPhotonVisionSim.
    *
-   * @param name The name of the camera.
+   * @param name         The name of the camera.
    * @param poseSupplier Supplier for the robot pose to use in simulation.
    */
   public VisionIOPhotonVisionSim(
@@ -31,7 +31,7 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
 
     // Add sim camera
     var cameraProperties = new SimCameraProperties();
-    cameraProperties.setCalibration(640, 480, Rotation2d.fromDegrees(72));
+    cameraProperties.setCalibration(800, 600, Rotation2d.fromDegrees(72));
     cameraProperties.setCalibError(0.38, 0.1);
     cameraProperties.setFPS(60);
     cameraProperties.setAvgLatencyMs(10);
