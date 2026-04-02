@@ -279,7 +279,7 @@ public class Superstructure extends SubsystemBase {
       case DRIVE:
         intake.setDesiredState(IntakeState.DEPLOYED);
         hopper.setDesiredState(HopperState.STOP);
-        shooter.setDesiredState(ShooterState.STOP);
+        shooter.setDesiredState(ShooterState.PREPFUEL);
         break;
 
       case INTAKE:

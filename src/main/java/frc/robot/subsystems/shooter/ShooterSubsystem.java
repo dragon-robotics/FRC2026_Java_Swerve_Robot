@@ -83,12 +83,13 @@ public class ShooterSubsystem extends SubsystemBase {
 
   // runs the shooter at half speed
   public void prepShooter() {
-    shooterLeadIO.setMotorRPM(targetRPM * 0.3); // Run at 30% of target RPM for prep
+    shooterLeadIO.setMotorRPM(1200); // Run at 1500 RPM for prep
   }
 
   public void stopShooter() {
     shooterLeadIO.setMotorRPM(0);
-    // Kicker is managed separately by stopKicker()/runKicker() — don't send conflicting commands
+    // Kicker is managed separately by stopKicker()/runKicker() — don't send
+    // conflicting commands
   }
 
   public void runKicker() {
@@ -158,7 +159,8 @@ public class ShooterSubsystem extends SubsystemBase {
     switch (currShooterState) {
       case STOP:
         // Only send CAN commands while kicker timer is active;
-        // once fully stopped, motors hold their last command — no need to re-send every loop
+        // once fully stopped, motors hold their last command — no need to re-send every
+        // loop
         if (kickerStopTimerRunning) {
           if (kickerStopTimer.hasElapsed(KICKER_STOP_DELAY)) {
             stopKicker();
@@ -169,7 +171,8 @@ public class ShooterSubsystem extends SubsystemBase {
             runKicker();
           }
         }
-        // Motors are already stopped from the TRANSITION→STOP path; no redundant writes needed
+        // Motors are already stopped from the TRANSITION→STOP path; no redundant writes
+        // needed
         break;
       case PREPFUEL:
         kickerStopTimerRunning = false;
