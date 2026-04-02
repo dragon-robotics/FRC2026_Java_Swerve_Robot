@@ -39,8 +39,7 @@ public class Superstructure extends SubsystemBase {
     DRIVE,
     INTAKE,
     OUTTAKE,
-    SHOOT,
-    SHOOT_JUICER
+    SHOOT
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -108,14 +107,12 @@ public class Superstructure extends SubsystemBase {
 
     brake = new SwerveRequest.SwerveDriveBrake();
     point = new SwerveRequest.PointWheelsAt();
-    applyFieldSpeeds =
-        new SwerveRequest.ApplyFieldSpeeds()
-            .withDesaturateWheelSpeeds(true)
-            .withDriveRequestType(DriveRequestType.Velocity);
-    applyRobotSpeeds =
-        new SwerveRequest.ApplyRobotSpeeds()
-            .withDesaturateWheelSpeeds(true)
-            .withDriveRequestType(DriveRequestType.Velocity);
+    applyFieldSpeeds = new SwerveRequest.ApplyFieldSpeeds()
+        .withDesaturateWheelSpeeds(true)
+        .withDriveRequestType(DriveRequestType.Velocity);
+    applyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds()
+        .withDesaturateWheelSpeeds(true)
+        .withDriveRequestType(DriveRequestType.Velocity);
 
     currentHeading = Optional.empty();
     rotationLastTriggered = 0.0;
@@ -249,7 +246,10 @@ public class Superstructure extends SubsystemBase {
   // Alignment
   // ──────────────────────────────────────────────────────────────────────────
 
-  /** Returns true if the robot heading is within tolerance of the angle to the hub. */
+  /**
+   * Returns true if the robot heading is within tolerance of the angle to the
+   * hub.
+   */
   public boolean isAlignedToTarget() {
     return alignedToTarget;
   }
@@ -298,24 +298,9 @@ public class Superstructure extends SubsystemBase {
         if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
           // Target acquired — X-lock wheels and feed the ball
           swerve.setControl(brake);
-          intake.setDesiredState(IntakeState.INTAKE);
           hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
         } else {
           hopper.setDesiredState(HopperState.STOP);
-          intake.setDesiredState(IntakeState.DEPLOYED);
-        }
-        break;
-
-      case SHOOT_JUICER:
-        shooter.setDesiredState(ShooterState.SHOOT);
-        if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-          // Target acquired — X-lock wheels and feed the ball
-          swerve.setControl(brake);
-          intake.setDesiredState(IntakeState.JUICER);
-          hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-        } else {
-          hopper.setDesiredState(HopperState.STOP);
-          intake.setDesiredState(IntakeState.DEPLOYED);
         }
         break;
     }
@@ -332,10 +317,9 @@ public class Superstructure extends SubsystemBase {
     // Cache the hub target once alliance is known (doesn't change mid-match)
     if (cachedHubTarget == null) {
       if (DriverStation.getAlliance().isPresent()) {
-        cachedHubTarget =
-            DriverStation.getAlliance().get() == Alliance.Red
-                ? FieldConstants.Hub.RED_HUB_CENTER_POSE
-                : FieldConstants.Hub.BLUE_HUB_CENTER_POSE;
+        cachedHubTarget = DriverStation.getAlliance().get() == Alliance.Red
+            ? FieldConstants.Hub.RED_HUB_CENTER_POSE
+            : FieldConstants.Hub.BLUE_HUB_CENTER_POSE;
       }
     }
 
