@@ -59,6 +59,10 @@ public class VisionSubsystem extends SubsystemBase {
   private Pose3d[] acceptedPoseBuffer;
   private int acceptedPoseCount = 0;
 
+  // Trimmed log buffer -- reused every cycle for DogLog, only reallocated when
+  // acceptedPoseCount changes size (practically never after first few cycles)
+  private Pose3d[] acceptedPoseLogBuffer = new Pose3d[0];
+
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(CommandSwerveDrivetrain swerve, VisionConsumer consumer, VisionIO... io) {
     this.swerve = swerve;
@@ -154,6 +158,15 @@ public class VisionSubsystem extends SubsystemBase {
       currentCameraName = mainInputs[cameraIndex].getCameraName();
       processCameraData(cameraIndex, mainInputs[cameraIndex]);
     }
+
+    // Log all accepted poses from all cameras this cycle as a single array.
+    // Reuse log buffer to avoid a heap allocation every 20ms cycle.
+    // Only reallocates when pose count changes — practically never in steady state.
+    if (acceptedPoseLogBuffer.length != acceptedPoseCount) {
+      acceptedPoseLogBuffer = new Pose3d[acceptedPoseCount];
+    }
+    System.arraycopy(acceptedPoseBuffer, 0, acceptedPoseLogBuffer, 0, acceptedPoseCount);
+    DogLog.log("Vision/AcceptedPoses", acceptedPoseLogBuffer);
   }
 
   private void processCameraData(int cameraIndex, VisionIOInputs inputs) {
