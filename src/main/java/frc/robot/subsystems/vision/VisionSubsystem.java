@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.vision.VisionIO.PoseObservation;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
 import frc.robot.util.vision.AcceptedPose;
 import frc.robot.util.vision.RejectedPose;
@@ -62,6 +63,16 @@ public class VisionSubsystem extends SubsystemBase {
   // Trimmed log buffer -- reused every cycle for DogLog, only reallocated when
   // acceptedPoseCount changes size (practically never after first few cycles)
   private Pose3d[] acceptedPoseLogBuffer = new Pose3d[0];
+
+  // Best high-confidence multi-tag pose seen this cycle — candidate for drift
+  // reseeding.
+  // Reset to null at the start of every periodic(), populated in
+  // handleAcceptedPose().
+  // Only updated when tagCount >= POSE_RESEED_MIN_TAG_COUNT and ambiguity is
+  // lower
+  // than the current best, so the caller always gets the most reliable fix
+  // available.
+  private PoseObservation bestReseedCandidate = null;
 
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(CommandSwerveDrivetrain swerve, VisionConsumer consumer, VisionIO... io) {
@@ -152,6 +163,10 @@ public class VisionSubsystem extends SubsystemBase {
     // Reset pose count -- no clearing needed, just overwrite slots
     acceptedPoseCount = 0;
 
+    // Reset best reseed candidate — populated fresh each cycle by
+    // handleAcceptedPose
+    bestReseedCandidate = null;
+
     // Process all camera data on the main thread (validation + pose estimator
     // updates)
     for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
@@ -226,6 +241,14 @@ public class VisionSubsystem extends SubsystemBase {
     var stdDevs = calculateStandardDeviations(accepted);
     consumer.accept(visionPose, Utils.fpgaToCurrentTime(poseObs.timestamp()), stdDevs);
 
+    // Track the best multi-tag pose this cycle as a drift-reseed candidate.
+    // "Best" = lowest ambiguity among qualifying multi-tag observations.
+    if (poseObs.tagCount() >= POSE_RESEED_MIN_TAG_COUNT) {
+      if (bestReseedCandidate == null || poseObs.ambiguity() < bestReseedCandidate.ambiguity()) {
+        bestReseedCandidate = poseObs;
+      }
+    }
+
     // ── Logging ────────────────────────────────────────────────────────────
     DogLog.log(camKey + "/AcceptedVisionPose", visionPose);
   }
@@ -255,5 +278,69 @@ public class VisionSubsystem extends SubsystemBase {
         : Double.MAX_VALUE;
 
     return VecBuilder.fill(linearStdDev, linearStdDev, angularStdDev);
+  }
+
+  /**
+   * Checks whether swerve odometry has drifted significantly from the best
+   * available
+   * high-confidence vision fix this cycle. If the drift exceeds
+   * {@code POSE_RESEED_THRESHOLD_METERS} and a qualifying multi-tag pose is
+   * available,
+   * the pose estimator is hard-reset to the vision pose.
+   *
+   * <p>
+   * Call this from {@code Superstructure.periodic()} on every cycle. It is a
+   * no-op
+   * when no qualifying vision pose was seen this cycle or when drift is within
+   * tolerance.
+   *
+   * @param currentPose the current swerve odometry pose (from
+   *                    {@code swerve.getState().Pose})
+   * @return {@code true} if a reseed was performed this cycle
+   */
+  public boolean tryReseedFromVision(Pose2d currentPose) {
+    if (bestReseedCandidate == null) {
+      return false;
+    }
+
+    Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
+    double drift = currentPose.getTranslation().getDistance(visionPose.getTranslation());
+
+    if (drift > POSE_RESEED_THRESHOLD_METERS) {
+      swerve.resetPose(visionPose);
+      DogLog.log("Vision/PoseReseed/Triggered", true);
+      DogLog.log("Vision/PoseReseed/DriftMeters", drift);
+      DogLog.log("Vision/PoseReseed/NewPose", visionPose);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Unconditionally reseeds the swerve pose from the best available
+   * high-confidence
+   * vision fix this cycle, regardless of how large the drift is.
+   *
+   * <p>
+   * Intended for operator-triggered recovery when the driver knows vision
+   * is trustworthy but odometry has gone badly wrong.
+   * Unlike {@link #tryReseedFromVision}, this bypasses the drift threshold
+   * entirely.
+   *
+   * @return {@code true} if a reseed was performed (a qualifying pose was
+   *         available),
+   *         {@code false} if no multi-tag vision fix was seen this cycle
+   */
+  public boolean forceReseedFromVision() {
+    if (bestReseedCandidate == null) {
+      return false;
+    }
+
+    Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
+    swerve.resetPose(visionPose);
+    DogLog.log("Vision/PoseReseed/ForcedByOperator", true);
+    DogLog.log("Vision/PoseReseed/NewPose", visionPose);
+    return true;
   }
 }
