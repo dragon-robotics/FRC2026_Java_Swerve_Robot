@@ -178,6 +178,21 @@ public class Superstructure extends SubsystemBase {
     return swerve.runOnce(swerve::seedFieldCentric);
   }
 
+  /**
+   * Operator-triggered vision reseed command. Unconditionally snaps swerve
+   * odometry
+   * to the best available multi-tag vision fix regardless of drift magnitude.
+   * Fires once on button press (InstantCommand). No-op if no vision fix is
+   * available.
+   */
+  public Command forceReseedFromVisionCmd() {
+    return new InstantCommand(() -> {
+      if (vision != null) {
+        vision.forceReseedFromVision();
+      }
+    });
+  }
+
   // ──────────────────────────────────────────────────────────────────────────
   // Intake Commands
   // ──────────────────────────────────────────────────────────────────────────
@@ -333,6 +348,13 @@ public class Superstructure extends SubsystemBase {
       shooter.setSetpointForDistance(distanceToHub + Units.feetToMeters(0.5)); // Always add 0.5 feet to account for
                                                                                // shooter rpm drop
       updateAlignmentStatus(currentPose, cachedHubTarget);
+
+      // Reseed swerve pose from vision if odometry has drifted significantly.
+      // vision.tryReseedFromVision() is a no-op when no qualifying vision fix is
+      // available this cycle, so this is safe to call unconditionally.
+      if (vision != null) {
+        vision.tryReseedFromVision(currentPose);
+      }
     }
 
     handleStateTransition();

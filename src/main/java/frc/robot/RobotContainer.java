@@ -336,7 +336,7 @@ public class RobotContainer {
 
     // Create the superstructure subsystem //
     superstructureSubsystem = new Superstructure(
-        swerveSubsystem, intakeSubsystem, hopperSubsystem, shooterSubsystem, null, this);
+        swerveSubsystem, intakeSubsystem, hopperSubsystem, shooterSubsystem, visionSubsystem, this);
 
     defaultDriveCommand = superstructureSubsystem.defaultDrive(
         () -> -driverController.getLeftY(),
@@ -392,11 +392,8 @@ public class RobotContainer {
 
     /* Driver Controls */
 
-    // // Brake the drivetrain on pressing the back button.
-    // driverController.back().whileTrue(swerveBrakeCommand);
-
-    // Reset the field-centric heading on start button press.
-    driverController.start().onTrue(seedFieldCentricCommand);
+    // Reset the field-centric heading on both start and back button press.
+    driverController.start().and(driverController.back()).onTrue(seedFieldCentricCommand);
 
     /* Intake */
     driverController
@@ -409,9 +406,6 @@ public class RobotContainer {
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
                 superstructureSubsystem));
-
-    /* Manual woktoss */
-    // driverController.a().whileTrue(wokTossIntakeCommand).onFalse(deployIntakeCommand);
 
     /* Outtake */
     driverController
@@ -439,6 +433,12 @@ public class RobotContainer {
                 superstructureSubsystem));
 
     /* Operator Controls */
+
+    /* Reset the robot pose based on vision — operator back and start button */
+    operatorController
+        .start()
+        .and(operatorController.back())
+        .onTrue(superstructureSubsystem.forceReseedFromVisionCmd());
 
     /* Juicer */
     operatorController
