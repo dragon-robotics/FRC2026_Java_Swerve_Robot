@@ -44,6 +44,10 @@ public final class SwerveConstants {
 
   public static final double SWERVE_DEADBAND = 0.1;
 
+  public static final double ODOMETRY_X_STD_METERS = 0.1;
+  public static final double ODOMETRY_Y_STD_METERS = 0.1;
+  public static final double ODOMETRY_HEADING_STD_RADIANS = Units.degreesToRadians(1);
+
   public static final Matrix<N3, N1> ODOMETRY_STD = VecBuilder.fill(
-      0.1, 0.1, Units.degreesToRadians(1));
+      ODOMETRY_X_STD_METERS, ODOMETRY_Y_STD_METERS, ODOMETRY_HEADING_STD_RADIANS);
 }
