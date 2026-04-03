@@ -175,13 +175,17 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     // Log all accepted poses from all cameras this cycle as a single array.
-    // Reuse log buffer to avoid a heap allocation every 20ms cycle.
-    // Only reallocates when pose count changes — practically never in steady state.
-    if (acceptedPoseLogBuffer.length != acceptedPoseCount) {
+    // Reuse a grow-only log buffer to avoid reallocating whenever the visible
+    // pose count fluctuates (for example, between 0 and a small positive value).
+    if (acceptedPoseLogBuffer.length < acceptedPoseCount) {
       acceptedPoseLogBuffer = new Pose3d[acceptedPoseCount];
     }
     System.arraycopy(acceptedPoseBuffer, 0, acceptedPoseLogBuffer, 0, acceptedPoseCount);
+    if (acceptedPoseCount < acceptedPoseLogBuffer.length) {
+      Arrays.fill(acceptedPoseLogBuffer, acceptedPoseCount, acceptedPoseLogBuffer.length, null);
+    }
     DogLog.log("Vision/AcceptedPoses", acceptedPoseLogBuffer);
+    DogLog.log("Vision/AcceptedPoseCount", acceptedPoseCount);
   }
 
   private void processCameraData(int cameraIndex, VisionIOInputs inputs) {
