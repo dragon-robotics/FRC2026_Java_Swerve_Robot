@@ -33,8 +33,7 @@ public final class SwerveConstants {
   public static final double WHEEL_DIAMETER_INCHES = 4.0;
   public static final double WHEEL_DIAMETER_METERS = Units.inchesToMeters(WHEEL_DIAMETER_INCHES);
   public static final double MAX_SPEED_FEET_PER_SECOND = 18.2;
-  public static final double MAX_SPEED_METERS_PER_SECOND =
-      Units.feetToMeters(MAX_SPEED_FEET_PER_SECOND);
+  public static final double MAX_SPEED_METERS_PER_SECOND = Units.feetToMeters(MAX_SPEED_FEET_PER_SECOND);
 
   public static final double ROBOT_MASS = (148 - 20.3) * 0.453592;
   public static final double CHASSIS_MASS = ROBOT_MASS;
@@ -45,7 +44,6 @@ public final class SwerveConstants {
 
   public static final double SWERVE_DEADBAND = 0.1;
 
-  public static final Matrix<N3, N1> ODOMETRY_STD =
-      VecBuilder.fill(
-          Units.inchesToMeters(12), Units.inchesToMeters(12), Units.degreesToRadians(3));
+  public static final Matrix<N3, N1> ODOMETRY_STD = VecBuilder.fill(
+      0.1, 0.1, Units.degreesToRadians(1));
 }
