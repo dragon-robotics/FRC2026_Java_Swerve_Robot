@@ -183,12 +183,14 @@ public class VisionSubsystem extends SubsystemBase {
     // Reject if vision pose disagrees with odometry by more than threshold.
     // Prevents a misidentified tag from snapping the pose estimator across the
     // field.
-    double poseDiscrepancy = swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
-    if (poseDiscrepancy > MAX_POSE_DISCREPANCY_METERS) {
-      if (!odometryInitialized) {
-        stablePoseCounter = 5;
+    // Skip this check until odometry is initialized — the robot starts at (0,0,0)
+    // by default, so every real field pose would exceed MAX_POSE_DISCREPANCY_METERS
+    // and prevent initialization from ever happening.
+    if (odometryInitialized) {
+      double poseDiscrepancy = swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
+      if (poseDiscrepancy > MAX_POSE_DISCREPANCY_METERS) {
+        return;
       }
-      return;
     }
 
     // Write directly into pre-allocated buffer -- grow if needed (rare)
