@@ -236,8 +236,7 @@ public class VisionSubsystem extends SubsystemBase {
       stablePoseCounter--;
       if (stablePoseCounter <= 0) {
         swerve.resetPose(visionPose);
-        odometryInitialized = true;
-        DogLog.log("Vision/OdometryInitialized", true);
+        markOdometryInitialized();
       }
     }
 
@@ -312,6 +311,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     if (drift > POSE_RESEED_THRESHOLD_METERS) {
       swerve.resetPose(visionPose);
+      markOdometryInitialized();
       DogLog.log("Vision/PoseReseed/Triggered", true);
       DogLog.log("Vision/PoseReseed/DriftMeters", drift);
       DogLog.log("Vision/PoseReseed/NewPose", visionPose);
@@ -343,8 +343,21 @@ public class VisionSubsystem extends SubsystemBase {
 
     Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
     swerve.resetPose(visionPose);
+    markOdometryInitialized();
     DogLog.log("Vision/PoseReseed/ForcedByOperator", true);
     DogLog.log("Vision/PoseReseed/NewPose", visionPose);
     return true;
+  }
+
+  /**
+   * Marks odometry as initialized and resets the stable-pose counter. Called
+   * whenever a pose reset is performed (either during normal initialization or
+   * via a reseed) so the subsystem initialization state stays consistent with
+   * the actual swerve pose.
+   */
+  private void markOdometryInitialized() {
+    odometryInitialized = true;
+    stablePoseCounter = 0;
+    DogLog.log("Vision/OdometryInitialized", true);
   }
 }
