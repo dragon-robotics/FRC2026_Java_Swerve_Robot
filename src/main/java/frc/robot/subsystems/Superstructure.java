@@ -127,14 +127,34 @@ public class Superstructure extends SubsystemBase {
     logger = new Telemetry();
     swerve.registerTelemetry(logger::telemeterize);
 
-    /* Always assume blue alliance if no alliance is found */
-    alliance = DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue);
+    /* Default to blue until Driver Station alliance becomes available. */
+    alliance = DriverStation.Alliance.Blue;
+    cachedHubTarget = FieldConstants.Hub.BLUE_CENTER_POSE;
+    refreshAllianceAndCachedHubTarget();
+  }
+
+  private void setAlliance(DriverStation.Alliance newAlliance) {
+    alliance = newAlliance;
     cachedHubTarget =
         alliance == DriverStation.Alliance.Red
             ? FieldConstants.Hub.RED_CENTER_POSE
             : FieldConstants.Hub.BLUE_CENTER_POSE;
   }
 
+  private void refreshAllianceAndCachedHubTarget() {
+    DriverStation.getAlliance()
+        .ifPresent(
+            dsAlliance -> {
+              if (alliance != dsAlliance) {
+                setAlliance(dsAlliance);
+              }
+            });
+  }
+
+  @Override
+  public void periodic() {
+    refreshAllianceAndCachedHubTarget();
+  }
   // ──────────────────────────────────────────────────────────────────────────
   // Heading Accessors (used by DefaultDriveCmd)
   // ──────────────────────────────────────────────────────────────────────────
