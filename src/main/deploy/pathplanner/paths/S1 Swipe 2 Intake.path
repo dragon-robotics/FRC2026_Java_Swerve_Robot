@@ -46,6 +46,10 @@
   ],
   "rotationTargets": [
     {
+      "waypointRelativePos": 0,
+      "rotationDegrees": 0.0
+    },
+    {
       "waypointRelativePos": 1,
       "rotationDegrees": 0.0
     },
@@ -73,7 +77,7 @@
   "eventMarkers": [
     {
       "name": "Intake",
-      "waypointRelativePos": 1.4063140631406638,
+      "waypointRelativePos": 1.4063140631406639,
       "endWaypointRelativePos": null,
       "command": null
     }
@@ -94,7 +98,7 @@
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": -68.138
   },
   "useDefaultConstraints": false
 }
