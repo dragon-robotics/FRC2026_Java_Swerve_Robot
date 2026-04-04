@@ -466,8 +466,8 @@ public class Superstructure extends SubsystemBase {
       vision.tryReseedFromVision(currentPose);
     }
 
-    superstructureTable.getEntry("SuperStructure CurrentState").setString(state.toString());
-    superstructureTable.getEntry("IsAlignedToTarget").setBoolean(alignedToTarget);
+    DogLog.log("SuperStructure/CurrentState", state.toString());
+    DogLog.log("SuperStructure/IsAlignedToTarget", alignedToTarget);
 
     DogLog.timeEnd("Perf/Superstructure");
   }

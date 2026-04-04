@@ -381,10 +381,7 @@ public class IntakeSubsystem extends SubsystemBase {
     // intakeRollerIO.updateInputs(intakeRollerInputs);
     intakeArmIO.updateInputs(intakeArmInputs);
 
-    intakeTable.getEntry("Intake CurrentState").setString(currIntakeState.toString());
-    intakeTable.getEntry("DesiredState").setString(desiredIntakeState.toString());
-    intakeTable.getEntry("Intake RollerSpeed").setDouble(getIntakeRollerSpeed());
-    intakeTable.getEntry("IsIntaking").setBoolean(isIntaking());
+    DogLog.log("Intake/CurrentState", currIntakeState.toString());
     DogLog.timeEnd("Perf/Intake");
   }
 }
