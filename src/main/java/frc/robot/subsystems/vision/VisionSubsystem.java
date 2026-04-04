@@ -175,15 +175,14 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     // Log all accepted poses from all cameras this cycle as a single array.
-    // Reuse a grow-only log buffer to avoid reallocating whenever the visible
-    // pose count fluctuates (for example, between 0 and a small positive value).
-    if (acceptedPoseLogBuffer.length < acceptedPoseCount) {
+    // Always pass DogLog an array of exactly acceptedPoseCount elements — the
+    // Pose3dStruct serializer will NPE if any element is null, so we must never
+    // hand it a grow-only buffer that has uninitialised trailing slots.
+    // Reallocate only when the count grows; shrinking just uses a sub-length copy.
+    if (acceptedPoseLogBuffer.length != acceptedPoseCount) {
       acceptedPoseLogBuffer = new Pose3d[acceptedPoseCount];
     }
     System.arraycopy(acceptedPoseBuffer, 0, acceptedPoseLogBuffer, 0, acceptedPoseCount);
-    if (acceptedPoseCount < acceptedPoseLogBuffer.length) {
-      Arrays.fill(acceptedPoseLogBuffer, acceptedPoseCount, acceptedPoseLogBuffer.length, null);
-    }
     DogLog.log("Vision/AcceptedPoses", acceptedPoseLogBuffer);
     DogLog.log("Vision/AcceptedPoseCount", acceptedPoseCount);
   }
@@ -286,16 +285,15 @@ public class VisionSubsystem extends SubsystemBase {
   /**
    * Checks whether swerve odometry has drifted significantly from the best
    * available
-   * high-confidence vision fix this cycle. If the drift exceeds
-   * {@code POSE_RESEED_THRESHOLD_METERS} and a qualifying multi-tag pose is
-   * available,
-   * the pose estimator is hard-reset to the vision pose.
+   * high-confidence vision fix this cycle. If the drift exceeds {@code
+   * POSE_RESEED_THRESHOLD_METERS} and a qualifying multi-tag pose is available,
+   * the pose estimator
+   * is hard-reset to the vision pose.
    *
    * <p>
    * Call this from {@code Superstructure.periodic()} on every cycle. It is a
-   * no-op
-   * when no qualifying vision pose was seen this cycle or when drift is within
-   * tolerance.
+   * no-op when no
+   * qualifying vision pose was seen this cycle or when drift is within tolerance.
    *
    * @param currentPose the current swerve odometry pose (from
    *                    {@code swerve.getState().Pose})
@@ -323,18 +321,19 @@ public class VisionSubsystem extends SubsystemBase {
 
   /**
    * Unconditionally reseeds the swerve pose from the best available
-   * high-confidence
-   * vision fix this cycle, regardless of how large the drift is.
+   * high-confidence vision fix this
+   * cycle, regardless of how large the drift is.
    *
    * <p>
-   * Intended for operator-triggered recovery when the driver knows vision
-   * is trustworthy but odometry has gone badly wrong.
-   * Unlike {@link #tryReseedFromVision}, this bypasses the drift threshold
-   * entirely.
+   * Intended for operator-triggered recovery when the driver knows vision is
+   * trustworthy but
+   * odometry has gone badly wrong. Unlike {@link #tryReseedFromVision}, this
+   * bypasses the drift
+   * threshold entirely.
    *
    * @return {@code true} if a reseed was performed (a qualifying pose was
-   *         available),
-   *         {@code false} if no multi-tag vision fix was seen this cycle
+   *         available), {@code false}
+   *         if no multi-tag vision fix was seen this cycle
    */
   public boolean forceReseedFromVision() {
     if (bestReseedCandidate == null) {
@@ -351,9 +350,10 @@ public class VisionSubsystem extends SubsystemBase {
 
   /**
    * Marks odometry as initialized and resets the stable-pose counter. Called
-   * whenever a pose reset is performed (either during normal initialization or
-   * via a reseed) so the subsystem initialization state stays consistent with
-   * the actual swerve pose.
+   * whenever a pose reset
+   * is performed (either during normal initialization or via a reseed) so the
+   * subsystem
+   * initialization state stays consistent with the actual swerve pose.
    */
   private void markOdometryInitialized() {
     odometryInitialized = true;

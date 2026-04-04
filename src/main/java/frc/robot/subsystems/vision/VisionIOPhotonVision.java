@@ -25,7 +25,8 @@ public class VisionIOPhotonVision implements VisionIO {
   protected final Supplier<SwerveDriveState> swerveDriveStateSupplier;
 
   // Static no-target constant to avoid allocation when no target is detected
-  private static final TargetObservation NO_TARGET = new TargetObservation(new Rotation2d(), new Rotation2d());
+  private static final TargetObservation NO_TARGET =
+      new TargetObservation(new Rotation2d(), new Rotation2d());
 
   // Pre-allocated reusable collections — cleared each cycle instead of re-created
   private final Set<Short> tagIds = new HashSet<>(16);
@@ -45,8 +46,8 @@ public class VisionIOPhotonVision implements VisionIO {
   /**
    * Creates a new VisionIOPV.
    *
-   * @param name             The configured name of the camera.
-   * @param robotToCamera    The 3D position of the camera relative to the robot.
+   * @param name The configured name of the camera.
+   * @param robotToCamera The 3D position of the camera relative to the robot.
    * @param rotationSupplier The current heading of the robot.
    */
   public VisionIOPhotonVision(
@@ -55,8 +56,9 @@ public class VisionIOPhotonVision implements VisionIO {
     this.camera = new PhotonCamera(name);
     this.robotToCamera = robotToCamera;
     this.swerveDriveStateSupplier = swerveDriveStateSupplier;
-    poseEstimator = new PhotonPoseEstimator(
-        APTAG_FIELD_LAYOUT, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCamera);
+    poseEstimator =
+        new PhotonPoseEstimator(
+            APTAG_FIELD_LAYOUT, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCamera);
     poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
     // Reset heading data before pose initialization //
