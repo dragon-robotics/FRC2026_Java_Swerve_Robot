@@ -64,8 +64,8 @@ public class AimAtTargetPoseCmd extends Command {
     // Choose which hub to aim to depending on alliance color
     Translation2d hubToAimTowards =
         alliance.isPresent() && (alliance.get() == Alliance.Red)
-            ? FieldConstants.Hub.RED_HUB_CENTER_POSE
-            : FieldConstants.Hub.BLUE_HUB_CENTER_POSE;
+            ? FieldConstants.Hub.RED_CENTER_POSE
+            : FieldConstants.Hub.BLUE_CENTER_POSE;
 
     // Current robot translation (x,y) in field coordinates
     var robotTranslation = swerve.getState().Pose.getTranslation();
