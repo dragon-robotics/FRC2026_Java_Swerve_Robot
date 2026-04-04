@@ -28,6 +28,7 @@ import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
@@ -358,20 +359,16 @@ public class RobotContainer {
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
 
     // Intake
-    intakeCommand = superstructureSubsystem.intakeCommand();
-    outtakeCommand = superstructureSubsystem.outtakeCommand();
-    deployIntakeCommand = superstructureSubsystem.deployIntakeCommand();
-    stowIntakeCommand = superstructureSubsystem.stowIntakeCommand();
-    wokTossIntakeCommand = superstructureSubsystem.wokTossIntakeCommand();
+    intakeCommand = new InstantCommand(
+        () -> superstructureSubsystem.setDesiredSuperState(SuperState.INTAKE),
+        superstructureSubsystem);
+    // Shoot
+    shootCommand = new InstantCommand(
+        () -> superstructureSubsystem.setDesiredSuperState(SuperState.SHOOT),
+        superstructureSubsystem);
 
-    // Hopper
-    stopHopperCommand = superstructureSubsystem.stopHopperCommand();
-    indexToShooterCommand = superstructureSubsystem.indexToShooterCommand();
-    indexToIntakeCommand = superstructureSubsystem.indexToIntakeCommand();
-
-    // Shooter
-    stopShooterCommand = superstructureSubsystem.stopShooterCommand();
-    shootCommand = superstructureSubsystem.shootCommand();
+    NamedCommands.registerCommand("Intake", intakeCommand);
+    NamedCommands.registerCommand("Shoot", shootCommand);
 
     autoChooser = AutoBuilder.buildAutoChooser("Tests");
     SmartDashboard.putData("Auto Mode", autoChooser);
