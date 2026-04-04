@@ -77,9 +77,9 @@ public class RobotContainer {
   /* Swerve Commands */
   private Command defaultDriveCommand;
   private Command shootDriveCommand;
-  private Command aimAtTargetPoseCommand;
   private Command swerveBrakeCommand;
   private Command seedFieldCentricCommand;
+  private Command driveCommand;
 
   /* Intake Commands */
   private Command intakeCommand;
@@ -353,8 +353,6 @@ public class RobotContainer {
     shootDriveCommand = superstructureSubsystem.shootDrive(
         () -> -driverController.getLeftY(), () -> -driverController.getLeftX());
 
-    aimAtTargetPoseCommand = superstructureSubsystem.aimAtTargetPose();
-
     swerveBrakeCommand = superstructureSubsystem.swerveBrakeCmd();
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
 
@@ -365,10 +363,15 @@ public class RobotContainer {
     // Shoot
     shootCommand = new InstantCommand(
         () -> superstructureSubsystem.setDesiredSuperState(SuperState.SHOOT),
+        superstructureSubsystem)
+        .alongWith(superstructureSubsystem.aimAtTargetPose());
+    driveCommand = new InstantCommand(
+        () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
         superstructureSubsystem);
 
     NamedCommands.registerCommand("Intake", intakeCommand);
     NamedCommands.registerCommand("Shoot", shootCommand);
+    NamedCommands.registerCommand("Drive", driveCommand);
 
     autoChooser = AutoBuilder.buildAutoChooser("Tests");
     SmartDashboard.putData("Auto Mode", autoChooser);
@@ -436,7 +439,7 @@ public class RobotContainer {
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.SHOOT),
                 superstructureSubsystem))
-        .whileTrue(aimAtTargetPoseCommand)
+        .whileTrue(superstructureSubsystem.aimAtTargetPose())
         .onFalse(
             new InstantCommand(
                 () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),

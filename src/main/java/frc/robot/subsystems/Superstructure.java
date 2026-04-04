@@ -372,8 +372,7 @@ public class Superstructure extends SubsystemBase {
       double distanceToHub = currentPose.getTranslation().getDistance(cachedHubTarget);
       DogLog.log("Superstructure/Distance to Hub (feet)", Units.metersToFeet(distanceToHub));
 
-      shooter.setSetpointForDistance(
-          distanceToHub + Units.feetToMeters(0.5)); // Always add 0.5 feet to account for
+      shooter.setSetpointForDistance(distanceToHub); // Always add 0.5 feet to account for
       // shooter rpm drop
       updateAlignmentStatus(currentPose, cachedHubTarget);
 
