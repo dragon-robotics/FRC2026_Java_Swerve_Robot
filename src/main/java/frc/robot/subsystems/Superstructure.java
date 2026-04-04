@@ -8,7 +8,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -25,6 +24,7 @@ import frc.robot.subsystems.shooter.ShooterSubsystem.ShooterState;
 import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.util.Telemetry;
 import frc.robot.util.constants.FieldConstants;
+import frc.robot.util.constants.FieldConstants.ZONES;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -76,7 +76,7 @@ public class Superstructure extends SubsystemBase {
 
   private static final double ALIGNMENT_TOLERANCE_DEGREES = 3.0;
   private boolean alignedToTarget = false;
-  private Translation2d cachedHubTarget = null;
+  private Translation2d cachedHubTarget;
 
   // ──────────────────────────────────────────────────────────────────────────
   // State Machine
@@ -84,6 +84,11 @@ public class Superstructure extends SubsystemBase {
 
   private SuperState state;
   private SuperState lastState = null;
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Alliance Initialization
+  // ──────────────────────────────────────────────────────────────────────────
+  private DriverStation.Alliance alliance;
 
   // ──────────────────────────────────────────────────────────────────────────
   // Constructor
@@ -107,18 +112,27 @@ public class Superstructure extends SubsystemBase {
 
     brake = new SwerveRequest.SwerveDriveBrake();
     point = new SwerveRequest.PointWheelsAt();
-    applyFieldSpeeds = new SwerveRequest.ApplyFieldSpeeds()
-        .withDesaturateWheelSpeeds(true)
-        .withDriveRequestType(DriveRequestType.Velocity);
-    applyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds()
-        .withDesaturateWheelSpeeds(true)
-        .withDriveRequestType(DriveRequestType.Velocity);
+    applyFieldSpeeds =
+        new SwerveRequest.ApplyFieldSpeeds()
+            .withDesaturateWheelSpeeds(true)
+            .withDriveRequestType(DriveRequestType.Velocity);
+    applyRobotSpeeds =
+        new SwerveRequest.ApplyRobotSpeeds()
+            .withDesaturateWheelSpeeds(true)
+            .withDriveRequestType(DriveRequestType.Velocity);
 
     currentHeading = Optional.empty();
     rotationLastTriggered = 0.0;
 
     logger = new Telemetry();
     swerve.registerTelemetry(logger::telemeterize);
+
+    /* Always assume blue alliance if no alliance is found */
+    alliance = DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue);
+    cachedHubTarget =
+        alliance == DriverStation.Alliance.Red
+            ? FieldConstants.Hub.RED_CENTER_POSE
+            : FieldConstants.Hub.BLUE_CENTER_POSE;
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -179,18 +193,17 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Operator-triggered vision reseed command. Unconditionally snaps swerve
-   * odometry
-   * to the best available multi-tag vision fix regardless of drift magnitude.
-   * Fires once on button press (InstantCommand). No-op if no vision fix is
-   * available.
+   * Operator-triggered vision reseed command. Unconditionally snaps swerve odometry to the best
+   * available multi-tag vision fix regardless of drift magnitude. Fires once on button press
+   * (InstantCommand). No-op if no vision fix is available.
    */
   public Command forceReseedFromVisionCmd() {
-    return new InstantCommand(() -> {
-      if (vision != null) {
-        vision.forceReseedFromVision();
-      }
-    });
+    return new InstantCommand(
+        () -> {
+          if (vision != null) {
+            vision.forceReseedFromVision();
+          }
+        });
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -261,10 +274,7 @@ public class Superstructure extends SubsystemBase {
   // Alignment
   // ──────────────────────────────────────────────────────────────────────────
 
-  /**
-   * Returns true if the robot heading is within tolerance of the angle to the
-   * hub.
-   */
+  /** Returns true if the robot heading is within tolerance of the angle to the hub. */
   public boolean isAlignedToTarget() {
     return alignedToTarget;
   }
@@ -329,32 +339,26 @@ public class Superstructure extends SubsystemBase {
   public void periodic() {
     DogLog.time("Perf/Superstructure");
 
-    // Cache the hub target once alliance is known (doesn't change mid-match)
-    if (cachedHubTarget == null) {
-      if (DriverStation.getAlliance().isPresent()) {
-        cachedHubTarget = DriverStation.getAlliance().get() == Alliance.Red
-            ? FieldConstants.Hub.RED_HUB_CENTER_POSE
-            : FieldConstants.Hub.BLUE_HUB_CENTER_POSE;
-      }
-    }
+    // Compute distance and alignment
+    Pose2d currentPose = swerve.getState().Pose;
 
-    // Compute distance and alignment when alliance is known
-    if (cachedHubTarget != null) {
-      Pose2d currentPose = swerve.getState().Pose;
+    // Check alliance zone the robot is in
+    ZONES currentZone = ZONES.fromPose(currentPose, alliance);
+    DogLog.log("Robot/Zone", currentZone.name());
 
-      double distanceToHub = currentPose.getTranslation().getDistance(cachedHubTarget);
-      DogLog.log("Superstructure/Distance to Hub (feet)", Units.metersToFeet(distanceToHub));
+    double distanceToHub = currentPose.getTranslation().getDistance(cachedHubTarget);
+    DogLog.log("Superstructure/Distance to Hub (feet)", Units.metersToFeet(distanceToHub));
 
-      shooter.setSetpointForDistance(distanceToHub + Units.feetToMeters(0.5)); // Always add 0.5 feet to account for
-                                                                               // shooter rpm drop
-      updateAlignmentStatus(currentPose, cachedHubTarget);
+    shooter.setSetpointForDistance(
+        distanceToHub + Units.feetToMeters(0.5)); // Always add 0.5 feet to account for
+    // shooter rpm drop
+    updateAlignmentStatus(currentPose, cachedHubTarget);
 
-      // Reseed swerve pose from vision if odometry has drifted significantly.
-      // vision.tryReseedFromVision() is a no-op when no qualifying vision fix is
-      // available this cycle, so this is safe to call unconditionally.
-      if (vision != null) {
-        vision.tryReseedFromVision(currentPose);
-      }
+    // Reseed swerve pose from vision if odometry has drifted significantly.
+    // vision.tryReseedFromVision() is a no-op when no qualifying vision fix is
+    // available this cycle, so this is safe to call unconditionally.
+    if (vision != null) {
+      vision.tryReseedFromVision(currentPose);
     }
 
     handleStateTransition();
