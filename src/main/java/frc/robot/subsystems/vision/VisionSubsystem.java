@@ -184,11 +184,16 @@ public class VisionSubsystem extends SubsystemBase {
     if (acceptedPoseCount > acceptedPoseLogBuffer.length) {
       acceptedPoseLogBuffer = new Pose3d[acceptedPoseCount];
     }
-    System.arraycopy(acceptedPoseBuffer, 0, acceptedPoseLogBuffer, 0, acceptedPoseCount);
-    Pose3d[] logArray =
-        acceptedPoseCount < acceptedPoseLogBuffer.length
-            ? Arrays.copyOf(acceptedPoseLogBuffer, acceptedPoseCount)
-            : acceptedPoseLogBuffer;
+    Pose3d[] logArray;
+    if (acceptedPoseCount < acceptedPoseLogBuffer.length) {
+      // Count shrank: copy directly from source into an exact-length array,
+      // avoiding a redundant intermediate copy into acceptedPoseLogBuffer.
+      logArray = Arrays.copyOf(acceptedPoseBuffer, acceptedPoseCount);
+    } else {
+      // Buffer is exactly the right size; copy once and log directly.
+      System.arraycopy(acceptedPoseBuffer, 0, acceptedPoseLogBuffer, 0, acceptedPoseCount);
+      logArray = acceptedPoseLogBuffer;
+    }
     DogLog.log("Vision/AcceptedPoses", logArray);
     DogLog.log("Vision/AcceptedPoseCount", acceptedPoseCount);
   }
