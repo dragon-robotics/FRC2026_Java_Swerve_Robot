@@ -37,22 +37,22 @@ public final class FieldConstants {
   public static final double FIELD_WIDTH = APTAG_FIELD_LAYOUT.getFieldWidth();
   public static final double FIELD_HEIGHT = Units.inchesToMeters(72);
 
-  public static enum ZONES {
+  public static enum FieldZones {
     ALLIANCE_LEFT,
-    ALLIANCE_LEFT_TRENCH,
-    ALLIANCE_LEFT_BUMP,
+    // ALLIANCE_LEFT_TRENCH,
+    // ALLIANCE_LEFT_BUMP,
     ALLIANCE_RIGHT,
-    ALLIANCE_RIGHT_TRENCH,
-    ALLIANCE_RIGHT_BUMP,
-    ALLIANCE_TOWER,
+    // ALLIANCE_RIGHT_TRENCH,
+    // ALLIANCE_RIGHT_BUMP,
+    // ALLIANCE_TOWER,
     NEUTRAL_LEFT,
-    NEUTRAL_LEFT_PURGE,
+    // NEUTRAL_LEFT_PURGE,
     NEUTRAL_RIGHT,
-    NEUTRAL_RIGHT_PURGE,
+    // NEUTRAL_RIGHT_PURGE,
     OPPONENT_LEFT,
     OPPONENT_RIGHT;
 
-    public static ZONES fromPose(Pose2d pose, DriverStation.Alliance alliance) {
+    public static FieldZones fromPose(Pose2d pose, DriverStation.Alliance alliance) {
       double x = pose.getX();
       double y = pose.getY();
 
@@ -72,6 +72,19 @@ public final class FieldConstants {
       }
     }
   }
+
+  // Neutral zone purge left point
+  // Neutral zone pass left point
+  // Neutral zone outtake left point
+
+  // Neutral zone purge right point
+  // Neutral zone pass right point
+  // Neutral zone outtake right point
+
+  // Opposing alliance zone pass to neutral zone left point
+  // Opposing alliance zone pass to alliance zone left point
+  // Opposing alliance zone pass to neutral zone right point
+  // Opposing alliance zone pass to alliance zone right point
 
   /**
    * Officially defined and relevant vertical lines found on the field (defined by
@@ -395,40 +408,5 @@ public final class FieldConstants {
     // Y_red = FIELD_WIDTH - Y_blue (left/right labels swap across centerline)
     public static final Translation2d RED_CENTER_POINT = new Translation2d(
         FIELD_LENGTH, FIELD_WIDTH - APTAG_FIELD_LAYOUT.getTagPose(29).get().getY());
-  }
-
-  /* Zones on the field - Always calculated from blue, flipped for red */
-
-  public static final class AllianceZone {
-    // Left
-    // Right
-  }
-
-  public static final class NeutralZone {
-    // Left
-    // Right
-
-    // Pass point left
-    // Outtake point left
-
-    // Pass point right
-    // Outtake point right
-
-    // Purge zone left
-    // Purge zone right
-
-    // Purge point left
-    // Purge point right
-  }
-
-  public static final class OpposingAllianceZone {
-    // Left
-    // Right
-
-    // Pass point neutral zone left
-    // Pass point alliance zone left
-
-    // Pass point neutral zone right
-    // Pass point alliance zone right
   }
 }
