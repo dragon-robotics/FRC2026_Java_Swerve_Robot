@@ -175,15 +175,21 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     // Log all accepted poses from all cameras this cycle as a single array.
-    // Always pass DogLog an array of exactly acceptedPoseCount elements — the
-    // Pose3dStruct serializer will NPE if any element is null, so we must never
-    // hand it a grow-only buffer that has uninitialised trailing slots.
-    // Reallocate only when the count grows; shrinking just uses a sub-length copy.
-    if (acceptedPoseLogBuffer.length != acceptedPoseCount) {
+    // Grow-only: only reallocate acceptedPoseLogBuffer when acceptedPoseCount
+    // exceeds its capacity, avoiding per-cycle allocations when pose count is
+    // stable or shrinks.
+    // DogLog requires an exact-length array (Pose3dStruct will NPE on null
+    // elements), so when count is less than the buffer capacity we pass a
+    // sub-length copy; otherwise we pass the buffer directly.
+    if (acceptedPoseCount > acceptedPoseLogBuffer.length) {
       acceptedPoseLogBuffer = new Pose3d[acceptedPoseCount];
     }
     System.arraycopy(acceptedPoseBuffer, 0, acceptedPoseLogBuffer, 0, acceptedPoseCount);
-    DogLog.log("Vision/AcceptedPoses", acceptedPoseLogBuffer);
+    Pose3d[] logArray =
+        acceptedPoseCount < acceptedPoseLogBuffer.length
+            ? Arrays.copyOf(acceptedPoseLogBuffer, acceptedPoseCount)
+            : acceptedPoseLogBuffer;
+    DogLog.log("Vision/AcceptedPoses", logArray);
     DogLog.log("Vision/AcceptedPoseCount", acceptedPoseCount);
   }
 
