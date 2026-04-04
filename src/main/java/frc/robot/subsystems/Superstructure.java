@@ -12,6 +12,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import frc.robot.RobotContainer;
 import frc.robot.commands.AimAtTargetPoseCmd;
 import frc.robot.commands.DefaultDriveCmd;
@@ -102,6 +104,12 @@ public class Superstructure extends SubsystemBase {
   // Alliance Initialization
   // ──────────────────────────────────────────────────────────────────────────
   private DriverStation.Alliance alliance;
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Elastic Dashboard
+  // ──────────────────────────────────────────────────────────────────────────
+
+  private final NetworkTable superstructureTable = NetworkTableInstance.getDefault().getTable("Superstructure");
 
   // ──────────────────────────────────────────────────────────────────────────
   // Constructor
@@ -457,6 +465,9 @@ public class Superstructure extends SubsystemBase {
     if (vision != null) {
       vision.tryReseedFromVision(currentPose);
     }
+
+    superstructureTable.getEntry("SuperStructure CurrentState").setString(state.toString());
+    superstructureTable.getEntry("IsAlignedToTarget").setBoolean(alignedToTarget);
 
     DogLog.timeEnd("Perf/Superstructure");
   }

@@ -6,6 +6,8 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
 import frc.robot.util.constants.ShooterConstants;
@@ -37,6 +39,9 @@ public class ShooterSubsystem extends SubsystemBase {
   private final Timer kickerStopTimer = new Timer();
   private boolean kickerStopTimerRunning = false;
   private static final double KICKER_STOP_DELAY = 1.0; // seconds
+
+  // NetworkTable for debugging
+  private final NetworkTable shooterTable = NetworkTableInstance.getDefault().getTable("Shooter");
 
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem(
@@ -237,6 +242,12 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterHoodIO.updateInputs(shooterHoodInputs);
 
     handleStateTransition();
+
+    shooterTable.getEntry("Shooter CurrentState").setString(currShooterState.toString());
+    shooterTable.getEntry("DesiredState").setString(desiredShooterState.toString());
+    shooterTable.getEntry("Shooter SpeedRPM").setDouble(getShooterSpeed());
+    shooterTable.getEntry("Shooter TargetRPM").setDouble(targetRPM);
+    shooterTable.getEntry("Shooter HoodAngle").setDouble(hoodAngle);
     DogLog.timeEnd("Perf/Shooter");
   }
 }

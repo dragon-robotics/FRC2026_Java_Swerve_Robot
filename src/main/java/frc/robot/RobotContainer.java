@@ -40,6 +40,10 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import frc.robot.generated.TunerConstants;
 import frc.robot.io.TalonFXMotorIO;
 import frc.robot.io.TalonFXMotorIOSim;
@@ -90,7 +94,12 @@ public class RobotContainer {
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
 
+  private final Field2d field = new Field2d();
+
   public RobotContainer() {
+
+    SmartDashboard.putData("Field", field);
+    // SmartDashboard.putData("Auto Mode", autoChooser);
 
     /* Setup DogLog */
     DogLog.setOptions(new DogLogOptions());
