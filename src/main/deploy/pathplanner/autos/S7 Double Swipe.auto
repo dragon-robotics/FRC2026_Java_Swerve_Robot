@@ -7,13 +7,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "S1 Swipe 1 Intake"
+            "pathName": "S7 Swipe 1 Intake"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "S1 Swipe 1 Shoot"
+            "pathName": "S7 Swipe 1 Shoot"
           }
         },
         {
@@ -23,7 +23,7 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 3.5
+                  "waitTime": 5.0
                 }
               },
               {
@@ -36,15 +36,34 @@
           }
         },
         {
-          "type": "path",
+          "type": "deadline",
           "data": {
-            "pathName": "S1 Swipe 2 Intake"
+            "commands": [
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 0.02
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Drive"
+                }
+              }
+            ]
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "S1 Swipe 1 Shoot"
+            "pathName": "S7 Swipe 2 Intake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S7 Swipe 1 Shoot"
           }
         },
         {
