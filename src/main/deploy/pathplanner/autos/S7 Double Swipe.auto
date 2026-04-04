@@ -7,13 +7,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "S1 Swipe 1 Intake"
+            "pathName": "S7 Swipe 1 Intake"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "S1 Swipe 1 Shoot"
+            "pathName": "S7 Swipe 1 Shoot"
           }
         },
         {
@@ -57,13 +57,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "S1 Swipe 2 Intake"
+            "pathName": "S7 Swipe 2 Intake"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "S1 Swipe 1 Shoot"
+            "pathName": "S7 Swipe 1 Shoot"
           }
         },
         {

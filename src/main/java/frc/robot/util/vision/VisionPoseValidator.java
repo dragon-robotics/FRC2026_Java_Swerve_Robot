@@ -31,13 +31,13 @@ public class VisionPoseValidator {
           "Ambiguity: %.3f > %.3f".formatted(observation.ambiguity(), MAX_AMBIGUITY));
     }
 
-    // Check Z coordinate
-    if (Math.abs(pose.getZ()) > MAX_Z_ERROR) {
-      return new RejectedPose(
-          observation,
-          RejectionReason.INVALID_Z_COORDINATE,
-          "Z: %.3f > %.3f".formatted(Math.abs(pose.getZ()), MAX_Z_ERROR));
-    }
+    // // Check Z coordinate
+    // if (Math.abs(pose.getZ()) > MAX_Z_ERROR) {
+    // return new RejectedPose(
+    // observation,
+    // RejectionReason.INVALID_Z_COORDINATE,
+    // "Z: %.3f > %.3f".formatted(Math.abs(pose.getZ()), MAX_Z_ERROR));
+    // }
 
     // Check field boundaries
     var pose2d = pose.toPose2d();
@@ -61,14 +61,14 @@ public class VisionPoseValidator {
 
     // // Check large pose change
     // if (m_lastAcceptedPose != null) {
-    //   double poseChange =
+    // double poseChange =
     // m_lastAcceptedPose.getTranslation().getDistance(pose2d.getTranslation());
-    //   if (poseChange > MAX_POSE_CHANGE) {
-    //     return new RejectedPose(
-    //         observation,
-    //         RejectionReason.LARGE_POSE_CHANGE,
-    //         "Change: %.2f > %.2f".formatted(poseChange, MAX_POSE_CHANGE));
-    //   }
+    // if (poseChange > MAX_POSE_CHANGE) {
+    // return new RejectedPose(
+    // observation,
+    // RejectionReason.LARGE_POSE_CHANGE,
+    // "Change: %.2f > %.2f".formatted(poseChange, MAX_POSE_CHANGE));
+    // }
     // }
 
     // Pose accepted - update last accepted pose
