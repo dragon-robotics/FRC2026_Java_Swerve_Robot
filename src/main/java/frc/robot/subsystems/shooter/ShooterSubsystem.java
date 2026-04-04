@@ -243,11 +243,11 @@ public class ShooterSubsystem extends SubsystemBase {
 
     handleStateTransition();
 
-    shooterTable.getEntry("Shooter CurrentState").setString(currShooterState.toString());
-    shooterTable.getEntry("DesiredState").setString(desiredShooterState.toString());
-    shooterTable.getEntry("Shooter SpeedRPM").setDouble(getShooterSpeed());
-    shooterTable.getEntry("Shooter TargetRPM").setDouble(targetRPM);
-    shooterTable.getEntry("Shooter HoodAngle").setDouble(hoodAngle);
+    DogLog.log("Shooter/CurrentState", currShooterState.toString());
+    DogLog.log("Shooter/DesiredState", desiredShooterState.toString());
+    DogLog.log("Shooter/SpeedRPM", getShooterSpeed());
+    DogLog.log("Shooter/TargetRPM", targetRPM);
+    DogLog.log("Shooter/HoodAngle", hoodAngle);
     DogLog.timeEnd("Perf/Shooter");
   }
 }
