@@ -136,7 +136,7 @@ public class HopperSubsystem extends SubsystemBase {
     /* This method will be called once per scheduler run */
     handleStateTransition();
 
-    DogLog.log("Hopper/CurrentState", currHopperState.toString());
+    DogLog.log("Hopper/Hopper_CurrentState", currHopperState.toString());
 
     // leadRollerMotorIO.updateInputs(leadRollerMotorIOInputs);
     // followRollerMotorIO.updateInputs(followRollerMotorIOInputs);
