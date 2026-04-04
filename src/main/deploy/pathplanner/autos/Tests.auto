@@ -7,7 +7,25 @@
         {
           "type": "path",
           "data": {
-            "pathName": "ancientDig"
+            "pathName": "S1 Swipe 1 Intake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S1 Swipe 1 Shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S1 Swipe 2 Intake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "S1 Swipe 1 Shoot"
           }
         }
       ]
