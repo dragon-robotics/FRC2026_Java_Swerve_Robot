@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.RobotContainer;
@@ -79,12 +80,22 @@ public class Superstructure extends SubsystemBase {
   private Translation2d cachedHubTarget;
   private boolean allianceConfirmed = false;
 
+  // Pre-cached zone name strings — avoids .name() heap allocation every cycle
+  private static final String[] ZONE_NAMES;
+
+  static {
+    FieldZones[] zones = FieldZones.values();
+    ZONE_NAMES = new String[zones.length];
+    for (int i = 0; i < zones.length; i++) {
+      ZONE_NAMES[i] = zones[i].name();
+    }
+  }
+
   // ──────────────────────────────────────────────────────────────────────────
   // State Machine
   // ──────────────────────────────────────────────────────────────────────────
 
   private SuperState state;
-  private SuperState lastState = null;
 
   // ──────────────────────────────────────────────────────────────────────────
   // Alliance Initialization
@@ -130,6 +141,21 @@ public class Superstructure extends SubsystemBase {
     alliance = DriverStation.Alliance.Blue;
     cachedHubTarget = FieldConstants.Hub.BLUE_CENTER_POSE;
     refreshAllianceAndCachedHubTarget();
+
+    // ── Default Commands ─────────────────────────────────────────────────
+    // These run whenever no other command requires the subsystem.
+    // They define the "DRIVE" superstate behavior. When any button-triggered
+    // command ends, the scheduler automatically resumes these defaults —
+    // no god loop needed.
+    intake.setDefaultCommand(
+        intake.runOnce(() -> intake.setDesiredState(IntakeState.DEPLOYED))
+            .withName("Intake.Default(DEPLOYED)"));
+    hopper.setDefaultCommand(
+        hopper.runOnce(() -> hopper.setDesiredState(HopperState.STOP))
+            .withName("Hopper.Default(STOP)"));
+    shooter.setDefaultCommand(
+        shooter.runOnce(() -> shooter.setDesiredState(ShooterState.PREPFUEL))
+            .withName("Shooter.Default(PREPFUEL)"));
   }
 
   private void setAlliance(DriverStation.Alliance newAlliance) {
@@ -143,9 +169,9 @@ public class Superstructure extends SubsystemBase {
     DriverStation.getAlliance()
         .ifPresent(
             dsAlliance -> {
-              if (alliance != dsAlliance) {
-                setAlliance(dsAlliance);
-              }
+              setAlliance(dsAlliance);
+              allianceConfirmed = true;
+              DogLog.log("Robot/AllianceConfirmed", dsAlliance.name());
             });
   }
 
@@ -223,67 +249,113 @@ public class Superstructure extends SubsystemBase {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Intake Commands
-  // ──────────────────────────────────────────────────────────────────────────
-
-  public Command intakeCommand() {
-    return new InstantCommand(() -> intake.setDesiredState(IntakeState.INTAKE), intake);
-  }
-
-  public Command outtakeCommand() {
-    return new InstantCommand(() -> intake.setDesiredState(IntakeState.OUTTAKE), intake);
-  }
-
-  public Command deployIntakeCommand() {
-    return new InstantCommand(() -> intake.setDesiredState(IntakeState.DEPLOYED), intake);
-  }
-
-  public Command stowIntakeCommand() {
-    return new InstantCommand(() -> intake.setDesiredState(IntakeState.HOME), intake);
-  }
-
-  public Command wokTossIntakeCommand() {
-    return new InstantCommand(() -> intake.setDesiredState(IntakeState.WOKTOSS), intake);
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Hopper Commands
-  // ──────────────────────────────────────────────────────────────────────────
-
-  public Command indexToIntakeCommand() {
-    return new InstantCommand(() -> hopper.setDesiredState(HopperState.INDEXTOINTAKE), hopper);
-  }
-
-  public Command indexToShooterCommand() {
-    return new InstantCommand(() -> hopper.setDesiredState(HopperState.INDEXTOSHOOTER), hopper);
-  }
-
-  public Command stopHopperCommand() {
-    return new InstantCommand(() -> hopper.setDesiredState(HopperState.STOP), hopper);
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Shooter Commands
-  // ──────────────────────────────────────────────────────────────────────────
-
-  public Command stopShooterCommand() {
-    return new InstantCommand(() -> shooter.setDesiredState(ShooterState.STOP), shooter);
-  }
-
-  public Command shootCommand() {
-    return new InstantCommand(() -> shooter.setDesiredState(ShooterState.SHOOT), shooter);
-  }
-
-  public Command prepFuelCommand() {
-    return new InstantCommand(() -> shooter.setDesiredState(ShooterState.PREPFUEL), shooter);
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
   // SuperState Commands
+  //
+  // Each command addRequirements() the subsystems it controls.
+  // WPILib's CommandScheduler handles mutex — when a setStateCmd() ends,
+  // the default commands on each subsystem resume automatically.
   // ──────────────────────────────────────────────────────────────────────────
 
-  public Command driveSuperstateCommand() {
-    return new InstantCommand(() -> setDesiredSuperState(SuperState.DRIVE));
+  public void setDesiredSuperState(SuperState state) {
+    this.state = state;
+    DogLog.log("Superstructure/State", state.name());
+  }
+
+  /**
+   * Returns a command that transitions relevant subsystems to the requested
+   * SuperState. Each subsystem is controlled through proper WPILib command
+   * requirements — not direct calls from periodic().
+   *
+   * <p>
+   * When the returned command ends (button released), the scheduler
+   * resumes the default commands on each required subsystem automatically.
+   *
+   * @param desiredState The SuperState to transition to
+   * @return A command that controls subsystems for the duration of the state
+   */
+  public Command setStateCmd(SuperState desiredState) {
+    switch (desiredState) {
+      case DRIVE:
+        // No subsystem commands needed — releasing any other state command
+        // causes the scheduler to resume default commands, which already
+        // implement DRIVE behavior (intake=DEPLOYED, hopper=STOP, shooter=PREPFUEL).
+        return Commands.runOnce(() -> setDesiredSuperState(SuperState.DRIVE))
+            .withName("SuperState(DRIVE)");
+
+      case INTAKE:
+        return Commands.runOnce(
+            () -> {
+              setDesiredSuperState(SuperState.INTAKE);
+              intake.setDesiredState(IntakeState.INTAKE);
+              shooter.setDesiredState(ShooterState.STOP);
+            },
+            intake,
+            shooter)
+            .withName("SuperState(INTAKE)");
+
+      case OUTTAKE:
+        return Commands.runOnce(
+            () -> {
+              setDesiredSuperState(SuperState.OUTTAKE);
+              intake.setDesiredState(IntakeState.OUTTAKE);
+              hopper.setDesiredState(HopperState.INDEXTOINTAKE);
+              shooter.setDesiredState(ShooterState.STOP);
+            },
+            intake,
+            hopper,
+            shooter)
+            .withName("SuperState(OUTTAKE)");
+
+      case SHOOT:
+        // SHOOT is special — it needs continuous polling for alignment.
+        // Use Commands.run() (not runOnce) so it executes every cycle.
+        return Commands.run(
+            () -> {
+              setDesiredSuperState(SuperState.SHOOT);
+              shooter.setDesiredState(ShooterState.SHOOT);
+              if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
+                swerve.setControl(brake);
+                hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+              } else {
+                hopper.setDesiredState(HopperState.STOP);
+              }
+            },
+            shooter,
+            hopper)
+            .withName("SuperState(SHOOT)");
+
+      default:
+        return Commands.none();
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Individual Subsystem Override Commands
+  //
+  // These require ONLY their specific subsystem — they preempt the default
+  // command on that subsystem without affecting others. When released,
+  // the default command resumes automatically.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Override intake independently — preempts default, doesn't touch
+   * hopper/shooter.
+   */
+  public Command intakeOverrideCmd(IntakeState intakeState) {
+    return Commands.runOnce(() -> intake.setDesiredState(intakeState), intake)
+        .withName("IntakeOverride(" + intakeState.name() + ")");
+  }
+
+  /** Override hopper independently. */
+  public Command hopperOverrideCmd(HopperState hopperState) {
+    return Commands.runOnce(() -> hopper.setDesiredState(hopperState), hopper)
+        .withName("HopperOverride(" + hopperState.name() + ")");
+  }
+
+  /** Override shooter independently. */
+  public Command shooterOverrideCmd(ShooterState shooterState) {
+    return Commands.runOnce(() -> shooter.setDesiredState(shooterState), shooter)
+        .withName("ShooterOverride(" + shooterState.name() + ")");
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -311,79 +383,38 @@ public class Superstructure extends SubsystemBase {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // State Machine
-  // ──────────────────────────────────────────────────────────────────────────
-
-  public void setDesiredSuperState(SuperState state) {
-    this.state = state;
-  }
-
-  public void handleStateTransition() {
-    switch (state) {
-      case DRIVE:
-        intake.setDesiredState(IntakeState.DEPLOYED);
-        hopper.setDesiredState(HopperState.STOP);
-        shooter.setDesiredState(ShooterState.PREPFUEL);
-        break;
-
-      case INTAKE:
-        intake.setDesiredState(IntakeState.INTAKE);
-        shooter.setDesiredState(ShooterState.STOP);
-        break;
-
-      case OUTTAKE:
-        intake.setDesiredState(IntakeState.OUTTAKE);
-        hopper.setDesiredState(HopperState.INDEXTOINTAKE);
-        shooter.setDesiredState(ShooterState.STOP);
-        break;
-
-      case SHOOT:
-        shooter.setDesiredState(ShooterState.SHOOT);
-        if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-          // Target acquired — X-lock wheels and feed the ball
-          swerve.setControl(brake);
-          hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-        } else {
-          hopper.setDesiredState(HopperState.STOP);
-        }
-        break;
-    }
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Periodic
+  // Periodic — telemetry and vision reseed ONLY, no subsystem state writes
   // ──────────────────────────────────────────────────────────────────────────
 
   @Override
   public void periodic() {
     DogLog.time("Perf/Superstructure");
 
+    // ── Alliance (poll until confirmed, then never again) ──────────────────
     if (!allianceConfirmed) {
       refreshAllianceAndCachedHubTarget();
-      allianceConfirmed = true;
-    } else {
-      // Compute distance and alignment
-      Pose2d currentPose = swerve.getState().Pose;
+    }
 
-      // Check alliance zone the robot is in
+    // Always compute telemetry regardless of alliance confirmation
+    Pose2d currentPose = swerve.getState().Pose;
+
+    // ── Zone detection (zero-alloc via pre-cached name strings) ────────────
+    if (allianceConfirmed) {
       FieldZones currentZone = FieldZones.fromPose(currentPose, alliance);
-      DogLog.log("Robot/Zone", currentZone.name());
+      DogLog.log("Robot/Zone", ZONE_NAMES[currentZone.ordinal()]);
+    }
 
+    // ── Distance + alignment (needed by SHOOT command group) ──────────────
+    if (cachedHubTarget != null) {
       double distanceToHub = currentPose.getTranslation().getDistance(cachedHubTarget);
       DogLog.log("Superstructure/Distance to Hub (feet)", Units.metersToFeet(distanceToHub));
-
-      shooter.setSetpointForDistance(distanceToHub); // Always add 0.5 feet to account for
-      // shooter rpm drop
+      shooter.setSetpointForDistance(distanceToHub);
       updateAlignmentStatus(currentPose, cachedHubTarget);
+    }
 
-      // Reseed swerve pose from vision if odometry has drifted significantly.
-      // vision.tryReseedFromVision() is a no-op when no qualifying vision fix is
-      // available this cycle, so this is safe to call unconditionally.
-      if (vision != null) {
-        vision.tryReseedFromVision(currentPose);
-      }
-
-      handleStateTransition();
+    // ── Vision reseed — no-op if no qualifying fix available ──────────────
+    if (vision != null) {
+      vision.tryReseedFromVision(currentPose);
     }
 
     DogLog.timeEnd("Perf/Superstructure");
