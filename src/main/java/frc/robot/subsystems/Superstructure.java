@@ -12,8 +12,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import frc.robot.RobotContainer;
 import frc.robot.commands.AimAtTargetPoseCmd;
 import frc.robot.commands.DefaultDriveCmd;
@@ -25,6 +23,8 @@ import frc.robot.subsystems.intake.IntakeSubsystem.IntakeState;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem.ShooterState;
 import frc.robot.subsystems.vision.VisionSubsystem;
+import frc.robot.util.HubShiftUtil;
+import frc.robot.util.HubShiftUtil.ShiftInfo;
 import frc.robot.util.Telemetry;
 import frc.robot.util.constants.FieldConstants;
 import frc.robot.util.constants.FieldConstants.FieldZones;
@@ -39,6 +39,7 @@ public class Superstructure extends SubsystemBase {
   // ──────────────────────────────────────────────────────────────────────────
 
   public enum SuperState {
+    DRIVE_STARTING_CONFIG,
     DRIVE,
     INTAKE,
     OUTTAKE,
@@ -106,12 +107,6 @@ public class Superstructure extends SubsystemBase {
   private DriverStation.Alliance alliance;
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Elastic Dashboard
-  // ──────────────────────────────────────────────────────────────────────────
-
-  private final NetworkTable superstructureTable = NetworkTableInstance.getDefault().getTable("Superstructure");
-
-  // ──────────────────────────────────────────────────────────────────────────
   // Constructor
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -129,7 +124,7 @@ public class Superstructure extends SubsystemBase {
     this.vision = vision;
     this.container = container;
 
-    state = SuperState.DRIVE;
+    state = SuperState.DRIVE_STARTING_CONFIG;
 
     brake = new SwerveRequest.SwerveDriveBrake();
     point = new SwerveRequest.PointWheelsAt();
@@ -265,11 +260,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // SuperState Commands
-  //
-  // Each command addRequirements() the subsystems it controls.
-  // WPILib's CommandScheduler handles mutex — when a setStateCmd() ends,
-  // the default commands on each subsystem resume automatically.
+  // Intake Commands
   // ──────────────────────────────────────────────────────────────────────────
 
   public void setDesiredSuperState(SuperState state) {
@@ -294,6 +285,18 @@ public class Superstructure extends SubsystemBase {
    */
   public Command setStateCmd(SuperState desiredState) {
     switch (desiredState) {
+      case DRIVE_STARTING_CONFIG:
+        return Commands.run(
+            () -> {
+              setDesiredSuperState(SuperState.DRIVE_STARTING_CONFIG);
+              intake.setDesiredState(IntakeState.HOME);
+              hopper.setDesiredState(HopperState.STOP);
+              shooter.setDesiredState(ShooterState.PREPFUEL);
+            },
+            intake,
+            hopper,
+            shooter)
+            .withName("SuperState(DRIVE_STARTING_CONFIG)");
       case DRIVE:
         // No subsystem commands needed — releasing any other state command
         // causes the scheduler to resume default commands, which already
@@ -372,7 +375,7 @@ public class Superstructure extends SubsystemBase {
    * hopper/shooter.
    */
   public Command intakeOverrideCmd(IntakeState intakeState) {
-    return Commands.runOnce(() -> intake.setDesiredState(intakeState), intake)
+    return Commands.run(() -> intake.setDesiredState(intakeState), intake)
         .withName("IntakeOverride(" + intakeState.name() + ")");
   }
 
@@ -429,6 +432,29 @@ public class Superstructure extends SubsystemBase {
       default:
         return Optional.empty();
     }
+  // ──────────────────────────────────────────────────────────────────────────
+  // Hub Shift Accessors
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Returns true if our hub is currently active and we should be shooting.
+   * Uses the shifted (fudged) timing so fuel arrives within the active window.
+   *
+   * <p>
+   * During auto, always returns true (hub is always active for your alliance).
+   * During disabled, returns false.
+   */
+  public boolean isHubActive() {
+    return HubShiftUtil.getShiftedShiftInfo().active();
+  }
+
+  /**
+   * Returns the time remaining in the current shift (using shifted timing).
+   * Drivers can use this to decide whether to commit to a scoring cycle
+   * or reposition for the next active shift.
+   */
+  public double getShiftTimeRemaining() {
+    return HubShiftUtil.getShiftedShiftInfo().remainingTime();
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -466,8 +492,29 @@ public class Superstructure extends SubsystemBase {
       vision.tryReseedFromVision(currentPose);
     }
 
-    DogLog.log("SuperStructure/CurrentState", state.toString());
-    DogLog.log("SuperStructure/IsAlignedToTarget", alignedToTarget);
+    // ── Hub Shift Tracking ─────────────────────────────────────────────────
+    ShiftInfo officialShift = HubShiftUtil.getOfficialShiftInfo();
+    ShiftInfo shiftedShift = HubShiftUtil.getShiftedShiftInfo();
+
+    // Official shift info (matches FMS timing exactly)
+    DogLog.log("HubShift/Official/CurrentShift", officialShift.currentShift().name());
+    DogLog.log("HubShift/Official/Active", officialShift.active());
+    DogLog.log("HubShift/Official/ElapsedTime", officialShift.elapsedTime());
+    DogLog.log("HubShift/Official/RemainingTime", officialShift.remainingTime());
+
+    // Shifted info (accounts for fuel flight time + count delay).
+    // Use THIS for robot decisions — it tells you when to START and STOP
+    // shooting so fuel arrives during the active window.
+    DogLog.log("HubShift/Shifted/CurrentShift", shiftedShift.currentShift().name());
+    DogLog.log("HubShift/Shifted/Active", shiftedShift.active());
+    DogLog.log("HubShift/Shifted/ElapsedTime", shiftedShift.elapsedTime());
+    DogLog.log("HubShift/Shifted/RemainingTime", shiftedShift.remainingTime());
+
+    // Which alliance goes first (for driver awareness)
+    DogLog.log("HubShift/FirstActiveAlliance", HubShiftUtil.getFirstActiveAlliance().name());
+
+    DogLog.log("SuperStructure/SuperStructure_CurrentState", state.toString());
+    DogLog.log("SuperStructure/SuperStructure_IsAlignedToTarget", alignedToTarget);
 
     DogLog.timeEnd("Perf/Superstructure");
   }
