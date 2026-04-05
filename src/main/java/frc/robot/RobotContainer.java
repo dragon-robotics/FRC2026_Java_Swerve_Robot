@@ -37,7 +37,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.generated.TunerConstants;
@@ -83,18 +82,8 @@ public class RobotContainer {
 
   /* Intake Commands */
   private Command intakeCommand;
-  private Command outtakeCommand;
-  private Command stowIntakeCommand;
-  private Command deployIntakeCommand;
-  private Command wokTossIntakeCommand;
-
-  /* Hopper Commands */
-  private Command stopHopperCommand;
-  private Command indexToShooterCommand;
-  private Command indexToIntakeCommand;
 
   /* Shooter Commands */
-  private Command stopShooterCommand;
   private Command shootCommand;
 
   /* Path follower */
@@ -357,17 +346,11 @@ public class RobotContainer {
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
 
     // Intake
-    intakeCommand = new InstantCommand(
-        () -> superstructureSubsystem.setDesiredSuperState(SuperState.INTAKE),
-        superstructureSubsystem);
+    intakeCommand = superstructureSubsystem.setStateCmd(SuperState.INTAKE);
     // Shoot
-    shootCommand = new InstantCommand(
-        () -> superstructureSubsystem.setDesiredSuperState(SuperState.SHOOT),
-        superstructureSubsystem)
+    shootCommand = superstructureSubsystem.setStateCmd(SuperState.SHOOT)
         .alongWith(superstructureSubsystem.aimAtTargetPose());
-    driveCommand = new InstantCommand(
-        () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
-        superstructureSubsystem);
+    driveCommand = superstructureSubsystem.setStateCmd(SuperState.DRIVE);
 
     NamedCommands.registerCommand("Intake", intakeCommand);
     NamedCommands.registerCommand("Shoot", shootCommand);
@@ -405,55 +388,27 @@ public class RobotContainer {
     /* Intake */
     driverController
         .leftTrigger(0.2)
-        .whileTrue(
-            new InstantCommand(
-                () -> superstructureSubsystem.setDesiredSuperState(SuperState.INTAKE),
-                superstructureSubsystem))
-        .onFalse(
-            new InstantCommand(
-                () -> intakeSubsystem.setDesiredState(IntakeState.DEPLOYED), intakeSubsystem))
-        .onFalse(
-            new InstantCommand(
-                () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
-                superstructureSubsystem));
+        .onTrue(superstructureSubsystem.setStateCmd(SuperState.INTAKE))
+        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
 
     /* Outtake */
     driverController
         .rightBumper()
-        .whileTrue(
-            new InstantCommand(
-                () -> superstructureSubsystem.setDesiredSuperState(SuperState.OUTTAKE),
-                superstructureSubsystem))
-        .onFalse(
-            new InstantCommand(
-                () -> intakeSubsystem.setDesiredState(IntakeState.DEPLOYED), intakeSubsystem))
-        .onFalse(
-            new InstantCommand(
-                () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
-                superstructureSubsystem));
+        .onTrue(superstructureSubsystem.setStateCmd(SuperState.OUTTAKE))
+        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
 
     /* Shoot */
     driverController
         .rightTrigger(0.2)
-        .whileTrue(
-            new InstantCommand(
-                () -> superstructureSubsystem.setDesiredSuperState(SuperState.SHOOT),
-                superstructureSubsystem))
+        .onTrue(superstructureSubsystem.setStateCmd(SuperState.SHOOT))
         .whileTrue(superstructureSubsystem.aimAtTargetPose())
-        .onFalse(
-            new InstantCommand(
-                () -> superstructureSubsystem.setDesiredSuperState(SuperState.DRIVE),
-                superstructureSubsystem));
+        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
 
     /* Driver can control the Juicer mode if needed */
     driverController
         .b()
-        .whileTrue(
-            new InstantCommand(
-                () -> intakeSubsystem.setDesiredState(IntakeState.JUICER), intakeSubsystem))
-        .onFalse(
-            new InstantCommand(
-                () -> intakeSubsystem.setDesiredState(IntakeState.DEPLOYED), intakeSubsystem));
+        .whileTrue(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER))
+        .onFalse(superstructureSubsystem.intakeOverrideCmd(IntakeState.DEPLOYED));
 
     /* Operator Controls */
 
@@ -466,12 +421,8 @@ public class RobotContainer {
     /* Operator mainly controls the Juicer mode */
     operatorController
         .b()
-        .whileTrue(
-            new InstantCommand(
-                () -> intakeSubsystem.setDesiredState(IntakeState.JUICER), intakeSubsystem))
-        .onFalse(
-            new InstantCommand(
-                () -> intakeSubsystem.setDesiredState(IntakeState.DEPLOYED), intakeSubsystem));
+        .whileTrue(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER))
+        .onFalse(superstructureSubsystem.intakeOverrideCmd(IntakeState.DEPLOYED));
 
     /* TODO: Add overrides to the shooter in case vision goes down */
     // If up d-pad, shooter is close up bumper shot
