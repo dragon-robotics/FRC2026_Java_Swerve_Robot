@@ -358,7 +358,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("Shoot", shootCommand);
     NamedCommands.registerCommand("Drive", driveCommand);
 
-    autoChooser = AutoBuilder.buildAutoChooser("Tests");
+    autoChooser = AutoBuilder.buildAutoChooser();
     SmartDashboard.putData("Auto Mode", autoChooser);
 
     configureBindings();
