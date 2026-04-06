@@ -37,6 +37,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.generated.TunerConstants;
@@ -349,7 +350,8 @@ public class RobotContainer {
     intakeCommand = superstructureSubsystem.setStateCmd(SuperState.INTAKE);
     // Shoot
     shootCommand = superstructureSubsystem.setStateCmd(SuperState.SHOOT)
-        .alongWith(superstructureSubsystem.aimAtTargetPose());
+        .alongWith(superstructureSubsystem.aimAtTargetPose())
+        .alongWith(Commands.waitSeconds(1.5).andThen(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER)));
     driveCommand = superstructureSubsystem.setStateCmd(SuperState.DRIVE);
 
     NamedCommands.registerCommand("Intake", intakeCommand);
