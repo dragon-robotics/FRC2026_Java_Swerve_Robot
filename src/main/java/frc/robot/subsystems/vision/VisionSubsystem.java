@@ -196,6 +196,7 @@ public class VisionSubsystem extends SubsystemBase {
     }
     DogLog.log("Vision/AcceptedPoses", logArray);
     DogLog.log("Vision/AcceptedPoseCount", acceptedPoseCount);
+    DogLog.log("Vision/OdometryInitialized", odometryInitialized);
   }
 
   private void processCameraData(int cameraIndex, VisionIOInputs inputs) {
@@ -271,6 +272,11 @@ public class VisionSubsystem extends SubsystemBase {
     if (!odometryInitialized) {
       stablePoseCounter = 5;
     }
+
+    // ── Rejection logging — shows exactly why each pose was rejected ─────
+    String camKey = "Vision/" + currentCameraName;
+    DogLog.log(camKey + "/RejectedReason", rejected.reason().name());
+    DogLog.log(camKey + "/RejectedDetails", rejected.details());
   }
 
   private Matrix<N3, N1> calculateStandardDeviations(AcceptedPose accepted) {
@@ -284,9 +290,13 @@ public class VisionSubsystem extends SubsystemBase {
     double distanceFactor = (dist * dist) / tagCount;
     double linearStdDev = LINEAR_STDDEV_BASELINE * (1.0 + distanceFactor) * (1.0 + poseObs.ambiguity());
 
-    // Never trust rotation from a single tag — ambiguity means we can't know which
-    // of the two possible solutions is correct.
-    double angularStdDev = (poseObs.tagCount() >= 2)
+    // Never trust rotation from flip-vulnerable observations.
+    // Single-tag: solver has two solutions → rotation is unreliable.
+    // Coplanar multi-tag: same problem — all tags on one plane gives no
+    // additional rotational constraint over a single tag.
+    // True multi-tag (tags on different planes): rotation is fully constrained.
+    boolean effectivelySingleTag = poseValidator.isEffectivelySingleTag(poseObs);
+    double angularStdDev = (!effectivelySingleTag && poseObs.tagCount() >= 2)
         ? ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor)
         : Double.MAX_VALUE;
 
