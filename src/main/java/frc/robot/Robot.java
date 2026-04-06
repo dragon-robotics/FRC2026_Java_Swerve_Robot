@@ -92,6 +92,10 @@ public class Robot extends TimedRobot {
   }
 
   @Override
+  public void disabledPeriodic() {
+  }
+
+  @Override
   public void disabledExit() {
   }
 
