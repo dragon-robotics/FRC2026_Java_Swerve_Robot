@@ -124,12 +124,14 @@ public class Superstructure extends SubsystemBase {
 
     brake = new SwerveRequest.SwerveDriveBrake();
     point = new SwerveRequest.PointWheelsAt();
-    applyFieldSpeeds = new SwerveRequest.ApplyFieldSpeeds()
-        .withDesaturateWheelSpeeds(true)
-        .withDriveRequestType(DriveRequestType.Velocity);
-    applyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds()
-        .withDesaturateWheelSpeeds(true)
-        .withDriveRequestType(DriveRequestType.Velocity);
+    applyFieldSpeeds =
+        new SwerveRequest.ApplyFieldSpeeds()
+            .withDesaturateWheelSpeeds(true)
+            .withDriveRequestType(DriveRequestType.Velocity);
+    applyRobotSpeeds =
+        new SwerveRequest.ApplyRobotSpeeds()
+            .withDesaturateWheelSpeeds(true)
+            .withDriveRequestType(DriveRequestType.Velocity);
 
     currentHeading = Optional.empty();
     rotationLastTriggered = 0.0;
@@ -148,21 +150,25 @@ public class Superstructure extends SubsystemBase {
     // command ends, the scheduler automatically resumes these defaults —
     // no god loop needed.
     intake.setDefaultCommand(
-        intake.runOnce(() -> intake.setDesiredState(IntakeState.DEPLOYED))
+        intake
+            .runOnce(() -> intake.setDesiredState(IntakeState.DEPLOYED))
             .withName("Intake.Default(DEPLOYED)"));
     hopper.setDefaultCommand(
-        hopper.runOnce(() -> hopper.setDesiredState(HopperState.STOP))
+        hopper
+            .runOnce(() -> hopper.setDesiredState(HopperState.STOP))
             .withName("Hopper.Default(STOP)"));
     shooter.setDefaultCommand(
-        shooter.runOnce(() -> shooter.setDesiredState(ShooterState.PREPFUEL))
+        shooter
+            .runOnce(() -> shooter.setDesiredState(ShooterState.PREPFUEL))
             .withName("Shooter.Default(PREPFUEL)"));
   }
 
   private void setAlliance(DriverStation.Alliance newAlliance) {
     alliance = newAlliance;
-    cachedHubTarget = alliance == DriverStation.Alliance.Red
-        ? FieldConstants.Hub.RED_CENTER_POSE
-        : FieldConstants.Hub.BLUE_CENTER_POSE;
+    cachedHubTarget =
+        alliance == DriverStation.Alliance.Red
+            ? FieldConstants.Hub.RED_CENTER_POSE
+            : FieldConstants.Hub.BLUE_CENTER_POSE;
   }
 
   private void refreshAllianceAndCachedHubTarget() {
@@ -233,10 +239,8 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Operator-triggered vision reseed command. Unconditionally snaps swerve
-   * odometry to the best
-   * available multi-tag vision fix regardless of drift magnitude. Fires once on
-   * button press
+   * Operator-triggered vision reseed command. Unconditionally snaps swerve odometry to the best
+   * available multi-tag vision fix regardless of drift magnitude. Fires once on button press
    * (InstantCommand). No-op if no vision fix is available.
    */
   public Command forceReseedFromVisionCmd() {
@@ -262,13 +266,12 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Returns a command that transitions relevant subsystems to the requested
-   * SuperState. Each subsystem is controlled through proper WPILib command
-   * requirements — not direct calls from periodic().
+   * Returns a command that transitions relevant subsystems to the requested SuperState. Each
+   * subsystem is controlled through proper WPILib command requirements — not direct calls from
+   * periodic().
    *
-   * <p>
-   * When the returned command ends (button released), the scheduler
-   * resumes the default commands on each required subsystem automatically.
+   * <p>When the returned command ends (button released), the scheduler resumes the default commands
+   * on each required subsystem automatically.
    *
    * @param desiredState The SuperState to transition to
    * @return A command that controls subsystems for the duration of the state
@@ -279,49 +282,60 @@ public class Superstructure extends SubsystemBase {
         // No subsystem commands needed — releasing any other state command
         // causes the scheduler to resume default commands, which already
         // implement DRIVE behavior (intake=DEPLOYED, hopper=STOP, shooter=PREPFUEL).
-        return Commands.runOnce(() -> setDesiredSuperState(SuperState.DRIVE))
+        return Commands.runOnce(
+                () -> {
+                  setDesiredSuperState(SuperState.DRIVE);
+                  intake.setDesiredState(IntakeState.INTAKE);
+                  hopper.setDesiredState(HopperState.STOP);
+                  shooter.setDesiredState(ShooterState.PREPFUEL);
+                },
+                intake,
+                hopper,
+                shooter)
             .withName("SuperState(DRIVE)");
 
       case INTAKE:
         return Commands.runOnce(
-            () -> {
-              setDesiredSuperState(SuperState.INTAKE);
-              intake.setDesiredState(IntakeState.INTAKE);
-              shooter.setDesiredState(ShooterState.PREPFUEL);
-            },
-            intake,
-            shooter)
+                () -> {
+                  setDesiredSuperState(SuperState.INTAKE);
+                  intake.setDesiredState(IntakeState.INTAKE);
+                  hopper.setDesiredState(HopperState.STOP);
+                  shooter.setDesiredState(ShooterState.PREPFUEL);
+                },
+                intake,
+                hopper,
+                shooter)
             .withName("SuperState(INTAKE)");
 
       case OUTTAKE:
         return Commands.runOnce(
-            () -> {
-              setDesiredSuperState(SuperState.OUTTAKE);
-              intake.setDesiredState(IntakeState.OUTTAKE);
-              hopper.setDesiredState(HopperState.INDEXTOINTAKE);
-              shooter.setDesiredState(ShooterState.PREPFUEL);
-            },
-            intake,
-            hopper,
-            shooter)
+                () -> {
+                  setDesiredSuperState(SuperState.OUTTAKE);
+                  intake.setDesiredState(IntakeState.OUTTAKE);
+                  hopper.setDesiredState(HopperState.INDEXTOINTAKE);
+                  shooter.setDesiredState(ShooterState.PREPFUEL);
+                },
+                intake,
+                hopper,
+                shooter)
             .withName("SuperState(OUTTAKE)");
 
       case SHOOT:
         // SHOOT is special — it needs continuous polling for alignment.
         // Use Commands.run() (not runOnce) so it executes every cycle.
         return Commands.run(
-            () -> {
-              setDesiredSuperState(SuperState.SHOOT);
-              shooter.setDesiredState(ShooterState.SHOOT);
-              if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-                swerve.setControl(brake);
-                hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-              } else {
-                hopper.setDesiredState(HopperState.STOP);
-              }
-            },
-            shooter,
-            hopper)
+                () -> {
+                  setDesiredSuperState(SuperState.SHOOT);
+                  shooter.setDesiredState(ShooterState.SHOOT);
+                  if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
+                    swerve.setControl(brake);
+                    hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+                  } else {
+                    hopper.setDesiredState(HopperState.STOP);
+                  }
+                },
+                shooter,
+                hopper)
             .withName("SuperState(SHOOT)");
 
       default:
@@ -337,10 +351,7 @@ public class Superstructure extends SubsystemBase {
   // the default command resumes automatically.
   // ──────────────────────────────────────────────────────────────────────────
 
-  /**
-   * Override intake independently — preempts default, doesn't touch
-   * hopper/shooter.
-   */
+  /** Override intake independently — preempts default, doesn't touch hopper/shooter. */
   public Command intakeOverrideCmd(IntakeState intakeState) {
     return Commands.runOnce(() -> intake.setDesiredState(intakeState), intake)
         .withName("IntakeOverride(" + intakeState.name() + ")");
@@ -362,10 +373,7 @@ public class Superstructure extends SubsystemBase {
   // Alignment
   // ──────────────────────────────────────────────────────────────────────────
 
-  /**
-   * Returns true if the robot heading is within tolerance of the angle to the
-   * hub.
-   */
+  /** Returns true if the robot heading is within tolerance of the angle to the hub. */
   public boolean isAlignedToTarget() {
     return alignedToTarget;
   }
