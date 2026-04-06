@@ -287,7 +287,7 @@ public class Superstructure extends SubsystemBase {
             () -> {
               setDesiredSuperState(SuperState.INTAKE);
               intake.setDesiredState(IntakeState.INTAKE);
-              shooter.setDesiredState(ShooterState.STOP);
+              shooter.setDesiredState(ShooterState.PREPFUEL);
             },
             intake,
             shooter)
@@ -299,7 +299,7 @@ public class Superstructure extends SubsystemBase {
               setDesiredSuperState(SuperState.OUTTAKE);
               intake.setDesiredState(IntakeState.OUTTAKE);
               hopper.setDesiredState(HopperState.INDEXTOINTAKE);
-              shooter.setDesiredState(ShooterState.STOP);
+              shooter.setDesiredState(ShooterState.PREPFUEL);
             },
             intake,
             hopper,
