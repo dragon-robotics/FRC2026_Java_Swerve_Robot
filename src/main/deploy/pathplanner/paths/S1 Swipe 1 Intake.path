@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 4.378677419354839,
-        "y": 7.4776989247311825
+        "x": 4.417688172043011,
+        "y": 7.545967741935485
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.276578612663123,
-        "y": 7.518880146804685
+        "x": 6.327038333636462,
+        "y": 7.589394557795013
       },
       "isLocked": false,
       "linkedName": null
@@ -20,12 +20,12 @@
         "y": 6.936424731182797
       },
       "prevControl": {
-        "x": 7.021068461526372,
-        "y": 7.173744413782286
+        "x": 7.011805398468463,
+        "y": 7.196096212402682
       },
       "nextControl": {
-        "x": 8.025854820757534,
-        "y": 4.140304123511896
+        "x": 7.933548651218675,
+        "y": 4.472243576128623
       },
       "isLocked": false,
       "linkedName": null
@@ -36,8 +36,8 @@
         "y": 4.547016129032259
       },
       "prevControl": {
-        "x": 7.745722262771901,
-        "y": 4.771619084226319
+        "x": 7.733869763773071,
+        "y": 4.880183532033006
       },
       "nextControl": null,
       "isLocked": false,
@@ -50,7 +50,34 @@
       "rotationDegrees": -50.55994726330952
     }
   ],
-  "constraintZones": [],
+  "constraintZones": [
+    {
+      "name": "Get to the FUEL",
+      "minWaypointRelativePos": 0,
+      "maxWaypointRelativePos": 0.9020090200901822,
+      "constraints": {
+        "maxVelocity": 4.0,
+        "maxAcceleration": 12.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 1080.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    },
+    {
+      "name": "Intake the FUEL",
+      "minWaypointRelativePos": 0.9,
+      "maxWaypointRelativePos": 2.0,
+      "constraints": {
+        "maxVelocity": 1.5,
+        "maxAcceleration": 9.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 1080.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
   "pointTowardsZones": [],
   "eventMarkers": [
     {
@@ -66,10 +93,10 @@
     }
   ],
   "globalConstraints": {
-    "maxVelocity": 3.0,
-    "maxAcceleration": 3.0,
+    "maxVelocity": 3.6,
+    "maxAcceleration": 4.0,
     "maxAngularVelocity": 540.0,
-    "maxAngularAcceleration": 720.0,
+    "maxAngularAcceleration": 1080.0,
     "nominalVoltage": 12.0,
     "unlimited": false
   },
