@@ -62,6 +62,8 @@ import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.util.constants.OperatorConstants;
 import frc.robot.util.constants.SwerveConstants;
 import frc.robot.util.constants.VisionConstants;
+import frc.robot.util.HubShiftUtil;
+import java.util.Optional;
 
 public class RobotContainer {
 
@@ -354,6 +356,22 @@ public class RobotContainer {
 
     // Warmup PathPlanner to avoid Java pauses
     CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
+
+    // ── Hub Shift Override ─────────────────────────────────────────────────
+    // Allows manual override of who "won auto" for testing/practice.
+    // Set "HubShift/WonAuto" on SmartDashboard:
+    // "true" = we won auto (opponent active first, we shoot Shift 2/4)
+    // "false" = we lost auto (we active first, we shoot Shift 1/3)
+    // "" = use FMS game data (default — normal competition)
+    SmartDashboard.putString("HubShift/WonAuto", "");
+    HubShiftUtil.setAllianceWinOverride(() -> {
+      String override = SmartDashboard.getString("HubShift/WonAuto", "");
+      if (override.equalsIgnoreCase("true"))
+        return Optional.of(true);
+      if (override.equalsIgnoreCase("false"))
+        return Optional.of(false);
+      return Optional.empty(); // Use FMS data
+    });
   }
 
   private void configureBindings() {
