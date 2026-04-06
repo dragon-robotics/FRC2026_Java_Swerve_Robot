@@ -90,8 +90,9 @@ public class VisionSubsystem extends SubsystemBase {
       threadInputs[i] = new VisionIOInputs();
       latestInputs[i] = new VisionIOInputs();
       mainInputs[i] = new VisionIOInputs();
-      disconnectedAlerts[i] = new Alert(
-          "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
+      disconnectedAlerts[i] =
+          new Alert(
+              "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
     }
 
     // Pre-allocate pose buffer: each camera can produce ~2 poses max per cycle
@@ -112,10 +113,8 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Background thread loop: continuously polls all cameras and publishes results.
-   * Runs as fast as
-   * cameras produce frames (~30fps). The thread owns 'threadInputs' exclusively
-   * and only touches
+   * Background thread loop: continuously polls all cameras and publishes results. Runs as fast as
+   * cameras produce frames (~30fps). The thread owns 'threadInputs' exclusively and only touches
    * 'latestInputs' under the lock for a fast memcpy.
    */
   private void visionThreadLoop() {
@@ -230,7 +229,8 @@ public class VisionSubsystem extends SubsystemBase {
     // by default, so every real field pose would exceed MAX_POSE_DISCREPANCY_METERS
     // and prevent initialization from ever happening.
     if (odometryInitialized) {
-      double poseDiscrepancy = swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
+      double poseDiscrepancy =
+          swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
       if (poseDiscrepancy > MAX_POSE_DISCREPANCY_METERS) {
         return;
       }
@@ -288,7 +288,8 @@ public class VisionSubsystem extends SubsystemBase {
     // Divide by tagCount so multiple tags reduce uncertainty.
     // (1 + ambiguity) penalises ambiguous single-tag solutions.
     double distanceFactor = (dist * dist) / tagCount;
-    double linearStdDev = LINEAR_STDDEV_BASELINE * (1.0 + distanceFactor) * (1.0 + poseObs.ambiguity());
+    double linearStdDev =
+        LINEAR_STDDEV_BASELINE * (1.0 + distanceFactor) * (1.0 + poseObs.ambiguity());
 
     // Never trust rotation from flip-vulnerable observations.
     // Single-tag: solver has two solutions → rotation is unreliable.
@@ -296,28 +297,24 @@ public class VisionSubsystem extends SubsystemBase {
     // additional rotational constraint over a single tag.
     // True multi-tag (tags on different planes): rotation is fully constrained.
     boolean effectivelySingleTag = poseValidator.isEffectivelySingleTag(poseObs);
-    double angularStdDev = (!effectivelySingleTag && poseObs.tagCount() >= 2)
-        ? ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor)
-        : Double.MAX_VALUE;
+    double angularStdDev =
+        (!effectivelySingleTag && poseObs.tagCount() >= 2)
+            ? ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor)
+            : Double.MAX_VALUE;
 
     return VecBuilder.fill(linearStdDev, linearStdDev, angularStdDev);
   }
 
   /**
-   * Checks whether swerve odometry has drifted significantly from the best
-   * available
+   * Checks whether swerve odometry has drifted significantly from the best available
    * high-confidence vision fix this cycle. If the drift exceeds {@code
-   * POSE_RESEED_THRESHOLD_METERS} and a qualifying multi-tag pose is available,
-   * the pose estimator
+   * POSE_RESEED_THRESHOLD_METERS} and a qualifying multi-tag pose is available, the pose estimator
    * is hard-reset to the vision pose.
    *
-   * <p>
-   * Call this from {@code Superstructure.periodic()} on every cycle. It is a
-   * no-op when no
+   * <p>Call this from {@code Superstructure.periodic()} on every cycle. It is a no-op when no
    * qualifying vision pose was seen this cycle or when drift is within tolerance.
    *
-   * @param currentPose the current swerve odometry pose (from
-   *                    {@code swerve.getState().Pose})
+   * @param currentPose the current swerve odometry pose (from {@code swerve.getState().Pose})
    * @return {@code true} if a reseed was performed this cycle
    */
   public boolean tryReseedFromVision(Pose2d currentPose) {
@@ -341,20 +338,15 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Unconditionally reseeds the swerve pose from the best available
-   * high-confidence vision fix this
+   * Unconditionally reseeds the swerve pose from the best available high-confidence vision fix this
    * cycle, regardless of how large the drift is.
    *
-   * <p>
-   * Intended for operator-triggered recovery when the driver knows vision is
-   * trustworthy but
-   * odometry has gone badly wrong. Unlike {@link #tryReseedFromVision}, this
-   * bypasses the drift
+   * <p>Intended for operator-triggered recovery when the driver knows vision is trustworthy but
+   * odometry has gone badly wrong. Unlike {@link #tryReseedFromVision}, this bypasses the drift
    * threshold entirely.
    *
-   * @return {@code true} if a reseed was performed (a qualifying pose was
-   *         available), {@code false}
-   *         if no multi-tag vision fix was seen this cycle
+   * @return {@code true} if a reseed was performed (a qualifying pose was available), {@code false}
+   *     if no multi-tag vision fix was seen this cycle
    */
   public boolean forceReseedFromVision() {
     if (bestReseedCandidate == null) {
@@ -370,10 +362,8 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Marks odometry as initialized and resets the stable-pose counter. Called
-   * whenever a pose reset
-   * is performed (either during normal initialization or via a reseed) so the
-   * subsystem
+   * Marks odometry as initialized and resets the stable-pose counter. Called whenever a pose reset
+   * is performed (either during normal initialization or via a reseed) so the subsystem
    * initialization state stays consistent with the actual swerve pose.
    */
   private void markOdometryInitialized() {

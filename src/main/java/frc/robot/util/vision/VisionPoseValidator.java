@@ -21,16 +21,13 @@ public class VisionPoseValidator {
   // ──────────────────────────────────────────────────────────────────────────
 
   /**
-   * Checks whether all tags in an observation lie on the same plane (same hub
-   * face). When all tags are coplanar, the multi-tag PnP solver has the same
-   * rotational ambiguity as single-tag — the planar geometry admits two valid
-   * solutions differing by 180° around the plane normal.
+   * Checks whether all tags in an observation lie on the same plane (same hub face). When all tags
+   * are coplanar, the multi-tag PnP solver has the same rotational ambiguity as single-tag — the
+   * planar geometry admits two valid solutions differing by 180° around the plane normal.
    *
-   * <p>
-   * Detection: compare the Z-axis (outward normal) of each tag's field
-   * pose. If all normals are within
-   * {@link frc.robot.util.constants.VisionConstants#COPLANAR_ANGLE_THRESHOLD_DEG}
-   * of each other, the tags are coplanar.
+   * <p>Detection: compare the Z-axis (outward normal) of each tag's field pose. If all normals are
+   * within {@link frc.robot.util.constants.VisionConstants#COPLANAR_ANGLE_THRESHOLD_DEG} of each
+   * other, the tags are coplanar.
    *
    * @param tagIDs array of visible tag IDs
    * @return true if all tags are coplanar (flip-vulnerable)
@@ -40,17 +37,17 @@ public class VisionPoseValidator {
       return true; // Single tag is trivially coplanar
     }
 
-    Optional<edu.wpi.first.math.geometry.Pose3d> firstPoseOpt = APTAG_FIELD_LAYOUT.getTagPose(tagIDs[0]);
-    if (firstPoseOpt.isEmpty())
-      return true; // Unknown tag — treat as vulnerable
+    Optional<edu.wpi.first.math.geometry.Pose3d> firstPoseOpt =
+        APTAG_FIELD_LAYOUT.getTagPose(tagIDs[0]);
+    if (firstPoseOpt.isEmpty()) return true; // Unknown tag — treat as vulnerable
 
     Rotation3d referenceRotation = firstPoseOpt.get().getRotation();
     double thresholdRad = Math.toRadians(COPLANAR_ANGLE_THRESHOLD_DEG);
 
     for (int i = 1; i < tagIDs.length; i++) {
-      Optional<edu.wpi.first.math.geometry.Pose3d> tagPoseOpt = APTAG_FIELD_LAYOUT.getTagPose(tagIDs[i]);
-      if (tagPoseOpt.isEmpty())
-        continue;
+      Optional<edu.wpi.first.math.geometry.Pose3d> tagPoseOpt =
+          APTAG_FIELD_LAYOUT.getTagPose(tagIDs[i]);
+      if (tagPoseOpt.isEmpty()) continue;
 
       // Compute relative rotation between this tag and the reference.
       // Coplanar tags face the same direction → relative rotation ≈ identity.
@@ -66,20 +63,19 @@ public class VisionPoseValidator {
   }
 
   /**
-   * Returns true if the observation is "effectively single-tag" for flip
-   * rejection and standard deviation purposes. True when:
+   * Returns true if the observation is "effectively single-tag" for flip rejection and standard
+   * deviation purposes. True when:
+   *
    * <ul>
-   * <li>tagCount == 1 (actually single tag), OR</li>
-   * <li>tagCount &gt;= 2 but all tags are coplanar (same hub face)</li>
+   *   <li>tagCount == 1 (actually single tag), OR
+   *   <li>tagCount &gt;= 2 but all tags are coplanar (same hub face)
    * </ul>
    *
-   * <p>
-   * Exposed as public so {@code VisionSubsystem.calculateStandardDeviations}
-   * can use it to distrust rotation from coplanar multi-tag observations.
+   * <p>Exposed as public so {@code VisionSubsystem.calculateStandardDeviations} can use it to
+   * distrust rotation from coplanar multi-tag observations.
    */
   public boolean isEffectivelySingleTag(PoseObservation observation) {
-    if (observation.tagCount() <= 1)
-      return true;
+    if (observation.tagCount() <= 1) return true;
     return areTagsCoplanar(observation.tagIDs());
   }
 
@@ -104,14 +100,14 @@ public class VisionPoseValidator {
     // Coplanar gets a slightly more generous limit since multiple coplanar
     // tags improve translational (but not rotational) accuracy.
     if (effectivelySingleTag) {
-      double maxDist = actuallySingleTag
-          ? SINGLE_TAG_MAX_DISTANCE_METERS
-          : COPLANAR_MAX_DISTANCE_METERS;
+      double maxDist =
+          actuallySingleTag ? SINGLE_TAG_MAX_DISTANCE_METERS : COPLANAR_MAX_DISTANCE_METERS;
 
       if (observation.averageTagDistance() > maxDist) {
-        RejectionReason reason = actuallySingleTag
-            ? RejectionReason.SINGLE_TAG_TOO_FAR
-            : RejectionReason.COPLANAR_TOO_FAR;
+        RejectionReason reason =
+            actuallySingleTag
+                ? RejectionReason.SINGLE_TAG_TOO_FAR
+                : RejectionReason.COPLANAR_TOO_FAR;
         return new RejectedPose(
             observation,
             reason,
@@ -140,13 +136,13 @@ public class VisionPoseValidator {
     // }
     // }
 
-    // // ── General ambiguity check (true multi-tag) ─────────────────────────
-    // if (!effectivelySingleTag && observation.ambiguity() > MAX_AMBIGUITY) {
-    // return new RejectedPose(
-    // observation,
-    // RejectionReason.HIGH_AMBIGUITY,
-    // "Ambiguity: %.3f > %.3f".formatted(observation.ambiguity(), MAX_AMBIGUITY));
-    // }
+    // ── General ambiguity check (true multi-tag) ─────────────────────────
+    if (!effectivelySingleTag && observation.ambiguity() > MAX_AMBIGUITY) {
+      return new RejectedPose(
+          observation,
+          RejectionReason.HIGH_AMBIGUITY,
+          "Ambiguity: %.3f > %.3f".formatted(observation.ambiguity(), MAX_AMBIGUITY));
+    }
 
     // ── Z coordinate check ───────────────────────────────────────────────
     if (Math.abs(pose.getZ()) > MAX_Z_ERROR) {
@@ -201,18 +197,16 @@ public class VisionPoseValidator {
       // gaps (e.g. autonomous → teleop transition).
       dt = Math.max(0.0, Math.min(dt, MAX_FLIP_DETECTION_DT_SECONDS));
 
-      double visionDelta = m_lastAcceptedPose.getTranslation()
-          .getDistance(pose2d.getTranslation());
+      double visionDelta = m_lastAcceptedPose.getTranslation().getDistance(pose2d.getTranslation());
 
-      double maxAllowedDelta = dt * MAX_ROBOT_SPEED_MPS * SPEED_TOLERANCE_MULTIPLIER
-          + BASE_JUMP_TOLERANCE_METERS;
+      double maxAllowedDelta =
+          dt * MAX_ROBOT_SPEED_MPS * SPEED_TOLERANCE_MULTIPLIER + BASE_JUMP_TOLERANCE_METERS;
 
       if (visionDelta > maxAllowedDelta) {
         return new RejectedPose(
             observation,
             RejectionReason.INTER_FRAME_JUMP,
-            "dt: %.3fs, delta: %.2fm > max: %.2fm"
-                .formatted(dt, visionDelta, maxAllowedDelta));
+            "dt: %.3fs, delta: %.2fm > max: %.2fm".formatted(dt, visionDelta, maxAllowedDelta));
       }
     }
 
