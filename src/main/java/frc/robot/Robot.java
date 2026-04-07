@@ -92,15 +92,14 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledPeriodic() {
-  }
-
-  @Override
   public void disabledExit() {
   }
 
   @Override
   public void autonomousInit() {
+    // Re-seed odometry from tags at auto start.
+    m_robotContainer.visionSubsystem.resetOdometryInitialized();
+
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     if (m_autonomousCommand != null) {
@@ -118,6 +117,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
+    // Re-seed odometry from tags at teleop start.
+    m_robotContainer.visionSubsystem.resetOdometryInitialized();
     if (m_autonomousCommand != null) {
       CommandScheduler.getInstance().cancel(m_autonomousCommand);
     }
