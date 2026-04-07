@@ -15,12 +15,17 @@ import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
+
 import java.util.Optional;
+
+import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.VoltageOut;
 
 public class TalonFXMotorIO implements MotorIO {
 
@@ -34,8 +39,11 @@ public class TalonFXMotorIO implements MotorIO {
   protected final MotionMagicVelocityTorqueCurrentFOC mmVelocityRequest;
   protected final MotionMagicExpoTorqueCurrentFOC mmPositionRequest;
   protected final PositionVoltage positionVoltageRequest;
+  protected final DutyCycleOut dutyCycleRequest;
+  protected final VoltageOut voltageRequest;
 
-  // Cached status signals — refreshed in batch to optimize loop time and use opt-in to optimize CAN
+  // Cached status signals — refreshed in batch to optimize loop time and use
+  // opt-in to optimize CAN
   // bus util
   protected final StatusSignal<Voltage> motorVoltageSignal;
   protected final StatusSignal<Current> statorCurrentSignal;
@@ -85,6 +93,8 @@ public class TalonFXMotorIO implements MotorIO {
     mmVelocityRequest = new MotionMagicVelocityTorqueCurrentFOC(0);
     mmPositionRequest = new MotionMagicExpoTorqueCurrentFOC(0);
     positionVoltageRequest = new PositionVoltage(INTAKE_ARM_DEPLOYED_POSITION);
+    dutyCycleRequest = new DutyCycleOut(0).withEnableFOC(true);
+    voltageRequest = new VoltageOut(0).withEnableFOC(true);
 
     // Disabled all unused signals first
     motor.optimizeBusUtilization(0);
@@ -110,7 +120,8 @@ public class TalonFXMotorIO implements MotorIO {
         positionSignal); // closed-loop feedback
 
     deviceTempSignal.setUpdateFrequency(
-        0.25); // temperature doesn't need to be updated as often, so we set it to 0.25Hz or every 4
+        0.25); // temperature doesn't need to be updated as often, so we set it to 0.25Hz or
+               // every 4
     // seconds
 
     // Register the motor to the signal registry
@@ -121,16 +132,16 @@ public class TalonFXMotorIO implements MotorIO {
         ccCfg -> {
           canCoder = new CANcoder(canID);
           canCoder.getConfigurator().apply(ccCfg);
-          TalonFXConfiguration updatedConfig =
-              config.withFeedback(
-                  new FeedbackConfigs()
-                      .withFeedbackRemoteSensorID(canCoder.getDeviceID())
-                      .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder));
+          TalonFXConfiguration updatedConfig = config.withFeedback(
+              new FeedbackConfigs()
+                  .withFeedbackRemoteSensorID(canCoder.getDeviceID())
+                  .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder));
           motor.getConfigurator().apply(updatedConfig);
 
           canCoder.optimizeBusUtilization(0);
 
-          // Modify CANCoder signal frequencies to match the motor's closed-loop update rate for
+          // Modify CANCoder signal frequencies to match the motor's closed-loop update
+          // rate for
           // better synchronization
           BaseStatusSignal.setUpdateFrequencyForAll(
               100, canCoder.getPosition(), canCoder.getVelocity(), canCoder.getAbsolutePosition());
@@ -151,12 +162,12 @@ public class TalonFXMotorIO implements MotorIO {
 
   @Override
   public void setMotorVoltage(double voltage) {
-    motor.setVoltage(voltage);
+    motor.setControl(voltageRequest.withOutput(voltage));
   }
 
   @Override
   public void setMotorPercentage(double percentage) {
-    motor.set(percentage);
+    motor.setControl(dutyCycleRequest.withOutput(percentage));
   }
 
   @Override
@@ -177,13 +188,13 @@ public class TalonFXMotorIO implements MotorIO {
   @Override
   public BaseStatusSignal[] getStatusSignals() {
     return new BaseStatusSignal[] {
-      motorVoltageSignal,
-      statorCurrentSignal,
-      deviceTempSignal,
-      velocitySignal,
-      positionSignal,
-      dutyCycleSignal,
-      torqueCurrentSignal
+        motorVoltageSignal,
+        statorCurrentSignal,
+        deviceTempSignal,
+        velocitySignal,
+        positionSignal,
+        dutyCycleSignal,
+        torqueCurrentSignal
     };
   }
 
