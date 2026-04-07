@@ -7,6 +7,7 @@ package frc.robot;
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.io.SignalRegistry;
@@ -20,11 +21,13 @@ public class Robot extends TimedRobot {
   private final RobotContainer m_robotContainer;
 
   // ── GC tracking ───────────────────────────────────────────────────────────
-  private final List<GarbageCollectorMXBean> gcBeans =
-      ManagementFactory.getGarbageCollectorMXBeans();
+  private final List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
 
   private long lastGcCount = 0;
   private long lastGcTimeMs = 0;
+
+  // ── Loop overrun tracking ─────────────────────────────────────────────────
+  private int overrunCount = 0;
 
   public Robot() {
     // super(0.025); // 25ms loop period — gives 5ms headroom over default 20ms
@@ -33,6 +36,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotPeriodic() {
+    double cycleStart = Timer.getFPGATimestamp();
     DogLog.time("Perf/Total");
 
     // Batch-refresh all CTRE motor signals BEFORE the scheduler runs subsystem
@@ -47,6 +51,14 @@ public class Robot extends TimedRobot {
 
     DogLog.timeEnd("Perf/Total");
 
+    // ── Loop overrun detection ──────────────────────────────────────────────
+    double cycleMs = (Timer.getFPGATimestamp() - cycleStart) * 1000.0;
+    DogLog.log("Perf/CycleMs", cycleMs);
+    if (cycleMs > 20.0) {
+      overrunCount++;
+    }
+    DogLog.log("Perf/OverrunCount", overrunCount);
+
     // ── Heap ────────────────────────────────────────────────────────────────
     Runtime rt = Runtime.getRuntime();
     DogLog.log("Perf/HeapUsedMB", (rt.totalMemory() - rt.freeMemory()) / (1024.0 * 1024.0));
@@ -57,8 +69,10 @@ public class Robot extends TimedRobot {
     for (GarbageCollectorMXBean bean : gcBeans) {
       long c = bean.getCollectionCount();
       long t = bean.getCollectionTime();
-      if (c >= 0) totalGcCount += c;
-      if (t >= 0) totalGcTimeMs += t;
+      if (c >= 0)
+        totalGcCount += c;
+      if (t >= 0)
+        totalGcTimeMs += t;
     }
     DogLog.log("Perf/GCDeltaCount", (int) (totalGcCount - lastGcCount));
     DogLog.log("Perf/GCDeltaTimeMs", (double) (totalGcTimeMs - lastGcTimeMs));
@@ -71,13 +85,16 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+  }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+  }
 
   @Override
-  public void disabledExit() {}
+  public void disabledExit() {
+  }
 
   @Override
   public void autonomousInit() {
@@ -89,10 +106,12 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+  }
 
   @Override
-  public void autonomousExit() {}
+  public void autonomousExit() {
+  }
 
   @Override
   public void teleopInit() {
@@ -102,10 +121,12 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+  }
 
   @Override
-  public void teleopExit() {}
+  public void teleopExit() {
+  }
 
   @Override
   public void testInit() {
@@ -113,11 +134,14 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+  }
 
   @Override
-  public void testExit() {}
+  public void testExit() {
+  }
 
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+  }
 }

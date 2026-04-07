@@ -2,6 +2,7 @@ package frc.robot.subsystems.shooter;
 
 import static frc.robot.util.constants.ShooterConstants.*;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -229,11 +230,13 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    DogLog.time("Perf/Shooter");
     shooterLeadIO.updateInputs(shooterLeadInputs);
     // shooterFollowIO.updateInputs(shooterFollowInputs);
     // shooterKickerIO.updateInputs(shooterKickerInputs);
     shooterHoodIO.updateInputs(shooterHoodInputs);
 
     handleStateTransition();
+    DogLog.timeEnd("Perf/Shooter");
   }
 }
