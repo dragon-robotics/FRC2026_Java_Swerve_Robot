@@ -60,9 +60,8 @@ public class VisionSubsystem extends SubsystemBase {
 
     for (int i = 0; i < io.length; i++) {
       inputs[i] = new VisionIOInputs();
-      disconnectedAlerts[i] =
-          new Alert(
-              "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
+      disconnectedAlerts[i] = new Alert(
+          "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
       validators[i] = new VisionPoseValidator();
     }
 
@@ -98,7 +97,8 @@ public class VisionSubsystem extends SubsystemBase {
     for (var observation : inputs[cameraIndex].getPoseObservations()) {
       PoseValidationResult result = validator.validatePose(observation);
       if (result instanceof RejectedPose rejected) {
-        if (!odometryInitialized) stablePoseCounter = 5;
+        if (!odometryInitialized)
+          stablePoseCounter = 5;
         DogLog.log(camKey + "/RejectedPose/Reason", rejected.reason().name());
         DogLog.log(camKey + "/RejectedPose/Details", rejected.details());
         continue;
@@ -109,8 +109,7 @@ public class VisionSubsystem extends SubsystemBase {
       // Once initialized, discard poses too far from odometry to prevent tag
       // misidentification
       if (odometryInitialized) {
-        double discrepancy =
-            swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
+        double discrepancy = swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
         if (discrepancy > MAX_POSE_DISCREPANCY_METERS) {
           continue;
         }
@@ -162,23 +161,26 @@ public class VisionSubsystem extends SubsystemBase {
     double linearStdDev = LINEAR_STDDEV_BASELINE * (1.0 + distanceFactor) * (1.0 + obs.ambiguity());
     // Distrust rotation for single-tag or coplanar multi-tag observations — both
     // have 180° rotational ambiguity (flip-vulnerable). Only true multi-tag
-    // observations (tags on different planes) provide a reliable rotational constraint.
-    double angularStdDev =
-        validator.isEffectivelySingleTag(obs)
-            ? Double.MAX_VALUE
-            : ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor);
+    // observations (tags on different planes) provide a reliable rotational
+    // constraint.
+    double angularStdDev = validator.isEffectivelySingleTag(obs)
+        ? Double.MAX_VALUE
+        : ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor);
     return VecBuilder.fill(linearStdDev, linearStdDev, angularStdDev);
   }
 
   /**
-   * If odometry has drifted more than {@code POSE_RESEED_THRESHOLD_METERS} from the best
-   * high-confidence vision fix this cycle, hard-resets the pose estimator. Call from {@code
+   * If odometry has drifted more than {@code POSE_RESEED_THRESHOLD_METERS} from
+   * the best
+   * high-confidence vision fix this cycle, hard-resets the pose estimator. Call
+   * from {@code
    * Superstructure.periodic()}.
    *
    * @return {@code true} if a reseed was performed
    */
   public boolean tryReseedFromVision(Pose2d currentPose) {
-    if (bestReseedCandidate == null) return false;
+    if (bestReseedCandidate == null)
+      return false;
 
     Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
     double drift = currentPose.getTranslation().getDistance(visionPose.getTranslation());
@@ -196,13 +198,15 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Unconditionally reseeds from the best high-confidence vision fix this cycle. For
+   * Unconditionally reseeds from the best high-confidence vision fix this cycle.
+   * For
    * operator-triggered recovery when odometry has gone badly wrong.
    *
    * @return {@code true} if a qualifying pose was available
    */
   public boolean forceReseedFromVision() {
-    if (bestReseedCandidate == null) return false;
+    if (bestReseedCandidate == null)
+      return false;
 
     Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
     swerve.resetPose(visionPose);
@@ -216,5 +220,20 @@ public class VisionSubsystem extends SubsystemBase {
     odometryInitialized = true;
     stablePoseCounter = 0;
     DogLog.log("Vision/OdometryInitialized", true);
+  }
+
+  /**
+   * Resets the odometry-initialized flag so that vision will re-seed the pose
+   * estimator from
+   * scratch on the next accepted observation. Call this at the start of
+   * autonomous so vision
+   * re-confirms the robot's starting pose from tags rather than carrying over a
+   * potentially stale
+   * teleop pose.
+   */
+  public void resetOdometryInitialized() {
+    odometryInitialized = false;
+    stablePoseCounter = 5;
+    DogLog.log("Vision/OdometryInitialized", false);
   }
 }
