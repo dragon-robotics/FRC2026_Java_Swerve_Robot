@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 8.259787887801727,
-        "y": 3.0435223219982044
+        "x": 8.072636988025181,
+        "y": 2.7916824543505365
       },
       "isLocked": false,
       "linkedName": null
@@ -20,28 +20,28 @@
         "y": 0.85
       },
       "prevControl": {
-        "x": 7.964569604000574,
-        "y": 1.2500313654205297
+        "x": 8.023872369775457,
+        "y": 1.3188563022746225
       },
       "nextControl": {
-        "x": 6.804025837606937,
-        "y": 0.5514530604453756
+        "x": 6.8253535381870964,
+        "y": 0.5425687534635939
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.7,
-        "y": 0.65
+        "x": 3.7545053763440857,
+        "y": 0.6
       },
       "prevControl": {
-        "x": 3.9854699811533276,
-        "y": 0.5609233758528099
+        "x": 3.993514451161164,
+        "y": 0.5266879126263339
       },
       "nextControl": {
-        "x": 3.367087405027319,
-        "y": 0.7538803799139899
+        "x": 3.5154963015270067,
+        "y": 0.673312087373666
       },
       "isLocked": false,
       "linkedName": "RTrench Near"
@@ -52,8 +52,8 @@
         "y": 0.8
       },
       "prevControl": {
-        "x": 3.569567369345046,
-        "y": 0.6820189505142128
+        "x": 3.3448592100411125,
+        "y": 0.6985338557911722
       },
       "nextControl": null,
       "isLocked": false,
@@ -63,22 +63,22 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 1.0,
-      "rotationDegrees": 180.0
+      "rotationDegrees": 0.0
     },
     {
-      "waypointRelativePos": 1.8,
-      "rotationDegrees": 180.0
+      "waypointRelativePos": 2.502242152466256,
+      "rotationDegrees": 0.0
     }
   ],
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 1.8,
+      "minWaypointRelativePos": 1.995079950799435,
       "maxWaypointRelativePos": 3.0,
       "constraints": {
         "maxVelocity": 2.5,
         "maxAcceleration": 5.0,
-        "maxAngularVelocity": 1080.0,
+        "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 1080.0,
         "nominalVoltage": 12.0,
         "unlimited": false
