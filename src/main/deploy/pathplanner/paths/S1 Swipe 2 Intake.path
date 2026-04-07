@@ -58,9 +58,9 @@
     {
       "name": "Drive Zone",
       "minWaypointRelativePos": 0,
-      "maxWaypointRelativePos": 1.400574005740075,
+      "maxWaypointRelativePos": 1.1988519885199156,
       "constraints": {
-        "maxVelocity": 4.0,
+        "maxVelocity": 3.6,
         "maxAcceleration": 12.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 1080.0,
@@ -70,7 +70,7 @@
     },
     {
       "name": "Intake Zone",
-      "minWaypointRelativePos": 1.4038540385404246,
+      "minWaypointRelativePos": 1.1955719557195723,
       "maxWaypointRelativePos": 2.0,
       "constraints": {
         "maxVelocity": 1.5,
