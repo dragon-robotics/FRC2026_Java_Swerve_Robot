@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.vision;
 
+import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
 import static frc.robot.util.constants.VisionConstants.*;
 
 import com.ctre.phoenix6.Utils;
@@ -20,88 +21,47 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.vision.VisionIO.PoseObservation;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
-import frc.robot.util.vision.AcceptedPose;
-import frc.robot.util.vision.RejectedPose;
-import frc.robot.util.vision.VisionPoseValidator;
 import java.util.Arrays;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class VisionSubsystem extends SubsystemBase {
 
   private final CommandSwerveDrivetrain swerve;
   private final VisionConsumer consumer;
   private final VisionIO[] io;
+  private final VisionIOInputs[] inputs;
   private final Alert[] disconnectedAlerts;
 
-  // -- Threading: double-buffered inputs --
-  // The background thread writes into 'threadInputs', then copies to
-  // 'latestInputs' under lock.
-  // The main thread copies 'latestInputs' into 'mainInputs' under lock, then
-  // processes freely.
-  private final VisionIOInputs[] threadInputs; // owned by background thread only
-  private final VisionIOInputs[] latestInputs; // shared, protected by lock
-  private final VisionIOInputs[] mainInputs; // owned by main thread only
-  private final ReentrantLock inputsLock = new ReentrantLock();
-  private final Thread visionThread;
-
-  // Check for odometry initialization
+  // Odometry initialization
   private int stablePoseCounter = 5;
   private boolean odometryInitialized = false;
 
-  // Vision pose validator
-  private final VisionPoseValidator poseValidator = new VisionPoseValidator();
+  // Best high-confidence multi-tag pose this cycle — candidate for drift
+  // reseeding
+  private PoseObservation bestReseedCandidate = null;
 
-  // Tracks the name of the camera being processed, so handleAcceptedPose can log
-  // per-camera keys
-  private String currentCameraName = "";
+  // Round-robin: only process one camera per periodic() to avoid loop overruns
+  private int nextCameraIndex = 0;
 
-  // Pre-allocated pose buffer -- avoids ArrayList and toArray() allocation each
-  // cycle.
+  // Pre-allocated pose buffer — avoids per-cycle allocation on RoboRIO v1
   private Pose3d[] acceptedPoseBuffer;
   private int acceptedPoseCount = 0;
 
-  // Trimmed log buffer -- reused every cycle for DogLog, only reallocated when
-  // acceptedPoseCount changes size (practically never after first few cycles)
-  private Pose3d[] acceptedPoseLogBuffer = new Pose3d[0];
-
-  // Best high-confidence multi-tag pose seen this cycle — candidate for drift
-  // reseeding.
-  // Reset to null at the start of every periodic(), populated in
-  // handleAcceptedPose().
-  // Only updated when tagCount >= POSE_RESEED_MIN_TAG_COUNT and ambiguity is
-  // lower
-  // than the current best, so the caller always gets the most reliable fix
-  // available.
-  private PoseObservation bestReseedCandidate = null;
-
-  /** Creates a new VisionSubsystem. */
   public VisionSubsystem(CommandSwerveDrivetrain swerve, VisionConsumer consumer, VisionIO... io) {
     this.swerve = swerve;
     this.consumer = consumer;
     this.io = io;
 
-    // Initialize triple-buffered inputs and alerts
-    threadInputs = new VisionIOInputs[io.length];
-    latestInputs = new VisionIOInputs[io.length];
-    mainInputs = new VisionIOInputs[io.length];
+    inputs = new VisionIOInputs[io.length];
     disconnectedAlerts = new Alert[io.length];
 
     for (int i = 0; i < io.length; i++) {
-      threadInputs[i] = new VisionIOInputs();
-      latestInputs[i] = new VisionIOInputs();
-      mainInputs[i] = new VisionIOInputs();
-      disconnectedAlerts[i] =
-          new Alert(
-              "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
+      inputs[i] = new VisionIOInputs();
+      disconnectedAlerts[i] = new Alert(
+          "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
     }
 
-    // Pre-allocate pose buffer: each camera can produce ~2 poses max per cycle
+    // Pre-allocate: each camera produces at most ~2 poses per cycle
     acceptedPoseBuffer = new Pose3d[io.length * 2];
-
-    // Start background vision thread -- iterates all cameras in a loop
-    visionThread = new Thread(this::visionThreadLoop, "VisionThread");
-    visionThread.setDaemon(true);
-    visionThread.start();
   }
 
   @FunctionalInterface
@@ -112,215 +72,111 @@ public class VisionSubsystem extends SubsystemBase {
         Matrix<N3, N1> visionMeasurementStdDevs);
   }
 
-  /**
-   * Background thread loop: continuously polls all cameras and publishes results. Runs as fast as
-   * cameras produce frames (~30fps). The thread owns 'threadInputs' exclusively and only touches
-   * 'latestInputs' under the lock for a fast memcpy.
-   */
-  private void visionThreadLoop() {
-    while (!Thread.currentThread().isInterrupted()) {
-      try {
-        // Poll every camera sequentially on this thread
-        for (int i = 0; i < io.length; i++) {
-          io[i].updateInputs(threadInputs[i]);
-        }
-
-        // Publish results to shared buffer under lock (fast -- just field copies)
-        inputsLock.lock();
-        try {
-          for (int i = 0; i < io.length; i++) {
-            latestInputs[i].copyFrom(threadInputs[i]);
-          }
-        } finally {
-          inputsLock.unlock();
-        }
-
-        // Yield briefly to avoid busy-spinning if cameras have no new data
-        Thread.sleep(2);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        break;
-      } catch (Exception e) {
-        // Log but don't crash the thread on transient errors
-        DogLog.log("Vision/ThreadError", e.getMessage());
-      }
-    }
-  }
-
   @Override
   public void periodic() {
-    // Snapshot latest camera results from background thread (fast lock)
-    inputsLock.lock();
-    try {
-      for (int i = 0; i < io.length; i++) {
-        mainInputs[i].copyFrom(latestInputs[i]);
-      }
-    } finally {
-      inputsLock.unlock();
-    }
-
-    // Reset pose count -- no clearing needed, just overwrite slots
+    DogLog.time("Perf/Vision");
     acceptedPoseCount = 0;
-
-    // Reset best reseed candidate — populated fresh each cycle by
-    // handleAcceptedPose
     bestReseedCandidate = null;
 
-    // Process all camera data on the main thread (validation + pose estimator
-    // updates)
-    for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
-      currentCameraName = mainInputs[cameraIndex].getCameraName();
-      processCameraData(cameraIndex, mainInputs[cameraIndex]);
+    // Round-robin: process one camera per cycle to stay within 20ms on RoboRIO v1.
+    // With 4 cameras at 50Hz, each camera is polled at ~12.5Hz — still sufficient.
+    int cameraIndex = nextCameraIndex;
+    nextCameraIndex = (nextCameraIndex + 1) % io.length;
+
+    io[cameraIndex].updateInputs(inputs[cameraIndex]);
+    disconnectedAlerts[cameraIndex].set(!inputs[cameraIndex].isConnected());
+
+    String camKey = "Vision/" + inputs[cameraIndex].getCameraName();
+
+    for (var observation : inputs[cameraIndex].getPoseObservations()) {
+      // Reject bad poses
+      boolean reject = observation.tagCount() == 0
+          || (observation.tagCount() == 1 && observation.ambiguity() > MAX_AMBIGUITY)
+          || Math.abs(observation.pose().getZ()) > MAX_Z_ERROR
+          || observation.pose().getX() < 0.0
+          || observation.pose().getX() > APTAG_FIELD_LAYOUT.getFieldLength()
+          || observation.pose().getY() < 0.0
+          || observation.pose().getY() > APTAG_FIELD_LAYOUT.getFieldWidth();
+
+      if (reject) {
+        if (!odometryInitialized)
+          stablePoseCounter = 5;
+        continue;
+      }
+
+      Pose2d visionPose = observation.pose().toPose2d();
+
+      // Once initialized, discard poses too far from odometry to prevent tag
+      // misidentification
+      if (odometryInitialized) {
+        double discrepancy = swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
+        if (discrepancy > MAX_POSE_DISCREPANCY_METERS) {
+          continue;
+        }
+      }
+
+      // Write into pre-allocated buffer — grow only if needed (rare)
+      if (acceptedPoseCount >= acceptedPoseBuffer.length) {
+        acceptedPoseBuffer = Arrays.copyOf(acceptedPoseBuffer, acceptedPoseBuffer.length * 2);
+      }
+      acceptedPoseBuffer[acceptedPoseCount++] = observation.pose();
+
+      // Odometry initialization: require N stable poses before first reset
+      if (!odometryInitialized) {
+        stablePoseCounter--;
+        if (stablePoseCounter <= 0) {
+          swerve.resetPose(visionPose);
+          markOdometryInitialized();
+        }
+      }
+
+      consumer.accept(
+          visionPose,
+          Utils.fpgaToCurrentTime(observation.timestamp()),
+          calculateStdDevs(observation));
+
+      // Track best multi-tag pose as a drift-reseed candidate
+      if (observation.tagCount() >= POSE_RESEED_MIN_TAG_COUNT) {
+        if (bestReseedCandidate == null
+            || observation.ambiguity() < bestReseedCandidate.ambiguity()) {
+          bestReseedCandidate = observation;
+        }
+      }
     }
 
-    // Log all accepted poses from all cameras this cycle as a single array.
-    // Grow-only: only reallocate acceptedPoseLogBuffer when acceptedPoseCount
-    // exceeds its capacity, avoiding per-cycle allocations when pose count is
-    // stable or shrinks.
-    // DogLog requires an exact-length array (Pose3dStruct will NPE on null
-    // elements), so when count is less than the buffer capacity we pass a
-    // sub-length copy; otherwise we pass the buffer directly.
-    if (acceptedPoseCount > acceptedPoseLogBuffer.length) {
-      acceptedPoseLogBuffer = new Pose3d[acceptedPoseCount];
+    // Single summary log per cycle — saves ~3-6ms vs per-observation logging
+    if (acceptedPoseCount > 0) {
+      DogLog.log("Vision/AcceptedPoses", Arrays.copyOf(acceptedPoseBuffer, acceptedPoseCount));
     }
-    Pose3d[] logArray;
-    if (acceptedPoseCount < acceptedPoseLogBuffer.length) {
-      // Count shrank: copy directly from source into an exact-length array,
-      // avoiding a redundant intermediate copy into acceptedPoseLogBuffer.
-      logArray = Arrays.copyOf(acceptedPoseBuffer, acceptedPoseCount);
-    } else {
-      // Buffer is exactly the right size; copy once and log directly.
-      System.arraycopy(acceptedPoseBuffer, 0, acceptedPoseLogBuffer, 0, acceptedPoseCount);
-      logArray = acceptedPoseLogBuffer;
-    }
-    DogLog.log("Vision/AcceptedPoses", logArray);
     DogLog.log("Vision/AcceptedPoseCount", acceptedPoseCount);
-    DogLog.log("Vision/OdometryInitialized", odometryInitialized);
+    DogLog.timeEnd("Perf/Vision");
   }
 
-  private void processCameraData(int cameraIndex, VisionIOInputs inputs) {
-    // Update disconnected alert
-    disconnectedAlerts[cameraIndex].set(!inputs.isConnected());
-
-    // Process pose observations -- no intermediate collections needed
-    for (var observation : inputs.getPoseObservations()) {
-
-      // Use instanceof with pattern matching
-      var validationResult = poseValidator.validatePose(observation);
-
-      if (validationResult instanceof AcceptedPose accepted) {
-        handleAcceptedPose(accepted);
-      } else if (validationResult instanceof RejectedPose rejected) {
-        handleRejectedPose(rejected);
-      }
-    }
-  }
-
-  private void handleAcceptedPose(AcceptedPose accepted) {
-    // Cache the poseObservation record accessor to avoid repeated calls
-    var poseObs = accepted.poseObservation();
-    Pose2d visionPose = poseObs.pose().toPose2d();
-    String camKey = "Vision/" + currentCameraName;
-
-    // Reject if vision pose disagrees with odometry by more than threshold.
-    // Prevents a misidentified tag from snapping the pose estimator across the
-    // field.
-    // Skip this check until odometry is initialized — the robot starts at (0,0,0)
-    // by default, so every real field pose would exceed MAX_POSE_DISCREPANCY_METERS
-    // and prevent initialization from ever happening.
-    if (odometryInitialized) {
-      double poseDiscrepancy =
-          swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
-      if (poseDiscrepancy > MAX_POSE_DISCREPANCY_METERS) {
-        return;
-      }
-    }
-
-    // Write directly into pre-allocated buffer -- grow if needed (rare)
-    if (acceptedPoseCount >= acceptedPoseBuffer.length) {
-      acceptedPoseBuffer = Arrays.copyOf(acceptedPoseBuffer, acceptedPoseBuffer.length * 2);
-    }
-    acceptedPoseBuffer[acceptedPoseCount++] = poseObs.pose();
-
-    // Check if odometry is initialized
-    if (!odometryInitialized) {
-      stablePoseCounter--;
-      if (stablePoseCounter <= 0) {
-        swerve.resetPose(visionPose);
-        markOdometryInitialized();
-      }
-    }
-
-    // Add to pose estimator
-    var stdDevs = calculateStandardDeviations(accepted);
-    consumer.accept(visionPose, Utils.fpgaToCurrentTime(poseObs.timestamp()), stdDevs);
-
-    // Track the best multi-tag pose this cycle as a drift-reseed candidate.
-    // "Best" = lowest ambiguity among qualifying multi-tag observations.
-    if (poseObs.tagCount() >= POSE_RESEED_MIN_TAG_COUNT) {
-      if (bestReseedCandidate == null || poseObs.ambiguity() < bestReseedCandidate.ambiguity()) {
-        bestReseedCandidate = poseObs;
-      }
-    }
-
-    // ── Logging ────────────────────────────────────────────────────────────
-    DogLog.log(camKey + "/AcceptedVisionPose", visionPose);
-  }
-
-  private void handleRejectedPose(RejectedPose rejected) {
-    // If odometry not initialized, reset stable pose counter
-    if (!odometryInitialized) {
-      stablePoseCounter = 5;
-    }
-
-    // ── Rejection logging — shows exactly why each pose was rejected ─────
-    String camKey = "Vision/" + currentCameraName;
-    DogLog.log(camKey + "/RejectedReason", rejected.reason().name());
-    DogLog.log(camKey + "/RejectedDetails", rejected.details());
-  }
-
-  private Matrix<N3, N1> calculateStandardDeviations(AcceptedPose accepted) {
-    var poseObs = accepted.poseObservation();
-    double dist = poseObs.averageTagDistance();
-    int tagCount = Math.max(poseObs.tagCount(), 1);
-
-    // Quadratic distance scaling: trust drops sharply with range.
-    // Divide by tagCount so multiple tags reduce uncertainty.
-    // (1 + ambiguity) penalises ambiguous single-tag solutions.
+  private Matrix<N3, N1> calculateStdDevs(PoseObservation obs) {
+    double dist = obs.averageTagDistance();
+    int tagCount = Math.max(obs.tagCount(), 1);
+    // Quadratic distance scaling: trust drops sharply with range; multiple tags
+    // reduce uncertainty
     double distanceFactor = (dist * dist) / tagCount;
-    double linearStdDev =
-        LINEAR_STDDEV_BASELINE * (1.0 + distanceFactor) * (1.0 + poseObs.ambiguity());
-
-    // Never trust rotation from flip-vulnerable observations.
-    // Single-tag: solver has two solutions → rotation is unreliable.
-    // Coplanar multi-tag: same problem — all tags on one plane gives no
-    // additional rotational constraint over a single tag.
-    // True multi-tag (tags on different planes): rotation is fully constrained.
-    boolean effectivelySingleTag = poseValidator.isEffectivelySingleTag(poseObs);
-    double angularStdDev =
-        (!effectivelySingleTag && poseObs.tagCount() >= 2)
-            ? ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor)
-            : Double.MAX_VALUE;
-
+    double linearStdDev = LINEAR_STDDEV_BASELINE * (1.0 + distanceFactor) * (1.0 + obs.ambiguity());
+    // Only trust rotation when multiple tags give a non-degenerate rotational
+    // constraint
+    double angularStdDev = obs.tagCount() >= 2 ? ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor) : Double.MAX_VALUE;
     return VecBuilder.fill(linearStdDev, linearStdDev, angularStdDev);
   }
 
   /**
-   * Checks whether swerve odometry has drifted significantly from the best available
-   * high-confidence vision fix this cycle. If the drift exceeds {@code
-   * POSE_RESEED_THRESHOLD_METERS} and a qualifying multi-tag pose is available, the pose estimator
-   * is hard-reset to the vision pose.
+   * If odometry has drifted more than {@code POSE_RESEED_THRESHOLD_METERS} from
+   * the best
+   * high-confidence vision fix this cycle, hard-resets the pose estimator. Call
+   * from {@code
+   * Superstructure.periodic()}.
    *
-   * <p>Call this from {@code Superstructure.periodic()} on every cycle. It is a no-op when no
-   * qualifying vision pose was seen this cycle or when drift is within tolerance.
-   *
-   * @param currentPose the current swerve odometry pose (from {@code swerve.getState().Pose})
-   * @return {@code true} if a reseed was performed this cycle
+   * @return {@code true} if a reseed was performed
    */
   public boolean tryReseedFromVision(Pose2d currentPose) {
-    if (bestReseedCandidate == null) {
+    if (bestReseedCandidate == null)
       return false;
-    }
 
     Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
     double drift = currentPose.getTranslation().getDistance(visionPose.getTranslation());
@@ -338,20 +194,15 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Unconditionally reseeds the swerve pose from the best available high-confidence vision fix this
-   * cycle, regardless of how large the drift is.
+   * Unconditionally reseeds from the best high-confidence vision fix this cycle.
+   * For
+   * operator-triggered recovery when odometry has gone badly wrong.
    *
-   * <p>Intended for operator-triggered recovery when the driver knows vision is trustworthy but
-   * odometry has gone badly wrong. Unlike {@link #tryReseedFromVision}, this bypasses the drift
-   * threshold entirely.
-   *
-   * @return {@code true} if a reseed was performed (a qualifying pose was available), {@code false}
-   *     if no multi-tag vision fix was seen this cycle
+   * @return {@code true} if a qualifying pose was available
    */
   public boolean forceReseedFromVision() {
-    if (bestReseedCandidate == null) {
+    if (bestReseedCandidate == null)
       return false;
-    }
 
     Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
     swerve.resetPose(visionPose);
@@ -361,11 +212,6 @@ public class VisionSubsystem extends SubsystemBase {
     return true;
   }
 
-  /**
-   * Marks odometry as initialized and resets the stable-pose counter. Called whenever a pose reset
-   * is performed (either during normal initialization or via a reseed) so the subsystem
-   * initialization state stays consistent with the actual swerve pose.
-   */
   private void markOdometryInitialized() {
     odometryInitialized = true;
     stablePoseCounter = 0;

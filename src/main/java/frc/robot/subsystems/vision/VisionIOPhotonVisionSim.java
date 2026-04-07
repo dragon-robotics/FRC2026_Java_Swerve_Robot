@@ -2,7 +2,7 @@ package frc.robot.subsystems.vision;
 
 import static frc.robot.util.constants.FieldConstants.*;
 
-import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import java.util.function.Supplier;
@@ -14,16 +14,19 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
 
   private final VisionSystemSim visionSim;
   private final PhotonCameraSim cameraSim;
+  private final Supplier<Pose2d> poseSupplier;
 
   /**
    * Creates a new VisionIOPhotonVisionSim.
    *
    * @param name The name of the camera.
+   * @param robotToCamera Transform from robot to camera.
    * @param poseSupplier Supplier for the robot pose to use in simulation.
    */
   public VisionIOPhotonVisionSim(
-      String name, Transform3d robotToCamera, Supplier<SwerveDriveState> swerveDriveStateSupplier) {
-    super(name, robotToCamera, swerveDriveStateSupplier);
+      String name, Transform3d robotToCamera, Supplier<Pose2d> poseSupplier) {
+    super(name, robotToCamera);
+    this.poseSupplier = poseSupplier;
 
     // Initialize vision sim
     visionSim = new VisionSystemSim("main");
@@ -50,7 +53,7 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
-    visionSim.update(this.swerveDriveStateSupplier.get().Pose);
+    visionSim.update(poseSupplier.get());
     super.updateInputs(inputs);
   }
 }

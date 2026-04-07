@@ -146,21 +146,13 @@ public class RobotContainer {
                 swerveSubsystem,
                 swerveSubsystem::addVisionMeasurement,
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[0],
-                    VisionConstants.APTAG_POSE_EST_CAM_F_POS,
-                    swerveSubsystem::getState),
+                    APTAG_CAMERA_NAMES[0], VisionConstants.APTAG_POSE_EST_CAM_F_POS),
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[1],
-                    VisionConstants.APTAG_POSE_EST_CAM_R_POS,
-                    swerveSubsystem::getState),
+                    APTAG_CAMERA_NAMES[1], VisionConstants.APTAG_POSE_EST_CAM_R_POS),
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[2],
-                    VisionConstants.APTAG_POSE_EST_CAM_B_POS,
-                    swerveSubsystem::getState),
+                    APTAG_CAMERA_NAMES[2], VisionConstants.APTAG_POSE_EST_CAM_B_POS),
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[3],
-                    VisionConstants.APTAG_POSE_EST_CAM_L_POS,
-                    swerveSubsystem::getState));
+                    APTAG_CAMERA_NAMES[3], VisionConstants.APTAG_POSE_EST_CAM_L_POS));
         break;
       case SIM:
         intakeSubsystem =
@@ -221,19 +213,19 @@ public class RobotContainer {
                 new VisionIOPhotonVisionSim(
                     APTAG_CAMERA_NAMES[0],
                     VisionConstants.APTAG_POSE_EST_CAM_F_POS,
-                    swerveSubsystem::getState),
+                    () -> swerveSubsystem.getState().Pose),
                 new VisionIOPhotonVisionSim(
                     APTAG_CAMERA_NAMES[1],
                     VisionConstants.APTAG_POSE_EST_CAM_R_POS,
-                    swerveSubsystem::getState),
+                    () -> swerveSubsystem.getState().Pose),
                 new VisionIOPhotonVisionSim(
                     APTAG_CAMERA_NAMES[2],
                     VisionConstants.APTAG_POSE_EST_CAM_B_POS,
-                    swerveSubsystem::getState),
+                    () -> swerveSubsystem.getState().Pose),
                 new VisionIOPhotonVisionSim(
                     APTAG_CAMERA_NAMES[3],
                     VisionConstants.APTAG_POSE_EST_CAM_L_POS,
-                    swerveSubsystem::getState));
+                    () -> swerveSubsystem.getState().Pose));
         break;
       case TEST:
         intakeSubsystem =
@@ -272,21 +264,13 @@ public class RobotContainer {
                 swerveSubsystem,
                 swerveSubsystem::addVisionMeasurement,
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[0],
-                    VisionConstants.APTAG_POSE_EST_CAM_F_POS,
-                    swerveSubsystem::getState),
+                    APTAG_CAMERA_NAMES[0], VisionConstants.APTAG_POSE_EST_CAM_F_POS),
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[1],
-                    VisionConstants.APTAG_POSE_EST_CAM_R_POS,
-                    swerveSubsystem::getState),
+                    APTAG_CAMERA_NAMES[1], VisionConstants.APTAG_POSE_EST_CAM_R_POS),
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[2],
-                    VisionConstants.APTAG_POSE_EST_CAM_B_POS,
-                    swerveSubsystem::getState),
+                    APTAG_CAMERA_NAMES[2], VisionConstants.APTAG_POSE_EST_CAM_B_POS),
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[3],
-                    VisionConstants.APTAG_POSE_EST_CAM_L_POS,
-                    swerveSubsystem::getState));
+                    APTAG_CAMERA_NAMES[3], VisionConstants.APTAG_POSE_EST_CAM_L_POS));
         break;
       default: // Default should be in comp mode //
         intakeSubsystem =
@@ -324,21 +308,13 @@ public class RobotContainer {
                 swerveSubsystem,
                 swerveSubsystem::addVisionMeasurement,
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[0],
-                    VisionConstants.APTAG_POSE_EST_CAM_F_POS,
-                    swerveSubsystem::getState),
+                    APTAG_CAMERA_NAMES[0], VisionConstants.APTAG_POSE_EST_CAM_F_POS),
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[1],
-                    VisionConstants.APTAG_POSE_EST_CAM_R_POS,
-                    swerveSubsystem::getState),
+                    APTAG_CAMERA_NAMES[1], VisionConstants.APTAG_POSE_EST_CAM_R_POS),
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[2],
-                    VisionConstants.APTAG_POSE_EST_CAM_B_POS,
-                    swerveSubsystem::getState),
+                    APTAG_CAMERA_NAMES[2], VisionConstants.APTAG_POSE_EST_CAM_B_POS),
                 new VisionIOPhotonVision(
-                    APTAG_CAMERA_NAMES[3],
-                    VisionConstants.APTAG_POSE_EST_CAM_L_POS,
-                    swerveSubsystem::getState));
+                    APTAG_CAMERA_NAMES[3], VisionConstants.APTAG_POSE_EST_CAM_L_POS));
         break;
     }
 
