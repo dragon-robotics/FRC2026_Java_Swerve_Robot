@@ -382,8 +382,10 @@ public class RobotContainer {
     /* Shoot */
     driverController
         .rightTrigger(0.2)
-        .onTrue(superstructureSubsystem.setStateCmd(SuperState.SHOOT))
-        .whileTrue(superstructureSubsystem.aimAtTargetPose())
+        .whileTrue(
+            Commands.parallel(
+                superstructureSubsystem.setStateCmd(SuperState.SHOOT).repeatedly(),
+                superstructureSubsystem.aimAtTargetPose()))
         .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
 
     /* Driver can control the Juicer mode if needed */
