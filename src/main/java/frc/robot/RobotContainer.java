@@ -33,6 +33,7 @@ import com.pathplanner.lib.commands.FollowPathCommand;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -40,10 +41,6 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import frc.robot.generated.TunerConstants;
 import frc.robot.io.TalonFXMotorIO;
 import frc.robot.io.TalonFXMotorIOSim;
@@ -59,10 +56,10 @@ import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.subsystems.vision.VisionSubsystem;
+import frc.robot.util.HubShiftUtil;
 import frc.robot.util.constants.OperatorConstants;
 import frc.robot.util.constants.SwerveConstants;
 import frc.robot.util.constants.VisionConstants;
-import frc.robot.util.HubShiftUtil;
 import java.util.Optional;
 
 public class RobotContainer {
@@ -115,221 +112,241 @@ public class RobotContainer {
     operatorController = new CommandXboxController(OperatorConstants.OPERATOR_PORT);
 
     /* Initialize Subsystems */
-    swerveSubsystem = TunerConstants.createDrivetrain(
-        250, SwerveConstants.ODOMETRY_STD, VisionConstants.DEFAULT_TAG_STDDEV);
+    swerveSubsystem =
+        TunerConstants.createDrivetrain(
+            250, SwerveConstants.ODOMETRY_STD, VisionConstants.DEFAULT_TAG_STDDEV);
 
     // Change initialization based on the state of the robot //
     switch (CURRENT_MODE) {
       case COMP:
-        intakeSubsystem = new IntakeSubsystem(
-            new TalonFXMotorIO(
-                INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
-            new TalonFXMotorIO(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
-        hopperSubsystem = new HopperSubsystem(
-            new TalonFXMotorIO(
-                HOPPER_ROLLER_LEAD_MOTOR_ID,
-                HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
-                "Hopper Lead Motor"),
-            new TalonFXMotorIO(
-                HOPPER_ROLLER_FOLLOW_MOTOR_ID,
-                HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
-                "Hopper Follow Motor",
-                new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
-        shooterSubsystem = new ShooterSubsystem(
-            new TalonFXMotorIO(
-                SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
-            new TalonFXMotorIO(
-                SHOOTER_FOLLOW_MOTOR_ID,
-                SHOOTER_FOLLOW_TALONFX_CONFIG,
-                "Shooter Follow",
-                new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
-            new TalonFXMotorIO(
-                SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
-            new TalonFXMotorIO(
-                SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
+        intakeSubsystem =
+            new IntakeSubsystem(
+                new TalonFXMotorIO(
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
+                new TalonFXMotorIO(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
+        hopperSubsystem =
+            new HopperSubsystem(
+                new TalonFXMotorIO(
+                    HOPPER_ROLLER_LEAD_MOTOR_ID,
+                    HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
+                    "Hopper Lead Motor"),
+                new TalonFXMotorIO(
+                    HOPPER_ROLLER_FOLLOW_MOTOR_ID,
+                    HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
+                    "Hopper Follow Motor",
+                    new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new TalonFXMotorIO(
+                    SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
+                new TalonFXMotorIO(
+                    SHOOTER_FOLLOW_MOTOR_ID,
+                    SHOOTER_FOLLOW_TALONFX_CONFIG,
+                    "Shooter Follow",
+                    new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
+                new TalonFXMotorIO(
+                    SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
+                new TalonFXMotorIO(
+                    SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
-        visionSubsystem = new VisionSubsystem(
-            swerveSubsystem,
-            swerveSubsystem::addVisionMeasurement,
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[0], VisionConstants.APTAG_POSE_EST_CAM_F_POS),
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[1], VisionConstants.APTAG_POSE_EST_CAM_R_POS),
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[2], VisionConstants.APTAG_POSE_EST_CAM_B_POS),
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[3], VisionConstants.APTAG_POSE_EST_CAM_L_POS));
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[0], VisionConstants.APTAG_POSE_EST_CAM_F_POS),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[1], VisionConstants.APTAG_POSE_EST_CAM_R_POS),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[2], VisionConstants.APTAG_POSE_EST_CAM_B_POS),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[3], VisionConstants.APTAG_POSE_EST_CAM_L_POS));
         break;
       case SIM:
-        intakeSubsystem = new IntakeSubsystemSim(
-            new TalonFXMotorIOSim(
-                INTAKE_ROLLER_MOTOR_ID,
-                INTAKE_ROLLER_TALONFX_CONFIG,
-                "KrakenX60",
-                "Intake Roller"),
-            new TalonFXMotorIOSim(
-                INTAKE_ARM_MOTOR_ID,
-                INTAKE_ARM_TALONFX_CONFIG,
-                "KrakenX60",
-                "Intake Arm",
-                INTAKE_ARM_CANCODER_CONFIG));
-        hopperSubsystem = new HopperSubsystem(
-            new TalonFXMotorIOSim(
-                HOPPER_ROLLER_LEAD_MOTOR_ID,
-                HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
-                "KrakenX60",
-                "Hopper Lead Motor"),
-            new TalonFXMotorIOSim(
-                HOPPER_ROLLER_FOLLOW_MOTOR_ID,
-                HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
-                "KrakenX60",
-                "Hopper Follow Motor",
-                new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)));
-        shooterSubsystem = new ShooterSubsystem(
-            new TalonFXMotorIOSim(
-                SHOOTER_LEAD_MOTOR_ID,
-                SHOOTER_LEAD_TALONFX_CONFIG,
-                "KrakenX60_FOC",
-                "Shooter Lead"),
-            new TalonFXMotorIOSim(
-                SHOOTER_FOLLOW_MOTOR_ID,
-                SHOOTER_FOLLOW_TALONFX_CONFIG,
-                "KrakenX60_FOC",
-                "Shooter Follow",
-                new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
-            new TalonFXMotorIOSim(
-                SHOOTER_KICKER_MOTOR_ID,
-                SHOOTER_KICKER_TALONFX_CONFIG,
-                "KrakenX60_FOC",
-                "Shooter Kicker"),
-            new TalonFXMotorIOSim(
-                SHOOTER_HOOD_MOTOR_ID,
-                SHOOTER_HOOD_TALONFX_CONFIG,
-                "KrakenX44",
-                "Shooter Hood"));
+        intakeSubsystem =
+            new IntakeSubsystemSim(
+                new TalonFXMotorIOSim(
+                    INTAKE_ROLLER_MOTOR_ID,
+                    INTAKE_ROLLER_TALONFX_CONFIG,
+                    "KrakenX60",
+                    "Intake Roller"),
+                new TalonFXMotorIOSim(
+                    INTAKE_ARM_MOTOR_ID,
+                    INTAKE_ARM_TALONFX_CONFIG,
+                    "KrakenX60",
+                    "Intake Arm",
+                    INTAKE_ARM_CANCODER_CONFIG));
+        hopperSubsystem =
+            new HopperSubsystem(
+                new TalonFXMotorIOSim(
+                    HOPPER_ROLLER_LEAD_MOTOR_ID,
+                    HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
+                    "KrakenX60",
+                    "Hopper Lead Motor"),
+                new TalonFXMotorIOSim(
+                    HOPPER_ROLLER_FOLLOW_MOTOR_ID,
+                    HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
+                    "KrakenX60",
+                    "Hopper Follow Motor",
+                    new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)));
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new TalonFXMotorIOSim(
+                    SHOOTER_LEAD_MOTOR_ID,
+                    SHOOTER_LEAD_TALONFX_CONFIG,
+                    "KrakenX60_FOC",
+                    "Shooter Lead"),
+                new TalonFXMotorIOSim(
+                    SHOOTER_FOLLOW_MOTOR_ID,
+                    SHOOTER_FOLLOW_TALONFX_CONFIG,
+                    "KrakenX60_FOC",
+                    "Shooter Follow",
+                    new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
+                new TalonFXMotorIOSim(
+                    SHOOTER_KICKER_MOTOR_ID,
+                    SHOOTER_KICKER_TALONFX_CONFIG,
+                    "KrakenX60_FOC",
+                    "Shooter Kicker"),
+                new TalonFXMotorIOSim(
+                    SHOOTER_HOOD_MOTOR_ID,
+                    SHOOTER_HOOD_TALONFX_CONFIG,
+                    "KrakenX44",
+                    "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
-        visionSubsystem = new VisionSubsystem(
-            swerveSubsystem,
-            swerveSubsystem::addVisionMeasurement,
-            // // Apriltag Pose-Estimation Cameras //
-            new VisionIOPhotonVisionSim(
-                APTAG_CAMERA_NAMES[0],
-                VisionConstants.APTAG_POSE_EST_CAM_F_POS,
-                () -> swerveSubsystem.getState().Pose),
-            new VisionIOPhotonVisionSim(
-                APTAG_CAMERA_NAMES[1],
-                VisionConstants.APTAG_POSE_EST_CAM_R_POS,
-                () -> swerveSubsystem.getState().Pose),
-            new VisionIOPhotonVisionSim(
-                APTAG_CAMERA_NAMES[2],
-                VisionConstants.APTAG_POSE_EST_CAM_B_POS,
-                () -> swerveSubsystem.getState().Pose),
-            new VisionIOPhotonVisionSim(
-                APTAG_CAMERA_NAMES[3],
-                VisionConstants.APTAG_POSE_EST_CAM_L_POS,
-                () -> swerveSubsystem.getState().Pose));
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                // // Apriltag Pose-Estimation Cameras //
+                new VisionIOPhotonVisionSim(
+                    APTAG_CAMERA_NAMES[0],
+                    VisionConstants.APTAG_POSE_EST_CAM_F_POS,
+                    () -> swerveSubsystem.getState().Pose),
+                new VisionIOPhotonVisionSim(
+                    APTAG_CAMERA_NAMES[1],
+                    VisionConstants.APTAG_POSE_EST_CAM_R_POS,
+                    () -> swerveSubsystem.getState().Pose),
+                new VisionIOPhotonVisionSim(
+                    APTAG_CAMERA_NAMES[2],
+                    VisionConstants.APTAG_POSE_EST_CAM_B_POS,
+                    () -> swerveSubsystem.getState().Pose),
+                new VisionIOPhotonVisionSim(
+                    APTAG_CAMERA_NAMES[3],
+                    VisionConstants.APTAG_POSE_EST_CAM_L_POS,
+                    () -> swerveSubsystem.getState().Pose));
         break;
       case TEST:
-        intakeSubsystem = new IntakeSubsystem(
-            new TalonFXMotorIOTunable(
-                INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
-            new TalonFXMotorIOTunable(
-                INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
-        hopperSubsystem = new HopperSubsystem(
-            new TalonFXMotorIOTunable(
-                HOPPER_ROLLER_LEAD_MOTOR_ID,
-                HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
-                "Hopper Lead Motor"),
-            new TalonFXMotorIOTunable(
-                HOPPER_ROLLER_FOLLOW_MOTOR_ID,
-                HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
-                "Hopper Follow Motor",
-                new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
-        shooterSubsystem = new ShooterSubsystem(
-            new TalonFXMotorIOTunable(
-                SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
-            new TalonFXMotorIOTunable(
-                SHOOTER_FOLLOW_MOTOR_ID,
-                SHOOTER_FOLLOW_TALONFX_CONFIG,
-                "Shooter Follow",
-                new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
-            new TalonFXMotorIOTunable(
-                SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
-            new TalonFXMotorIOTunable(
-                SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
+        intakeSubsystem =
+            new IntakeSubsystem(
+                new TalonFXMotorIOTunable(
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
+                new TalonFXMotorIOTunable(
+                    INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
+        hopperSubsystem =
+            new HopperSubsystem(
+                new TalonFXMotorIOTunable(
+                    HOPPER_ROLLER_LEAD_MOTOR_ID,
+                    HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
+                    "Hopper Lead Motor"),
+                new TalonFXMotorIOTunable(
+                    HOPPER_ROLLER_FOLLOW_MOTOR_ID,
+                    HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
+                    "Hopper Follow Motor",
+                    new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new TalonFXMotorIOTunable(
+                    SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
+                new TalonFXMotorIOTunable(
+                    SHOOTER_FOLLOW_MOTOR_ID,
+                    SHOOTER_FOLLOW_TALONFX_CONFIG,
+                    "Shooter Follow",
+                    new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
+                new TalonFXMotorIOTunable(
+                    SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
+                new TalonFXMotorIOTunable(
+                    SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
-        visionSubsystem = new VisionSubsystem(
-            swerveSubsystem,
-            swerveSubsystem::addVisionMeasurement,
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[0], VisionConstants.APTAG_POSE_EST_CAM_F_POS),
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[1], VisionConstants.APTAG_POSE_EST_CAM_R_POS),
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[2], VisionConstants.APTAG_POSE_EST_CAM_B_POS),
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[3], VisionConstants.APTAG_POSE_EST_CAM_L_POS));
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[0], VisionConstants.APTAG_POSE_EST_CAM_F_POS),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[1], VisionConstants.APTAG_POSE_EST_CAM_R_POS),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[2], VisionConstants.APTAG_POSE_EST_CAM_B_POS),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[3], VisionConstants.APTAG_POSE_EST_CAM_L_POS));
         break;
       default: // Default should be in comp mode //
-        intakeSubsystem = new IntakeSubsystem(
-            new TalonFXMotorIO(
-                INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
-            new TalonFXMotorIO(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
-        hopperSubsystem = new HopperSubsystem(
-            new TalonFXMotorIO(
-                HOPPER_ROLLER_LEAD_MOTOR_ID,
-                HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
-                "Hopper Lead Motor"),
-            new TalonFXMotorIO(
-                HOPPER_ROLLER_FOLLOW_MOTOR_ID,
-                HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
-                "Hopper Follow Motor",
-                new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
-        shooterSubsystem = new ShooterSubsystem(
-            new TalonFXMotorIO(
-                SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
-            new TalonFXMotorIO(
-                SHOOTER_FOLLOW_MOTOR_ID,
-                SHOOTER_FOLLOW_TALONFX_CONFIG,
-                "Shooter Follow",
-                new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
-            new TalonFXMotorIO(
-                SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
-            new TalonFXMotorIO(
-                SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
+        intakeSubsystem =
+            new IntakeSubsystem(
+                new TalonFXMotorIO(
+                    INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
+                new TalonFXMotorIO(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
+        hopperSubsystem =
+            new HopperSubsystem(
+                new TalonFXMotorIO(
+                    HOPPER_ROLLER_LEAD_MOTOR_ID,
+                    HOPPER_ROLLER_LEAD_TALONFX_CONFIG,
+                    "Hopper Lead Motor"),
+                new TalonFXMotorIO(
+                    HOPPER_ROLLER_FOLLOW_MOTOR_ID,
+                    HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG,
+                    "Hopper Follow Motor",
+                    new Follower(HOPPER_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Aligned)));
+        shooterSubsystem =
+            new ShooterSubsystem(
+                new TalonFXMotorIO(
+                    SHOOTER_LEAD_MOTOR_ID, SHOOTER_LEAD_TALONFX_CONFIG, "Shooter Lead"),
+                new TalonFXMotorIO(
+                    SHOOTER_FOLLOW_MOTOR_ID,
+                    SHOOTER_FOLLOW_TALONFX_CONFIG,
+                    "Shooter Follow",
+                    new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
+                new TalonFXMotorIO(
+                    SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
+                new TalonFXMotorIO(
+                    SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
         // climberSubsystem = new ClimberSubsystem();
-        visionSubsystem = new VisionSubsystem(
-            swerveSubsystem,
-            swerveSubsystem::addVisionMeasurement,
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[0], VisionConstants.APTAG_POSE_EST_CAM_F_POS),
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[1], VisionConstants.APTAG_POSE_EST_CAM_R_POS),
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[2], VisionConstants.APTAG_POSE_EST_CAM_B_POS),
-            new VisionIOPhotonVision(
-                APTAG_CAMERA_NAMES[3], VisionConstants.APTAG_POSE_EST_CAM_L_POS));
+        visionSubsystem =
+            new VisionSubsystem(
+                swerveSubsystem,
+                swerveSubsystem::addVisionMeasurement,
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[0], VisionConstants.APTAG_POSE_EST_CAM_F_POS),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[1], VisionConstants.APTAG_POSE_EST_CAM_R_POS),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[2], VisionConstants.APTAG_POSE_EST_CAM_B_POS),
+                new VisionIOPhotonVision(
+                    APTAG_CAMERA_NAMES[3], VisionConstants.APTAG_POSE_EST_CAM_L_POS));
         break;
     }
 
     // Create the superstructure subsystem //
-    superstructureSubsystem = new Superstructure(
-        swerveSubsystem,
-        intakeSubsystem,
-        hopperSubsystem,
-        shooterSubsystem,
-        visionSubsystem,
-        this);
+    superstructureSubsystem =
+        new Superstructure(
+            swerveSubsystem,
+            intakeSubsystem,
+            hopperSubsystem,
+            shooterSubsystem,
+            visionSubsystem,
+            this);
 
-    defaultDriveCommand = superstructureSubsystem.defaultDrive(
-        () -> -driverController.getLeftY(),
-        () -> -driverController.getLeftX(),
-        () -> -driverController.getRightX(),
-        () -> driverController.getHID().getPOV() == 0,
-        () -> driverController.getHID().getXButton());
+    defaultDriveCommand =
+        superstructureSubsystem.defaultDrive(
+            () -> -driverController.getLeftY(),
+            () -> -driverController.getLeftX(),
+            () -> -driverController.getRightX(),
+            () -> driverController.getHID().getPOV() == 0,
+            () -> driverController.getHID().getXButton());
 
-    shootDriveCommand = superstructureSubsystem.shootDrive(
-        () -> -driverController.getLeftY(), () -> -driverController.getLeftX());
+    shootDriveCommand =
+        superstructureSubsystem.shootDrive(
+            () -> -driverController.getLeftY(), () -> -driverController.getLeftX());
 
     swerveBrakeCommand = superstructureSubsystem.swerveBrakeCmd();
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
@@ -337,12 +354,13 @@ public class RobotContainer {
     // Intake
     intakeCommand = superstructureSubsystem.setStateCmd(SuperState.INTAKE);
     // Shoot
-    shootCommand = superstructureSubsystem
-        .setStateCmd(SuperState.SHOOT)
-        .alongWith(superstructureSubsystem.aimAtTargetPose())
-        .alongWith(
-            Commands.waitSeconds(1.5)
-                .andThen(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER)));
+    shootCommand =
+        superstructureSubsystem
+            .setStateCmd(SuperState.SHOOT)
+            .alongWith(superstructureSubsystem.aimAtTargetPose())
+            .alongWith(
+                Commands.waitSeconds(1.5)
+                    .andThen(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER)));
     driveCommand = superstructureSubsystem.setStateCmd(SuperState.DRIVE);
 
     NamedCommands.registerCommand("Intake", intakeCommand);
@@ -364,14 +382,13 @@ public class RobotContainer {
     // "false" = we lost auto (we active first, we shoot Shift 1/3)
     // "" = use FMS game data (default — normal competition)
     SmartDashboard.putString("HubShift/WonAuto", "");
-    HubShiftUtil.setAllianceWinOverride(() -> {
-      String override = SmartDashboard.getString("HubShift/WonAuto", "");
-      if (override.equalsIgnoreCase("true"))
-        return Optional.of(true);
-      if (override.equalsIgnoreCase("false"))
-        return Optional.of(false);
-      return Optional.empty(); // Use FMS data
-    });
+    HubShiftUtil.setAllianceWinOverride(
+        () -> {
+          String override = SmartDashboard.getString("HubShift/WonAuto", "");
+          if (override.equalsIgnoreCase("true")) return Optional.of(true);
+          if (override.equalsIgnoreCase("false")) return Optional.of(false);
+          return Optional.empty(); // Use FMS data
+        });
   }
 
   private void configureBindings() {

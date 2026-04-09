@@ -19,7 +19,8 @@ public class VisionIOPhotonVision implements VisionIO {
   protected final Transform3d robotToCamera;
   protected final PhotonPoseEstimator poseEstimator;
 
-  private static final TargetObservation NO_TARGET = new TargetObservation(new Rotation2d(), new Rotation2d());
+  private static final TargetObservation NO_TARGET =
+      new TargetObservation(new Rotation2d(), new Rotation2d());
 
   // Pre-allocated reusable collections — avoids GC pressure on RoboRIO v1
   private final Set<Short> tagIds = new HashSet<>(16);
@@ -80,10 +81,11 @@ public class VisionIOPhotonVision implements VisionIO {
 
       // Try coprocessor multi-tag first (runs on camera, no RIO CPU cost), fall back
       // to lowest ambiguity
-      EstimatedRobotPose visionEst = poseEstimator
-          .estimateCoprocMultiTagPose(result)
-          .or(() -> poseEstimator.estimateLowestAmbiguityPose(result))
-          .orElse(null);
+      EstimatedRobotPose visionEst =
+          poseEstimator
+              .estimateCoprocMultiTagPose(result)
+              .or(() -> poseEstimator.estimateLowestAmbiguityPose(result))
+              .orElse(null);
       if (visionEst != null) {
         List<PhotonTrackedTarget> targets = result.getTargets();
         int count = targets.size();
@@ -123,8 +125,7 @@ public class VisionIOPhotonVision implements VisionIO {
     } else {
       int[] arr = new int[tagIds.size()];
       int i = 0;
-      for (short id : tagIds)
-        arr[i++] = id;
+      for (short id : tagIds) arr[i++] = id;
       inputs.setTagIds(arr);
     }
   }
