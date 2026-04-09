@@ -293,7 +293,7 @@ public class Superstructure extends SubsystemBase {
         return Commands.run(
             () -> {
               setDesiredSuperState(SuperState.DRIVE);
-              intake.setDesiredState(IntakeState.INTAKE);
+              intake.setDesiredState(IntakeState.DEPLOYED);
               hopper.setDesiredState(HopperState.STOP);
               shooter.setDesiredState(ShooterState.PREPFUEL);
             },
