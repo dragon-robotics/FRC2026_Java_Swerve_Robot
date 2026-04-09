@@ -127,17 +127,16 @@ public class DefaultDriveCmd extends Command {
       rotationLastTriggeredSetter.accept(Timer.getFPGATimestamp());
     }
 
-    if (angleLockSup.getAsBoolean()) {
-      setSwerveToLockAngle(speeds.translation, speeds.strafe);
-    } else if (zoneLockedHeadingGetter.get().isPresent()) {
-      swerve.setControl(
-          driveMaintainHeading
-              .withVelocityX(speeds.translation)
-              .withVelocityY(speeds.strafe)
-              .withTargetDirection(zoneLockedHeadingGetter.get().get()));
+    Optional<Rotation2d> zoneHeading = zoneLockedHeadingGetter.get();
+
+    if (angleLockSup.getAsBoolean() && zoneHeading.isPresent()) {
+      // Zone lock active and heading available — lock to zone angle
+      setSwerveToLockAngle(speeds.translation, speeds.strafe, zoneHeading.get());
     } else if (rotationTriggered || rotationActive) {
+      // Driver is actively rotating — let them rotate freely
       setSwerveToRotate(speeds.translation, speeds.strafe, speeds.rotation);
     } else {
+      // Default — maintain current heading
       setSwerveToMaintainHeading(speeds.translation, speeds.strafe);
     }
   }
@@ -200,15 +199,12 @@ public class DefaultDriveCmd extends Command {
     }
   }
 
-  private void setSwerveToLockAngle(double translation, double strafe) {
-    Optional<Rotation2d> zoneHeading = zoneLockedHeadingGetter.get();
-    if (zoneHeading.isEmpty())
-      return; // No lock defined for current zone — do nothing
-
+  // ...existing code...
+  private void setSwerveToLockAngle(double translation, double strafe, Rotation2d targetHeading) {
     swerve.setControl(
         driveMaintainHeading
             .withVelocityX(translation)
             .withVelocityY(strafe)
-            .withTargetDirection(zoneHeading.get()));
+            .withTargetDirection(targetHeading));
   }
 }
