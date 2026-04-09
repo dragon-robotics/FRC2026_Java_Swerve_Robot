@@ -7,25 +7,22 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
-
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
-
 import java.util.Optional;
-
-import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.controls.VoltageOut;
 
 public class TalonFXMotorIO implements MotorIO {
 
@@ -121,7 +118,7 @@ public class TalonFXMotorIO implements MotorIO {
 
     deviceTempSignal.setUpdateFrequency(
         0.25); // temperature doesn't need to be updated as often, so we set it to 0.25Hz or
-               // every 4
+    // every 4
     // seconds
 
     // Register the motor to the signal registry
@@ -132,10 +129,11 @@ public class TalonFXMotorIO implements MotorIO {
         ccCfg -> {
           canCoder = new CANcoder(canID);
           canCoder.getConfigurator().apply(ccCfg);
-          TalonFXConfiguration updatedConfig = config.withFeedback(
-              new FeedbackConfigs()
-                  .withFeedbackRemoteSensorID(canCoder.getDeviceID())
-                  .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder));
+          TalonFXConfiguration updatedConfig =
+              config.withFeedback(
+                  new FeedbackConfigs()
+                      .withFeedbackRemoteSensorID(canCoder.getDeviceID())
+                      .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder));
           motor.getConfigurator().apply(updatedConfig);
 
           canCoder.optimizeBusUtilization(0);
@@ -188,13 +186,13 @@ public class TalonFXMotorIO implements MotorIO {
   @Override
   public BaseStatusSignal[] getStatusSignals() {
     return new BaseStatusSignal[] {
-        motorVoltageSignal,
-        statorCurrentSignal,
-        deviceTempSignal,
-        velocitySignal,
-        positionSignal,
-        dutyCycleSignal,
-        torqueCurrentSignal
+      motorVoltageSignal,
+      statorCurrentSignal,
+      deviceTempSignal,
+      velocitySignal,
+      positionSignal,
+      dutyCycleSignal,
+      torqueCurrentSignal
     };
   }
 
