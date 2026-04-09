@@ -432,6 +432,7 @@ public class Superstructure extends SubsystemBase {
       default:
         return Optional.empty();
     }
+  }
   // ──────────────────────────────────────────────────────────────────────────
   // Hub Shift Accessors
   // ──────────────────────────────────────────────────────────────────────────
