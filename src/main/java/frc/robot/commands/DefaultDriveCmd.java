@@ -10,6 +10,8 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+
+import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -40,6 +42,8 @@ public class DefaultDriveCmd extends Command {
   private final DoubleSupplier strafeSup;
   private final DoubleSupplier rotationSup;
   private final BooleanSupplier halfSpeedSup;
+  private final BooleanSupplier angleLockSup;
+  private final Supplier<Optional<Rotation2d>> zoneLockedHeadingGetter;
 
   private final Supplier<Optional<Rotation2d>> headingGetter;
   private final Consumer<Optional<Rotation2d>> headingSetter;
@@ -59,38 +63,39 @@ public class DefaultDriveCmd extends Command {
       DoubleSupplier strafeSup,
       DoubleSupplier rotationSup,
       BooleanSupplier halfSpeedSup,
+      BooleanSupplier angleLockSup, // Locks the robot's heading to a diagonal to cross the bump
       Supplier<Optional<Rotation2d>> headingGetter,
       Consumer<Optional<Rotation2d>> headingSetter,
       DoubleSupplier rotationLastTriggeredGetter,
-      DoubleConsumer rotationLastTriggeredSetter) {
+      DoubleConsumer rotationLastTriggeredSetter,
+      Supplier<Optional<Rotation2d>> zoneLockedHeadingGetter) {
 
     this.swerve = swerve;
     this.translationSup = translationSup;
     this.strafeSup = strafeSup;
     this.rotationSup = rotationSup;
     this.halfSpeedSup = halfSpeedSup;
+    this.angleLockSup = angleLockSup;
     this.headingGetter = headingGetter;
     this.headingSetter = headingSetter;
+    this.zoneLockedHeadingGetter = zoneLockedHeadingGetter;
     this.rotationLastTriggeredGetter = rotationLastTriggeredGetter;
     this.rotationLastTriggeredSetter = rotationLastTriggeredSetter;
 
     maxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // Max speed at 12 volts
-    maxAngularRate =
-        RotationsPerSecond.of(1).in(RadiansPerSecond); // 1 rotation per second max angular velocity
+    maxAngularRate = RotationsPerSecond.of(1).in(RadiansPerSecond); // 1 rotation per second max angular velocity
 
-    drive =
-        new SwerveRequest.FieldCentric()
-            .withDeadband(maxSpeed * 0.05)
-            .withRotationalDeadband(maxAngularRate * 0.05)
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-            .withDesaturateWheelSpeeds(true);
+    drive = new SwerveRequest.FieldCentric()
+        .withDeadband(maxSpeed * 0.05)
+        .withRotationalDeadband(maxAngularRate * 0.05)
+        .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+        .withDesaturateWheelSpeeds(true);
 
-    driveMaintainHeading =
-        new SwerveRequest.FieldCentricFacingAngle()
-            .withDeadband(maxSpeed * 0.05)
-            .withRotationalDeadband(maxAngularRate * 0.05)
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-            .withDesaturateWheelSpeeds(true);
+    driveMaintainHeading = new SwerveRequest.FieldCentricFacingAngle()
+        .withDeadband(maxSpeed * 0.05)
+        .withRotationalDeadband(maxAngularRate * 0.05)
+        .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+        .withDesaturateWheelSpeeds(true);
 
     driveMaintainHeading.HeadingController.setPID(
         SwerveConstants.HEADING_KP, SwerveConstants.HEADING_KI, SwerveConstants.HEADING_KD);
@@ -102,29 +107,36 @@ public class DefaultDriveCmd extends Command {
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {}
+  public void initialize() {
+  }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
     double rawRotation = rotationSup.getAsDouble();
-    var speeds =
-        processJoystickInputs(
-            translationSup.getAsDouble(),
-            strafeSup.getAsDouble(),
-            rawRotation,
-            halfSpeedSup.getAsBoolean());
+    var speeds = processJoystickInputs(
+        translationSup.getAsDouble(),
+        strafeSup.getAsDouble(),
+        rawRotation,
+        halfSpeedSup.getAsBoolean());
 
     boolean rotationTriggered = Math.abs(rawRotation) > SwerveConstants.SWERVE_DEADBAND;
-    boolean rotationActive =
-        MathUtil.isNear(rotationLastTriggeredGetter.getAsDouble(), Timer.getFPGATimestamp(), 0.1)
-            && (Math.abs(swerve.getState().Speeds.omegaRadiansPerSecond) > Math.toRadians(10));
+    boolean rotationActive = MathUtil.isNear(rotationLastTriggeredGetter.getAsDouble(), Timer.getFPGATimestamp(), 0.1)
+        && (Math.abs(swerve.getState().Speeds.omegaRadiansPerSecond) > Math.toRadians(10));
 
     if (rotationTriggered) {
       rotationLastTriggeredSetter.accept(Timer.getFPGATimestamp());
     }
 
-    if (rotationTriggered || rotationActive) {
+    if (angleLockSup.getAsBoolean()) {
+      setSwerveToLockAngle(speeds.translation, speeds.strafe);
+    } else if (zoneLockedHeadingGetter.get().isPresent()) {
+      swerve.setControl(
+          driveMaintainHeading
+              .withVelocityX(speeds.translation)
+              .withVelocityY(speeds.strafe)
+              .withTargetDirection(zoneLockedHeadingGetter.get().get()));
+    } else if (rotationTriggered || rotationActive) {
       setSwerveToRotate(speeds.translation, speeds.strafe, speeds.rotation);
     } else {
       setSwerveToMaintainHeading(speeds.translation, speeds.strafe);
@@ -133,7 +145,8 @@ public class DefaultDriveCmd extends Command {
 
   // Called once the command ends or is interrupted.
   @Override
-  public void end(boolean interrupted) {}
+  public void end(boolean interrupted) {
+  }
 
   // Returns true when the command should end.
   @Override
@@ -177,15 +190,26 @@ public class DefaultDriveCmd extends Command {
 
     Optional<Alliance> alliance = DriverStation.getAlliance();
     if (alliance.isPresent()) {
-      Rotation2d targetDirection =
-          alliance.get() == Alliance.Blue
-              ? headingGetter.get().get() // was: currentHeading.get()
-              : headingGetter.get().get().rotateBy(Rotation2d.fromDegrees(180));
+      Rotation2d targetDirection = alliance.get() == Alliance.Blue
+          ? headingGetter.get().get() // was: currentHeading.get()
+          : headingGetter.get().get().rotateBy(Rotation2d.fromDegrees(180));
       swerve.setControl(
           driveMaintainHeading
               .withVelocityX(translation)
               .withVelocityY(strafe)
               .withTargetDirection(targetDirection));
     }
+  }
+
+  private void setSwerveToLockAngle(double translation, double strafe) {
+    Optional<Rotation2d> zoneHeading = zoneLockedHeadingGetter.get();
+    if (zoneHeading.isEmpty())
+      return; // No lock defined for current zone — do nothing
+
+    swerve.setControl(
+        driveMaintainHeading
+            .withVelocityX(translation)
+            .withVelocityY(strafe)
+            .withTargetDirection(zoneHeading.get()));
   }
 }
