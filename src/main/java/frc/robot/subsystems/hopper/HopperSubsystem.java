@@ -3,9 +3,9 @@ package frc.robot.subsystems.hopper;
 import static frc.robot.util.constants.HopperConstants.*;
 
 import dev.doglog.DogLog;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
 
