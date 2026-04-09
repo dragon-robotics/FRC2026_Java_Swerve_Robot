@@ -6,6 +6,7 @@ package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Rotation;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -13,8 +14,8 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -181,21 +182,21 @@ public class DefaultDriveCmd extends Command {
   }
 
   private void setSwerveToMaintainHeading(double translation, double strafe) {
-    if (headingGetter.get().isEmpty()) { // was: currentHeading.isEmpty()
+    if (headingGetter.get().isEmpty()) {
       headingSetter.accept(Optional.of(swerve.getState().Pose.getRotation()));
     }
 
     Optional<Alliance> alliance = DriverStation.getAlliance();
     if (alliance.isPresent()) {
-      Rotation2d targetDirection = alliance.get() == Alliance.Blue
-          ? headingGetter.get().get() // was: currentHeading.get()
-          : headingGetter.get().get().rotateBy(Rotation2d.fromDegrees(180));
+      Rotation2d targetDirection = alliance.get() == Alliance.Blue ? headingGetter.get().get()
+          : headingGetter.get().get().rotateBy(Rotation2d.kPi);
       swerve.setControl(
           driveMaintainHeading
               .withVelocityX(translation)
               .withVelocityY(strafe)
               .withTargetDirection(targetDirection));
     }
+
   }
 
   // ...existing code...
