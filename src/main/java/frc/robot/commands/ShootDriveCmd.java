@@ -92,7 +92,7 @@ public class ShootDriveCmd extends Command {
     // Vector from robot to target hub
     var delta = hubToAimTowards.minus(robotTranslation);
 
-    // Absolute angle in field frame pointing from robot to hub
+    // Absolute angle in field frame — front of robot faces the hub
     Rotation2d angleToPointAt = new Rotation2d(Math.atan2(delta.getY(), delta.getX()));
 
     setCurrentHeading.accept(Optional.of(angleToPointAt));

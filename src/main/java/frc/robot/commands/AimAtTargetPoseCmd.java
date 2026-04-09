@@ -14,6 +14,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.util.constants.FieldConstants;
 import frc.robot.util.constants.SwerveConstants;
+
+import static edu.wpi.first.units.Units.Rotation;
+
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -34,12 +37,11 @@ public class AimAtTargetPoseCmd extends Command {
     this.swerve = swerve;
     this.setCurrentHeading = setCurrentHeading;
 
-    driveMaintainHeading =
-        new SwerveRequest.FieldCentricFacingAngle()
-            .withDeadband(maxSpeed * 0.05)
-            .withRotationalDeadband(maxAngularRate * 0.05)
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-            .withDesaturateWheelSpeeds(true);
+    driveMaintainHeading = new SwerveRequest.FieldCentricFacingAngle()
+        .withDeadband(maxSpeed * 0.05)
+        .withRotationalDeadband(maxAngularRate * 0.05)
+        .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+        .withDesaturateWheelSpeeds(true);
 
     /* Set the PID constants for the Maintain Heading controller */
     driveMaintainHeading.HeadingController.setPID(
@@ -53,7 +55,8 @@ public class AimAtTargetPoseCmd extends Command {
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {}
+  public void initialize() {
+  }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
@@ -62,10 +65,9 @@ public class AimAtTargetPoseCmd extends Command {
     Optional<Alliance> alliance = DriverStation.getAlliance();
 
     // Choose which hub to aim to depending on alliance color
-    Translation2d hubToAimTowards =
-        alliance.isPresent() && (alliance.get() == Alliance.Red)
-            ? FieldConstants.Hub.RED_CENTER_POSE
-            : FieldConstants.Hub.BLUE_CENTER_POSE;
+    Translation2d hubToAimTowards = alliance.isPresent() && (alliance.get() == Alliance.Red)
+        ? FieldConstants.Hub.RED_CENTER_POSE
+        : FieldConstants.Hub.BLUE_CENTER_POSE;
 
     // Current robot translation (x,y) in field coordinates
     var robotTranslation = swerve.getState().Pose.getTranslation();
@@ -73,10 +75,18 @@ public class AimAtTargetPoseCmd extends Command {
     // Vector from robot to target hub
     var delta = hubToAimTowards.minus(robotTranslation);
 
-    // Absolute angle in field frame pointing from robot to hub
-    Rotation2d angleToPointAt = new Rotation2d(Math.atan2(delta.getY(), delta.getX()));
+    Rotation2d angleToPointAt;
+    if (alliance.isPresent() && (alliance.get() == Alliance.Red)) {
+      // Absolute angle in field frame — front of robot faces the hub
+      angleToPointAt = new Rotation2d(Math.atan2(delta.getY(), delta.getX())).rotateBy(Rotation2d.kPi);
 
-    setCurrentHeading.accept(Optional.of(angleToPointAt));
+      setCurrentHeading.accept(Optional.of(angleToPointAt.rotateBy(Rotation2d.kPi)));
+    } else {
+      // Absolute angle in field frame — front of robot faces the hub
+      angleToPointAt = new Rotation2d(Math.atan2(delta.getY(), delta.getX()));
+
+      setCurrentHeading.accept(Optional.of(angleToPointAt));
+    }
 
     swerve.setControl(
         driveMaintainHeading.withTargetDirection(angleToPointAt).withTargetRateFeedforward(0.1));
@@ -84,7 +94,8 @@ public class AimAtTargetPoseCmd extends Command {
 
   // Called once the command ends or is interrupted.
   @Override
-  public void end(boolean interrupted) {}
+  public void end(boolean interrupted) {
+  }
 
   // Returns true when the command should end.
   @Override
