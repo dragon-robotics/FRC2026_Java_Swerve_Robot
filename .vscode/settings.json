@@ -67,5 +67,6 @@
   "[java]": {
     "editor.defaultFormatter": "redhat.java",
     "editor.formatOnSave": true
-  }
+  },
+  "java.compile.nullAnalysis.mode": "automatic"
 }
