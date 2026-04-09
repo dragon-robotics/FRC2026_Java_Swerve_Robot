@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems.vision;
 
-import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
 import static frc.robot.util.constants.VisionConstants.*;
 
 import com.ctre.phoenix6.Utils;
@@ -21,6 +20,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.vision.VisionIO.PoseObservation;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
+import frc.robot.util.vision.PoseValidationResult;
+import frc.robot.util.vision.RejectedPose;
+import frc.robot.util.vision.VisionPoseValidator;
 import java.util.Arrays;
 
 public class VisionSubsystem extends SubsystemBase {
@@ -30,6 +32,7 @@ public class VisionSubsystem extends SubsystemBase {
   private final VisionIO[] io;
   private final VisionIOInputs[] inputs;
   private final Alert[] disconnectedAlerts;
+  private final VisionPoseValidator[] validators;
 
   // Odometry initialization
   private int stablePoseCounter = 5;
@@ -53,12 +56,14 @@ public class VisionSubsystem extends SubsystemBase {
 
     inputs = new VisionIOInputs[io.length];
     disconnectedAlerts = new Alert[io.length];
+    validators = new VisionPoseValidator[io.length];
 
     for (int i = 0; i < io.length; i++) {
       inputs[i] = new VisionIOInputs();
       disconnectedAlerts[i] =
           new Alert(
               "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
+      validators[i] = new VisionPoseValidator();
     }
 
     // Pre-allocate: each camera produces at most ~2 poses per cycle
@@ -88,20 +93,14 @@ public class VisionSubsystem extends SubsystemBase {
     disconnectedAlerts[cameraIndex].set(!inputs[cameraIndex].isConnected());
 
     String camKey = "Vision/" + inputs[cameraIndex].getCameraName();
+    VisionPoseValidator validator = validators[cameraIndex];
 
     for (var observation : inputs[cameraIndex].getPoseObservations()) {
-      // Reject bad poses
-      boolean reject =
-          observation.tagCount() == 0
-              || (observation.tagCount() == 1 && observation.ambiguity() > MAX_AMBIGUITY)
-              || Math.abs(observation.pose().getZ()) > MAX_Z_ERROR
-              || observation.pose().getX() < 0.0
-              || observation.pose().getX() > APTAG_FIELD_LAYOUT.getFieldLength()
-              || observation.pose().getY() < 0.0
-              || observation.pose().getY() > APTAG_FIELD_LAYOUT.getFieldWidth();
-
-      if (reject) {
+      PoseValidationResult result = validator.validatePose(observation);
+      if (result instanceof RejectedPose rejected) {
         if (!odometryInitialized) stablePoseCounter = 5;
+        DogLog.log(camKey + "/RejectedPose/Reason", rejected.reason().name());
+        DogLog.log(camKey + "/RejectedPose/Details", rejected.details());
         continue;
       }
 
@@ -135,7 +134,7 @@ public class VisionSubsystem extends SubsystemBase {
       consumer.accept(
           visionPose,
           Utils.fpgaToCurrentTime(observation.timestamp()),
-          calculateStdDevs(observation));
+          calculateStdDevs(observation, validator));
 
       // Track best multi-tag pose as a drift-reseed candidate
       if (observation.tagCount() >= POSE_RESEED_MIN_TAG_COUNT) {
@@ -154,17 +153,20 @@ public class VisionSubsystem extends SubsystemBase {
     DogLog.timeEnd("Perf/Vision");
   }
 
-  private Matrix<N3, N1> calculateStdDevs(PoseObservation obs) {
+  private Matrix<N3, N1> calculateStdDevs(PoseObservation obs, VisionPoseValidator validator) {
     double dist = obs.averageTagDistance();
     int tagCount = Math.max(obs.tagCount(), 1);
     // Quadratic distance scaling: trust drops sharply with range; multiple tags
     // reduce uncertainty
     double distanceFactor = (dist * dist) / tagCount;
     double linearStdDev = LINEAR_STDDEV_BASELINE * (1.0 + distanceFactor) * (1.0 + obs.ambiguity());
-    // Only trust rotation when multiple tags give a non-degenerate rotational
-    // constraint
+    // Distrust rotation for single-tag or coplanar multi-tag observations — both
+    // have 180° rotational ambiguity (flip-vulnerable). Only true multi-tag
+    // observations (tags on different planes) provide a reliable rotational constraint.
     double angularStdDev =
-        obs.tagCount() >= 2 ? ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor) : Double.MAX_VALUE;
+        validator.isEffectivelySingleTag(obs)
+            ? Double.MAX_VALUE
+            : ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor);
     return VecBuilder.fill(linearStdDev, linearStdDev, angularStdDev);
   }
 
