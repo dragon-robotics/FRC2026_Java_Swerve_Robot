@@ -56,8 +56,9 @@ public class VisionSubsystem extends SubsystemBase {
 
     for (int i = 0; i < io.length; i++) {
       inputs[i] = new VisionIOInputs();
-      disconnectedAlerts[i] = new Alert(
-          "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
+      disconnectedAlerts[i] =
+          new Alert(
+              "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
     }
 
     // Pre-allocate: each camera produces at most ~2 poses per cycle
@@ -90,17 +91,17 @@ public class VisionSubsystem extends SubsystemBase {
 
     for (var observation : inputs[cameraIndex].getPoseObservations()) {
       // Reject bad poses
-      boolean reject = observation.tagCount() == 0
-          || (observation.tagCount() == 1 && observation.ambiguity() > MAX_AMBIGUITY)
-          || Math.abs(observation.pose().getZ()) > MAX_Z_ERROR
-          || observation.pose().getX() < 0.0
-          || observation.pose().getX() > APTAG_FIELD_LAYOUT.getFieldLength()
-          || observation.pose().getY() < 0.0
-          || observation.pose().getY() > APTAG_FIELD_LAYOUT.getFieldWidth();
+      boolean reject =
+          observation.tagCount() == 0
+              || (observation.tagCount() == 1 && observation.ambiguity() > MAX_AMBIGUITY)
+              || Math.abs(observation.pose().getZ()) > MAX_Z_ERROR
+              || observation.pose().getX() < 0.0
+              || observation.pose().getX() > APTAG_FIELD_LAYOUT.getFieldLength()
+              || observation.pose().getY() < 0.0
+              || observation.pose().getY() > APTAG_FIELD_LAYOUT.getFieldWidth();
 
       if (reject) {
-        if (!odometryInitialized)
-          stablePoseCounter = 5;
+        if (!odometryInitialized) stablePoseCounter = 5;
         continue;
       }
 
@@ -109,7 +110,8 @@ public class VisionSubsystem extends SubsystemBase {
       // Once initialized, discard poses too far from odometry to prevent tag
       // misidentification
       if (odometryInitialized) {
-        double discrepancy = swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
+        double discrepancy =
+            swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
         if (discrepancy > MAX_POSE_DISCREPANCY_METERS) {
           continue;
         }
@@ -161,22 +163,20 @@ public class VisionSubsystem extends SubsystemBase {
     double linearStdDev = LINEAR_STDDEV_BASELINE * (1.0 + distanceFactor) * (1.0 + obs.ambiguity());
     // Only trust rotation when multiple tags give a non-degenerate rotational
     // constraint
-    double angularStdDev = obs.tagCount() >= 2 ? ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor) : Double.MAX_VALUE;
+    double angularStdDev =
+        obs.tagCount() >= 2 ? ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor) : Double.MAX_VALUE;
     return VecBuilder.fill(linearStdDev, linearStdDev, angularStdDev);
   }
 
   /**
-   * If odometry has drifted more than {@code POSE_RESEED_THRESHOLD_METERS} from
-   * the best
-   * high-confidence vision fix this cycle, hard-resets the pose estimator. Call
-   * from {@code
+   * If odometry has drifted more than {@code POSE_RESEED_THRESHOLD_METERS} from the best
+   * high-confidence vision fix this cycle, hard-resets the pose estimator. Call from {@code
    * Superstructure.periodic()}.
    *
    * @return {@code true} if a reseed was performed
    */
   public boolean tryReseedFromVision(Pose2d currentPose) {
-    if (bestReseedCandidate == null)
-      return false;
+    if (bestReseedCandidate == null) return false;
 
     Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
     double drift = currentPose.getTranslation().getDistance(visionPose.getTranslation());
@@ -194,15 +194,13 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Unconditionally reseeds from the best high-confidence vision fix this cycle.
-   * For
+   * Unconditionally reseeds from the best high-confidence vision fix this cycle. For
    * operator-triggered recovery when odometry has gone badly wrong.
    *
    * @return {@code true} if a qualifying pose was available
    */
   public boolean forceReseedFromVision() {
-    if (bestReseedCandidate == null)
-      return false;
+    if (bestReseedCandidate == null) return false;
 
     Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
     swerve.resetPose(visionPose);
