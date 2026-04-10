@@ -405,8 +405,8 @@ public class Superstructure extends SubsystemBase {
     // When this is enabled, only do bumper up shot settings. Ignore all calculated
     // values
     return Commands.runOnce(() -> {
-      shooter.setManualDistanceOverride(true);
       manualShooterDistanceOverride = true;
+      shooter.setManualDistanceOverride(manualShooterDistanceOverride);
     }, shooter)
         .withName("ShooterOverride(Manual Distance Override Enable)");
   }
@@ -414,10 +414,20 @@ public class Superstructure extends SubsystemBase {
   public Command disableManualShooterDistanceOverrideCmd() {
     // When this is disabled, revert to calculated shot settings.
     return Commands.runOnce(() -> {
-      shooter.setManualDistanceOverride(false);
       manualShooterDistanceOverride = false;
+      shooter.setManualDistanceOverride(manualShooterDistanceOverride);
     }, shooter)
         .withName("ShooterOverride(Manual Distance Override Disable)");
+  }
+
+  public Command toggleManualShooterDistanceOverrideCmd() {
+    // Each press flips the override state: enabled → disabled → enabled...
+    return Commands.runOnce(() -> {
+      manualShooterDistanceOverride = !manualShooterDistanceOverride;
+      shooter.setManualDistanceOverride(manualShooterDistanceOverride);
+      DogLog.log("Shooter/ManualDistanceOverride", manualShooterDistanceOverride);
+    }, shooter)
+        .withName("ShooterOverride(Toggle Manual Distance Override)");
   }
 
   // ──────────────────────────────────────────────────────────────────────────
