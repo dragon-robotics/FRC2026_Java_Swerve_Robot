@@ -3,6 +3,7 @@ package frc.robot.util.constants;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
@@ -185,17 +186,17 @@ public final class FieldConstants {
     // Y_red = FIELD_WIDTH - Y_blue (left/right labels swap across centerline)
 
     public static final Translation3d RED_TOP_CENTER_POINT = new Translation3d(
-        APTAG_FIELD_LAYOUT.getTagPose(11).get().getX() - WIDTH / 2.0,
+        APTAG_FIELD_LAYOUT.getTagPose(10).get().getX() - WIDTH / 2.0,
         FIELD_WIDTH / 2.0,
         HEIGHT);
 
     public static final Translation3d RED_INNER_CENTER_POINT = new Translation3d(
-        APTAG_FIELD_LAYOUT.getTagPose(11).get().getX() - INNER_WIDTH / 2.0,
+        APTAG_FIELD_LAYOUT.getTagPose(10).get().getX() - INNER_WIDTH / 2.0,
         FIELD_WIDTH / 2.0,
         INNER_HEIGHT);
 
     public static final Translation2d RED_CENTER_POSE = new Translation2d(
-        APTAG_FIELD_LAYOUT.getTagPose(11).get().getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0);
+        APTAG_FIELD_LAYOUT.getTagPose(10).get().getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0);
 
     public static final Translation2d RED_NEAR_LEFT_CORNER = new Translation2d(
         RED_TOP_CENTER_POINT.getX() + WIDTH / 2.0, FIELD_WIDTH / 2.0 + WIDTH / 2.0);
@@ -208,10 +209,10 @@ public final class FieldConstants {
 
     // Red hub faces — sourced directly from AprilTag poses
     // Note: near/far and left/right are from the red driver station perspective
-    public static final Pose2d RED_NEAR_FACE = APTAG_FIELD_LAYOUT.getTagPose(11).get().toPose2d();
-    public static final Pose2d RED_FAR_FACE = APTAG_FIELD_LAYOUT.getTagPose(5).get().toPose2d();
-    public static final Pose2d RED_RIGHT_FACE = APTAG_FIELD_LAYOUT.getTagPose(3).get().toPose2d();
-    public static final Pose2d RED_LEFT_FACE = APTAG_FIELD_LAYOUT.getTagPose(6).get().toPose2d();
+    public static final Pose2d RED_NEAR_FACE = APTAG_FIELD_LAYOUT.getTagPose(10).get().toPose2d();
+    public static final Pose2d RED_FAR_FACE = APTAG_FIELD_LAYOUT.getTagPose(4).get().toPose2d();
+    public static final Pose2d RED_RIGHT_FACE = APTAG_FIELD_LAYOUT.getTagPose(2).get().toPose2d();
+    public static final Pose2d RED_LEFT_FACE = APTAG_FIELD_LAYOUT.getTagPose(5).get().toPose2d();
   }
 
   public static final class LeftBump {
