@@ -336,7 +336,6 @@ public class RobotContainer {
     // Shoot
     shootCommand = superstructureSubsystem
         .setStateCmd(SuperState.SHOOT)
-        .alongWith(superstructureSubsystem.aimAtTargetPose())
         .alongWith(
             Commands.waitSeconds(1.5)
                 .andThen(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER)));
@@ -407,10 +406,7 @@ public class RobotContainer {
     /* Shoot */
     driverController
         .rightTrigger(0.2)
-        .whileTrue(
-            Commands.parallel(
-                superstructureSubsystem.setStateCmd(SuperState.SHOOT).repeatedly(),
-                superstructureSubsystem.aimAtTargetPose()))
+        .whileTrue(superstructureSubsystem.setStateCmd(SuperState.SHOOT))
         .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
 
     /* Driver can control the Juicer mode if needed */
