@@ -83,6 +83,7 @@ public class Superstructure extends SubsystemBase {
   private Translation2d cachedHubTarget;
   private boolean allianceConfirmed = false;
   private FieldZones currentZone;
+  private boolean manualShooterDistanceOverride = false;
 
   // Pre-cached zone name strings — avoids .name() heap allocation every cycle
   private static final String[] ZONE_NAMES;
@@ -128,14 +129,12 @@ public class Superstructure extends SubsystemBase {
 
     brake = new SwerveRequest.SwerveDriveBrake();
     point = new SwerveRequest.PointWheelsAt();
-    applyFieldSpeeds =
-        new SwerveRequest.ApplyFieldSpeeds()
-            .withDesaturateWheelSpeeds(true)
-            .withDriveRequestType(DriveRequestType.Velocity);
-    applyRobotSpeeds =
-        new SwerveRequest.ApplyRobotSpeeds()
-            .withDesaturateWheelSpeeds(true)
-            .withDriveRequestType(DriveRequestType.Velocity);
+    applyFieldSpeeds = new SwerveRequest.ApplyFieldSpeeds()
+        .withDesaturateWheelSpeeds(true)
+        .withDriveRequestType(DriveRequestType.Velocity);
+    applyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds()
+        .withDesaturateWheelSpeeds(true)
+        .withDriveRequestType(DriveRequestType.Velocity);
 
     currentHeading = Optional.empty();
     rotationLastTriggered = 0.0;
@@ -170,10 +169,9 @@ public class Superstructure extends SubsystemBase {
 
   private void setAlliance(DriverStation.Alliance newAlliance) {
     alliance = newAlliance;
-    cachedHubTarget =
-        alliance == DriverStation.Alliance.Red
-            ? FieldConstants.Hub.RED_CENTER_POSE
-            : FieldConstants.Hub.BLUE_CENTER_POSE;
+    cachedHubTarget = alliance == DriverStation.Alliance.Red
+        ? FieldConstants.Hub.RED_CENTER_POSE
+        : FieldConstants.Hub.BLUE_CENTER_POSE;
   }
 
   private void refreshAllianceAndCachedHubTarget() {
@@ -247,8 +245,10 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Operator-triggered vision reseed command. Unconditionally snaps swerve odometry to the best
-   * available multi-tag vision fix regardless of drift magnitude. Fires once on button press
+   * Operator-triggered vision reseed command. Unconditionally snaps swerve
+   * odometry to the best
+   * available multi-tag vision fix regardless of drift magnitude. Fires once on
+   * button press
    * (InstantCommand). No-op if no vision fix is available.
    */
   public Command forceReseedFromVisionCmd() {
@@ -270,11 +270,15 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Returns a command that transitions relevant subsystems to the requested SuperState. Each
-   * subsystem is controlled through proper WPILib command requirements — not direct calls from
+   * Returns a command that transitions relevant subsystems to the requested
+   * SuperState. Each
+   * subsystem is controlled through proper WPILib command requirements — not
+   * direct calls from
    * periodic().
    *
-   * <p>When the returned command ends (button released), the scheduler resumes the default commands
+   * <p>
+   * When the returned command ends (button released), the scheduler resumes the
+   * default commands
    * on each required subsystem automatically.
    *
    * @param desiredState The SuperState to transition to
@@ -284,74 +288,83 @@ public class Superstructure extends SubsystemBase {
     switch (desiredState) {
       case DRIVE_STARTING_CONFIG:
         return Commands.run(
-                () -> {
-                  setDesiredSuperState(SuperState.DRIVE_STARTING_CONFIG);
-                  intake.setDesiredState(IntakeState.HOME);
-                  hopper.setDesiredState(HopperState.STOP);
-                  shooter.setDesiredState(ShooterState.PREPFUEL);
-                },
-                intake,
-                hopper,
-                shooter)
+            () -> {
+              setDesiredSuperState(SuperState.DRIVE_STARTING_CONFIG);
+              intake.setDesiredState(IntakeState.HOME);
+              hopper.setDesiredState(HopperState.STOP);
+              shooter.setDesiredState(ShooterState.PREPFUEL);
+            },
+            intake,
+            hopper,
+            shooter)
             .withName("SuperState(DRIVE_STARTING_CONFIG)");
       case DRIVE:
         // No subsystem commands needed — releasing any other state command
         // causes the scheduler to resume default commands, which already
         // implement DRIVE behavior (intake=DEPLOYED, hopper=STOP, shooter=PREPFUEL).
         return Commands.run(
-                () -> {
-                  setDesiredSuperState(SuperState.DRIVE);
-                  intake.setDesiredState(IntakeState.DEPLOYED);
-                  hopper.setDesiredState(HopperState.STOP);
-                  shooter.setDesiredState(ShooterState.PREPFUEL);
-                },
-                intake,
-                hopper,
-                shooter)
+            () -> {
+              setDesiredSuperState(SuperState.DRIVE);
+              intake.setDesiredState(IntakeState.DEPLOYED);
+              hopper.setDesiredState(HopperState.STOP);
+              shooter.setDesiredState(ShooterState.PREPFUEL);
+            },
+            intake,
+            hopper,
+            shooter)
             .withName("SuperState(DRIVE)");
 
       case INTAKE:
         return Commands.run(
-                () -> {
-                  setDesiredSuperState(SuperState.INTAKE);
-                  intake.setDesiredState(IntakeState.INTAKE);
-                  hopper.setDesiredState(HopperState.STOP);
-                  shooter.setDesiredState(ShooterState.PREPFUEL);
-                },
-                intake,
-                hopper,
-                shooter)
+            () -> {
+              setDesiredSuperState(SuperState.INTAKE);
+              intake.setDesiredState(IntakeState.INTAKE);
+              hopper.setDesiredState(HopperState.STOP);
+              shooter.setDesiredState(ShooterState.PREPFUEL);
+            },
+            intake,
+            hopper,
+            shooter)
             .withName("SuperState(INTAKE)");
 
       case OUTTAKE:
         return Commands.run(
-                () -> {
-                  setDesiredSuperState(SuperState.OUTTAKE);
-                  intake.setDesiredState(IntakeState.OUTTAKE);
-                  hopper.setDesiredState(HopperState.INDEXTOINTAKE);
-                  shooter.setDesiredState(ShooterState.PREPFUEL);
-                },
-                intake,
-                hopper,
-                shooter)
+            () -> {
+              setDesiredSuperState(SuperState.OUTTAKE);
+              intake.setDesiredState(IntakeState.OUTTAKE);
+              hopper.setDesiredState(HopperState.INDEXTOINTAKE);
+              shooter.setDesiredState(ShooterState.PREPFUEL);
+            },
+            intake,
+            hopper,
+            shooter)
             .withName("SuperState(OUTTAKE)");
 
       case SHOOT:
         // SHOOT is special — it needs continuous polling for alignment.
         // Use Commands.run() (not runOnce) so it executes every cycle.
         return Commands.run(
-                () -> {
-                  setDesiredSuperState(SuperState.SHOOT);
-                  shooter.setDesiredState(ShooterState.SHOOT);
-                  if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-                    swerve.setControl(brake);
-                    hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-                  } else {
-                    hopper.setDesiredState(HopperState.STOP);
-                  }
-                },
-                shooter,
-                hopper)
+            () -> {
+              setDesiredSuperState(SuperState.SHOOT);
+              shooter.setDesiredState(ShooterState.SHOOT);
+              if (manualShooterDistanceOverride) {
+                if (shooter.getCurrentState() == ShooterState.SHOOT) {
+                  swerve.setControl(brake);
+                  hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+                } else {
+                  hopper.setDesiredState(HopperState.STOP);
+                }
+              } else {
+                if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
+                  swerve.setControl(brake);
+                  hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+                } else {
+                  hopper.setDesiredState(HopperState.STOP);
+                }
+              }
+            },
+            shooter,
+            hopper)
             .withName("SuperState(SHOOT)");
 
       default:
@@ -367,7 +380,10 @@ public class Superstructure extends SubsystemBase {
   // the default command resumes automatically.
   // ──────────────────────────────────────────────────────────────────────────
 
-  /** Override intake independently — preempts default, doesn't touch hopper/shooter. */
+  /**
+   * Override intake independently — preempts default, doesn't touch
+   * hopper/shooter.
+   */
   public Command intakeOverrideCmd(IntakeState intakeState) {
     return Commands.run(() -> intake.setDesiredState(intakeState), intake)
         .withName("IntakeOverride(" + intakeState.name() + ")");
@@ -385,11 +401,33 @@ public class Superstructure extends SubsystemBase {
         .withName("ShooterOverride(" + shooterState.name() + ")");
   }
 
+  public Command enableManualShooterDistanceOverrideCmd() {
+    // When this is enabled, only do bumper up shot settings. Ignore all calculated
+    // values
+    return Commands.runOnce(() -> {
+      shooter.setManualDistanceOverride(true);
+      manualShooterDistanceOverride = true;
+    }, shooter)
+        .withName("ShooterOverride(Manual Distance Override Enable)");
+  }
+
+  public Command disableManualShooterDistanceOverrideCmd() {
+    // When this is disabled, revert to calculated shot settings.
+    return Commands.runOnce(() -> {
+      shooter.setManualDistanceOverride(false);
+      manualShooterDistanceOverride = false;
+    }, shooter)
+        .withName("ShooterOverride(Manual Distance Override Disable)");
+  }
+
   // ──────────────────────────────────────────────────────────────────────────
   // Alignment
   // ──────────────────────────────────────────────────────────────────────────
 
-  /** Returns true if the robot heading is within tolerance of the angle to the hub. */
+  /**
+   * Returns true if the robot heading is within tolerance of the angle to the
+   * hub.
+   */
   public boolean isAlignedToTarget() {
     return alignedToTarget;
   }
@@ -408,11 +446,13 @@ public class Superstructure extends SubsystemBase {
 
   // Heading Lock based on zone based on user input
   /**
-   * Returns the desired locked heading angle (in degrees) based on the current field zone and
+   * Returns the desired locked heading angle (in degrees) based on the current
+   * field zone and
    * alliance. Returns empty if no lock is defined for the zone.
    */
   public Optional<Rotation2d> getZoneLockedHeading() {
-    if (!allianceConfirmed || currentZone == null) return Optional.empty();
+    if (!allianceConfirmed || currentZone == null)
+      return Optional.empty();
 
     switch (currentZone) {
       case ALLIANCE_LEFT, NEUTRAL_LEFT, OPPONENT_LEFT:
@@ -429,10 +469,13 @@ public class Superstructure extends SubsystemBase {
   // ──────────────────────────────────────────────────────────────────────────
 
   /**
-   * Returns true if our hub is currently active and we should be shooting. Uses the shifted
+   * Returns true if our hub is currently active and we should be shooting. Uses
+   * the shifted
    * (fudged) timing so fuel arrives within the active window.
    *
-   * <p>During auto, always returns true (hub is always active for your alliance). During disabled,
+   * <p>
+   * During auto, always returns true (hub is always active for your alliance).
+   * During disabled,
    * returns false.
    */
   public boolean isHubActive() {
@@ -440,8 +483,10 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Returns the time remaining in the current shift (using shifted timing). Drivers can use this to
-   * decide whether to commit to a scoring cycle or reposition for the next active shift.
+   * Returns the time remaining in the current shift (using shifted timing).
+   * Drivers can use this to
+   * decide whether to commit to a scoring cycle or reposition for the next active
+   * shift.
    */
   public double getShiftTimeRemaining() {
     return HubShiftUtil.getShiftedShiftInfo().remainingTime();

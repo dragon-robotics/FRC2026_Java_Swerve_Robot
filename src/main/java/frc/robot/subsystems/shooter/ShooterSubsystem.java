@@ -35,6 +35,8 @@ public class ShooterSubsystem extends SubsystemBase {
   protected double targetRPM;
   protected double hoodAngle;
 
+  protected boolean manualDistanceOverride;
+
   // Timer to keep kicker running after shooting stops
   private final Timer kickerStopTimer = new Timer();
   private boolean kickerStopTimerRunning = false;
@@ -65,6 +67,8 @@ public class ShooterSubsystem extends SubsystemBase {
     // Initialize target RPM and hood angle to default values
     this.targetRPM = ShooterConstants.SHOOTER_LEAD_RPM;
     this.hoodAngle = ShooterConstants.SHOOTER_HOOD_SETTING; // default to home position
+
+    this.manualDistanceOverride = false;
   }
 
   public ShooterState getCurrentState() {
@@ -118,8 +122,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void setSetpointForDistance(double distanceToTarget) {
     ShooterSetpoint setpoint = getSetpointForDistance(distanceToTarget);
-    targetRPM = setpoint.shooterRPM();
-    hoodAngle = setpoint.hoodAngle();
+    targetRPM = manualDistanceOverride ? 2500 : setpoint.shooterRPM();
+    hoodAngle = manualDistanceOverride ? 0 : setpoint.hoodAngle();
   }
 
   /* Returns the speed in RPM */
@@ -137,6 +141,14 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public double getTargetRPM() {
     return targetRPM;
+  }
+
+  public void setManualDistanceOverride(boolean enabled) {
+    manualDistanceOverride = enabled;
+  }
+
+  public void disableManualDistanceOverride() {
+    manualDistanceOverride = false;
   }
 
   /* State Management */
@@ -248,6 +260,7 @@ public class ShooterSubsystem extends SubsystemBase {
     DogLog.log("Shooter/SpeedRPM", getShooterSpeed());
     DogLog.log("Shooter/TargetRPM", targetRPM);
     DogLog.log("Shooter/HoodAngle", hoodAngle);
+    DogLog.log("Shooter/ManualOverride", manualDistanceOverride);
     DogLog.timeEnd("Perf/Shooter");
   }
 }
