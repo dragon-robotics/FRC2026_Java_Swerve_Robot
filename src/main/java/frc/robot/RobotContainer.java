@@ -435,7 +435,7 @@ public class RobotContainer {
 
     /* TODO: Add overrides to the shooter in case vision goes down */
     operatorController
-        .pov(180)
+        .x().and(operatorController.a())
         .onTrue(superstructureSubsystem.toggleManualShooterDistanceOverrideCmd());
 
     // If up d-pad, shooter is close up bumper shot
