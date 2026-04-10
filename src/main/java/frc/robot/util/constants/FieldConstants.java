@@ -21,7 +21,7 @@ public final class FieldConstants {
         Filesystem.getDeployDirectory().getPath(),
         "apriltags",
         "welded",
-        "2026-rebuilt-welded.json");
+        "2026-rebuilt-welded-no-single.json");
     AprilTagFieldLayout defaultLayout = null;
     try {
       defaultLayout = new AprilTagFieldLayout(defaultPath);
