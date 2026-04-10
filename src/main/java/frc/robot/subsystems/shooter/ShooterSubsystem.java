@@ -147,10 +147,6 @@ public class ShooterSubsystem extends SubsystemBase {
     manualDistanceOverride = enabled;
   }
 
-  public void disableManualDistanceOverride() {
-    manualDistanceOverride = false;
-  }
-
   /* State Management */
 
   public void setDesiredState(ShooterState state) {
