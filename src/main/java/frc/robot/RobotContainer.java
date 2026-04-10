@@ -435,8 +435,15 @@ public class RobotContainer {
 
     /* TODO: Add overrides to the shooter in case vision goes down */
     operatorController
-        .x().and(operatorController.a())
+        .x()
+        .and(operatorController.a())
         .onTrue(superstructureSubsystem.toggleManualShooterDistanceOverrideCmd());
+
+    operatorController
+        .rightBumper()
+        .whileTrue(
+            Commands.run(() -> shooterSubsystem.runKickerMotorPercentage(1), shooterSubsystem)
+                .withName("Kicker Full Power"));
 
     // If up d-pad, shooter is close up bumper shot
     // If left or right d-pad, shooter is trench shot
