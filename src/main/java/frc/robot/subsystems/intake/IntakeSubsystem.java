@@ -45,7 +45,8 @@ public class IntakeSubsystem extends SubsystemBase {
   protected boolean wokTossMovingToDeployed;
 
   /**
-   * Tracks the last state for which CAN commands were sent, so we can skip redundant writes when
+   * Tracks the last state for which CAN commands were sent, so we can skip
+   * redundant writes when
    * the state hasn't changed. Reset to null on any state transition.
    */
   private IntakeState lastCommandedState = null;
@@ -112,7 +113,8 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /**
-   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity holds the arm down
+   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity
+   * holds the arm down
    * once deployed — no PID needed to maintain the down position.
    */
   public void coastIntakeArm() {
@@ -147,26 +149,22 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public boolean isIntakeArmAtDeployed() {
-    double positionError =
-        Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtStowed() {
-    double positionError =
-        Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtWokToss() {
-    double positionError =
-        Math.abs(INTAKE_ARM_WOKTOSS_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_WOKTOSS_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtPreJuice() {
-    double positionError =
-        Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
@@ -247,7 +245,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public void handleStateTransition() {
     // Handle the state transitions
     switch (currIntakeState) {
-        // ── Steady states: only send CAN commands on state entry ──
+      // ── Steady states: only send CAN commands on state entry ──
       case HOME:
         if (lastCommandedState != currIntakeState) {
           // First entry -- command arm to stow via PID and stop rollers
@@ -258,27 +256,27 @@ public class IntakeSubsystem extends SubsystemBase {
         } else if (!homeCoasting && isIntakeArmAtStowed()) {
           // Arm has arrived at stow -- coast to save 8-14A of stator current.
           // Gravity + mechanical stops hold the arm in place; PID is unnecessary.
-          coastIntakeArm();
+          deployIntakeArm();
           homeCoasting = true;
         }
         break;
       case INTAKE:
         if (lastCommandedState != currIntakeState) {
-          coastIntakeArm();
+          deployIntakeArm();
           runIntake();
           lastCommandedState = currIntakeState;
         }
         break;
       case OUTTAKE:
         if (lastCommandedState != currIntakeState) {
-          coastIntakeArm();
+          deployIntakeArm();
           runOuttake();
           lastCommandedState = currIntakeState;
         }
         break;
       case DEPLOYED:
         if (lastCommandedState != currIntakeState) {
-          coastIntakeArm();
+          deployIntakeArm();
           stopIntake();
           lastCommandedState = currIntakeState;
         }
@@ -291,10 +289,10 @@ public class IntakeSubsystem extends SubsystemBase {
         }
         break;
 
-        // ── Transition states: send arm + roller commands once on entry ──
-        // TalonFX maintains its onboard PID loop once commanded,
-        // so we only need to send the position setpoint once.
-        // We still check feedback each loop to know when to transition.
+      // ── Transition states: send arm + roller commands once on entry ──
+      // TalonFX maintains its onboard PID loop once commanded,
+      // so we only need to send the position setpoint once.
+      // We still check feedback each loop to know when to transition.
       case DEPLOYING:
         if (lastCommandedState != currIntakeState) {
           deployIntakeArm();
