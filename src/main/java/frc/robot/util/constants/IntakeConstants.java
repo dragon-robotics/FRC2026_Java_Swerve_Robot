@@ -114,7 +114,7 @@ public final class IntakeConstants {
       .withCurrentLimits(
           new CurrentLimitsConfigs()
               .withStatorCurrentLimitEnable(true)
-              .withStatorCurrentLimit(Amps.of(40))
+              .withStatorCurrentLimit(Amps.of(50))
               .withSupplyCurrentLimitEnable(true)
               .withSupplyCurrentLimit(Amps.of(30))
               .withSupplyCurrentLowerLimit(Amps.of(20))
@@ -138,7 +138,7 @@ public final class IntakeConstants {
        */
       .withSlot0(
           new Slot0Configs()
-              .withKP(17)
+              .withKP(20)
               .withKI(0)
               .withKD(0)
               .withKS(0)
@@ -181,8 +181,8 @@ public final class IntakeConstants {
       .withMagnetSensor(
           new MagnetSensorConfigs()
               .withAbsoluteSensorDiscontinuityPoint(0.5)
-              .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
-              .withMagnetOffset(0.015869546875));
+              .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
+              .withMagnetOffset(-0.843506));
 
   public static final SparkBaseConfig INTAKE_ARM_SPARKMAX_CONFIG = new SparkMaxConfig()
       .apply(

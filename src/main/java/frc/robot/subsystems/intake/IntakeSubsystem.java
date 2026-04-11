@@ -9,6 +9,7 @@ import static frc.robot.util.constants.IntakeConstants.*;
 import dev.doglog.DogLog;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
@@ -296,7 +297,14 @@ public class IntakeSubsystem extends SubsystemBase {
       case DEPLOYING:
         if (lastCommandedState != currIntakeState) {
           deployIntakeArm();
-          runIntakeRollerPercentage(-0.4);
+          if (DriverStation.isAutonomous()) {
+            intakeRollerIO.setMotorPercentage(-0.5);
+            // runOuttake();
+          } else if (DriverStation.isTeleop()) {
+            stopIntake();
+          } else {
+            stopIntake();
+          }
           lastCommandedState = currIntakeState;
         }
         // When intake arm reaches setpoint, transition to INTAKE or OUTTAKE state
