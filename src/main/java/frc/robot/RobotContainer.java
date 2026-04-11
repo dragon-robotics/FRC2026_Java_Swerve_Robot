@@ -415,6 +415,10 @@ public class RobotContainer {
         .whileTrue(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER))
         .onFalse(superstructureSubsystem.intakeOverrideCmd(IntakeState.DEPLOYED));
 
+    driverController
+        .x()
+        .whileTrue(superstructureSubsystem.setStateCmd(SuperState.DRIVE_STARTING_CONFIG));
+
     /* Operator Controls */
 
     /* Reset the robot pose based on vision — operator back and start button */
