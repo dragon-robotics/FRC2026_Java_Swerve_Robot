@@ -319,8 +319,8 @@ public class RobotContainer {
         this);
 
     defaultDriveCommand = superstructureSubsystem.defaultDrive(
-        () -> -driverController.getLeftY(),
-        () -> -driverController.getLeftX(),
+        () -> driverController.getLeftY(),
+        () -> driverController.getLeftX(),
         () -> -driverController.getRightX(),
         () -> driverController.getHID().getPOV() == 0,
         () -> driverController.getHID().getXButton());
