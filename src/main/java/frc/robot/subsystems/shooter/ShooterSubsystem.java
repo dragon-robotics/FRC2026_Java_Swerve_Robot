@@ -4,8 +4,6 @@ import static frc.robot.util.constants.ShooterConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
@@ -41,9 +39,6 @@ public class ShooterSubsystem extends SubsystemBase {
   private final Timer kickerStopTimer = new Timer();
   private boolean kickerStopTimerRunning = false;
   private static final double KICKER_STOP_DELAY = 1.0; // seconds
-
-  // NetworkTable for debugging
-  private final NetworkTable shooterTable = NetworkTableInstance.getDefault().getTable("Shooter");
 
   /** Creates a new ShooterSubsystem. */
   public ShooterSubsystem(
