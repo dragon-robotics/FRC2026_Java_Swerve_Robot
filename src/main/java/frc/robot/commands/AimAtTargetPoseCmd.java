@@ -73,19 +73,10 @@ public class AimAtTargetPoseCmd extends Command {
     // Vector from robot to target hub
     var delta = hubToAimTowards.minus(robotTranslation);
 
-    Rotation2d angleToPointAt;
-    if (alliance.isPresent() && (alliance.get() == Alliance.Red)) {
-      // Absolute angle in field frame — front of robot faces the hub
-      angleToPointAt =
-          new Rotation2d(Math.atan2(delta.getY(), delta.getX())).rotateBy(Rotation2d.kPi);
-
-      setCurrentHeading.accept(Optional.of(angleToPointAt.rotateBy(Rotation2d.kPi)));
-    } else {
-      // Absolute angle in field frame — front of robot faces the hub
-      angleToPointAt = new Rotation2d(Math.atan2(delta.getY(), delta.getX()));
-
-      setCurrentHeading.accept(Optional.of(angleToPointAt));
-    }
+    // Absolute angle in field frame — hubToAimTowards is already alliance-specific,
+    // so atan2 gives the correct direction-to-hub angle for both alliances.
+    Rotation2d angleToPointAt = new Rotation2d(Math.atan2(delta.getY(), delta.getX()));
+    setCurrentHeading.accept(Optional.of(angleToPointAt));
 
     swerve.setControl(
         driveMaintainHeading.withTargetDirection(angleToPointAt).withTargetRateFeedforward(0.1));
