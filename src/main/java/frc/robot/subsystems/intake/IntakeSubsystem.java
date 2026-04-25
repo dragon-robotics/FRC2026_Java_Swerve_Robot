@@ -7,8 +7,6 @@ package frc.robot.subsystems.intake;
 import static frc.robot.util.constants.IntakeConstants.*;
 
 import dev.doglog.DogLog;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
@@ -54,8 +52,6 @@ public class IntakeSubsystem extends SubsystemBase {
   // Juicer sub-phase tracking — always reset to WAIT on (re-)entry
   private JuicerPhase juicerPhase = JuicerPhase.PRE_JUICE;
   private JuicerPhase lastJuicerPhase = null;
-
-  private final NetworkTable intakeTable = NetworkTableInstance.getDefault().getTable("Intake");
 
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem(MotorIO intakeRollerIO, MotorIO intakeArmIO) {
