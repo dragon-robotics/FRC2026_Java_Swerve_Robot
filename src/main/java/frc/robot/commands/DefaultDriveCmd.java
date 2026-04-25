@@ -4,14 +4,21 @@
 
 package frc.robot.commands;
 
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
+import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
@@ -19,12 +26,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.util.constants.SwerveConstants;
-import java.util.Optional;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
-import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class DefaultDriveCmd extends Command {
@@ -81,22 +82,19 @@ public class DefaultDriveCmd extends Command {
     this.rotationLastTriggeredSetter = rotationLastTriggeredSetter;
 
     maxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // Max speed at 12 volts
-    maxAngularRate =
-        RotationsPerSecond.of(1).in(RadiansPerSecond); // 1 rotation per second max angular velocity
+    maxAngularRate = RotationsPerSecond.of(1).in(RadiansPerSecond); // 1 rotation per second max angular velocity
 
-    drive =
-        new SwerveRequest.FieldCentric()
-            .withDeadband(maxSpeed * 0.05)
-            .withRotationalDeadband(maxAngularRate * 0.05)
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-            .withDesaturateWheelSpeeds(true);
+    drive = new SwerveRequest.FieldCentric()
+        .withDeadband(maxSpeed * 0.05)
+        .withRotationalDeadband(maxAngularRate * 0.05)
+        .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+        .withDesaturateWheelSpeeds(true);
 
-    driveMaintainHeading =
-        new SwerveRequest.FieldCentricFacingAngle()
-            .withDeadband(maxSpeed * 0.05)
-            .withRotationalDeadband(maxAngularRate * 0.05)
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-            .withDesaturateWheelSpeeds(true);
+    driveMaintainHeading = new SwerveRequest.FieldCentricFacingAngle()
+        .withDeadband(maxSpeed * 0.05)
+        .withRotationalDeadband(maxAngularRate * 0.05)
+        .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+        .withDesaturateWheelSpeeds(true);
 
     driveMaintainHeading.HeadingController.setPID(
         SwerveConstants.HEADING_KP, SwerveConstants.HEADING_KI, SwerveConstants.HEADING_KD);
@@ -108,23 +106,22 @@ public class DefaultDriveCmd extends Command {
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {}
+  public void initialize() {
+  }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
     double rawRotation = rotationSup.getAsDouble();
-    var speeds =
-        processJoystickInputs(
-            translationSup.getAsDouble(),
-            strafeSup.getAsDouble(),
-            rawRotation,
-            halfSpeedSup.getAsBoolean());
+    var speeds = processJoystickInputs(
+        translationSup.getAsDouble(),
+        strafeSup.getAsDouble(),
+        rawRotation,
+        halfSpeedSup.getAsBoolean());
 
     boolean rotationTriggered = Math.abs(rawRotation) > SwerveConstants.SWERVE_DEADBAND;
-    boolean rotationActive =
-        MathUtil.isNear(rotationLastTriggeredGetter.getAsDouble(), Timer.getFPGATimestamp(), 0.1)
-            && (Math.abs(swerve.getState().Speeds.omegaRadiansPerSecond) > Math.toRadians(10));
+    boolean rotationActive = MathUtil.isNear(rotationLastTriggeredGetter.getAsDouble(), Timer.getFPGATimestamp(), 0.1)
+        && (Math.abs(swerve.getState().Speeds.omegaRadiansPerSecond) > Math.toRadians(10));
 
     if (rotationTriggered) {
       rotationLastTriggeredSetter.accept(Timer.getFPGATimestamp());
@@ -146,7 +143,8 @@ public class DefaultDriveCmd extends Command {
 
   // Called once the command ends or is interrupted.
   @Override
-  public void end(boolean interrupted) {}
+  public void end(boolean interrupted) {
+  }
 
   // Returns true when the command should end.
   @Override
@@ -185,30 +183,31 @@ public class DefaultDriveCmd extends Command {
 
   private void setSwerveToMaintainHeading(double translation, double strafe) {
     if (headingGetter.get().isEmpty()) {
-      headingSetter.accept(Optional.of(swerve.getState().Pose.getRotation()));
+      headingSetter.accept(Optional.of(toOperatorPerspectiveHeading(swerve.getState().Pose.getRotation())));
     }
 
-    Optional<Alliance> alliance = DriverStation.getAlliance();
-    if (alliance.isPresent()) {
-      Rotation2d targetDirection =
-          alliance.get() == Alliance.Blue
-              ? headingGetter.get().get()
-              : headingGetter.get().get().rotateBy(Rotation2d.kPi);
+    if (DriverStation.getAlliance().isPresent()) {
       swerve.setControl(
           driveMaintainHeading
               .withVelocityX(translation)
               .withVelocityY(strafe)
-              .withTargetDirection(targetDirection));
+              .withTargetDirection(headingGetter.get().get()));
     }
   }
 
   // ...existing code...
   private void setSwerveToLockAngle(double translation, double strafe, Rotation2d targetHeading) {
-    headingSetter.accept(Optional.of(swerve.getState().Pose.getRotation()));
+    headingSetter.accept(Optional.of(toOperatorPerspectiveHeading(swerve.getState().Pose.getRotation())));
     swerve.setControl(
         driveMaintainHeading
             .withVelocityX(translation)
             .withVelocityY(strafe)
-            .withTargetDirection(targetHeading));
+            .withTargetDirection(toOperatorPerspectiveHeading(targetHeading)));
+  }
+
+  private Rotation2d toOperatorPerspectiveHeading(Rotation2d fieldHeading) {
+    return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+        ? fieldHeading.rotateBy(Rotation2d.kPi)
+        : fieldHeading;
   }
 }
