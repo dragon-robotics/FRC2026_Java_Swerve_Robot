@@ -16,6 +16,7 @@ public class ShooterSubsystem extends SubsystemBase {
     STOP,
     PREPFUEL,
     SHOOT,
+    PURGE,
     TRANSITION // Transition state to handle ramping up/down of the shooter speed
   }
 
@@ -195,6 +196,11 @@ public class ShooterSubsystem extends SubsystemBase {
         runKicker();
         setHoodAngle(hoodAngle);
         break;
+      case PURGE:
+        runShooter();
+        runKicker();
+        setHoodAngle(2.5);
+        break;
       case TRANSITION:
         switch (desiredShooterState) {
           case STOP:
@@ -228,6 +234,13 @@ public class ShooterSubsystem extends SubsystemBase {
             if (MathUtil.isNear(targetRPM, getShooterSpeed(), 60)
                 && MathUtil.isNear(hoodAngle, shooterHoodInputs.getMotorPosition(), 0.125)) {
               currShooterState = ShooterState.SHOOT;
+            }
+          case PURGE:
+            runShooter();
+            setHoodAngle(2.5);
+            if (MathUtil.isNear(2450, getShooterSpeed(), 60)
+                && MathUtil.isNear(2.5, shooterHoodInputs.getMotorPosition(), 0.125)) {
+              currShooterState = ShooterState.PURGE;
             }
             break;
           default:
