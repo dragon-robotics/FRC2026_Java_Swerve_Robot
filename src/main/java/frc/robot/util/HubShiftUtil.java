@@ -82,7 +82,7 @@ public class HubShiftUtil {
     return alliance == Alliance.Blue ? Alliance.Red : Alliance.Blue;
   }
 
-  /** Starts the timer at the begining of teleop. */
+  /** Starts the timer at the beginning of teleop. */
   public static void initialize() {
     shiftTimerOffset = 0;
     shiftTimer.restart();
@@ -114,12 +114,12 @@ public class HubShiftUtil {
       active = true;
       currentShift = ShiftEnum.AUTO;
     } else if (DriverStation.isEnabled()) {
-      // Adjust the current offset if the time difference above the theshold
+      // Adjust the current offset if the time difference above the threshold
       if (Math.abs(fieldTeleopTime - currentTime) >= timeResetThreshold
           && fieldTeleopTime <= 135
           && DriverStation.isFMSAttached()) {
         shiftTimerOffset += currentTime - fieldTeleopTime;
-        currentTime = timerValue + shiftTimerOffset;
+        currentTime = timerValue - shiftTimerOffset;
       }
       int currentShiftIndex = -1;
       for (int i = 0; i < shiftStartTimes.length; i++) {
