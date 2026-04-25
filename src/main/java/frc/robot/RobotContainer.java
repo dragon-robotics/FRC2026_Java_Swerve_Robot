@@ -409,11 +409,11 @@ public class RobotContainer {
         .whileTrue(superstructureSubsystem.setStateCmd(SuperState.SHOOT))
         .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
 
-    /* Purge */
-    driverController
-        .leftStick()
-        .whileTrue(superstructureSubsystem.setStateCmd(SuperState.PURGE))
-        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
+    // /* Purge */
+    // driverController
+    // .rightStick()
+    // .whileTrue(superstructureSubsystem.setStateCmd(SuperState.PURGE))
+    // .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
 
     /* Driver can control the Juicer mode if needed */
     driverController
