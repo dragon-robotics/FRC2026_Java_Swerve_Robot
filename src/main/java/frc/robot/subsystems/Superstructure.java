@@ -339,27 +339,26 @@ public class Superstructure extends SubsystemBase {
 
       case SHOOT:
         // SHOOT is special — it needs continuous polling for alignment.
-        // AimAtTargetPoseCmd only runs when manualShooterDistanceOverride is false.
-        // When override is active, skip aiming and shoot in place.
+        // swerve is always required: either AimAtTargetPoseCmd (when override is off)
+        // or a dedicated brake command (when override is on) runs in parallel so that
+        // the swerve default command cannot fight the brake output.
         return Commands.run(
                 () -> {
                   setDesiredSuperState(SuperState.SHOOT);
                   shooter.setDesiredState(ShooterState.SHOOT);
                   if (manualShooterDistanceOverride) {
-                    // Override active: aim command not running, just shoot in place
+                    // Override active: brake held by parallel command; just gate hopper
                     if (shooter.getCurrentState() == ShooterState.SHOOT) {
-                      swerve.setControl(brake);
                       hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
                     } else {
                       hopper.setDesiredState(HopperState.STOP);
                     }
                   } else {
-                    // Normal: require alignment before feeding
+                    // Normal: require alignment before feeding;
+                    // AimAtTargetPoseCmd handles swerve in parallel
                     if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-                      swerve.setControl(brake);
                       hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
                     } else {
-                      // Aim command is running in parallel (scheduled below)
                       hopper.setDesiredState(HopperState.STOP);
                     }
                   }
@@ -367,8 +366,10 @@ public class Superstructure extends SubsystemBase {
                 shooter,
                 hopper)
             .alongWith(
-                Commands.waitUntil(() -> !manualShooterDistanceOverride)
-                    .andThen(new AimAtTargetPoseCmd(swerve, this::setCurrentHeading)))
+                Commands.either(
+                    new AimAtTargetPoseCmd(swerve, this::setCurrentHeading),
+                    Commands.run(() -> swerve.setControl(brake), swerve),
+                    () -> !manualShooterDistanceOverride))
             .withName("SuperState(SHOOT)");
 
       default:
