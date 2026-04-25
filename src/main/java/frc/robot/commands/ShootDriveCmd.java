@@ -4,18 +4,14 @@
 
 package frc.robot.commands;
 
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.DoubleSupplier;
-
-import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-import com.ctre.phoenix6.swerve.SwerveRequest;
-
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveRequest;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -23,6 +19,9 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.util.constants.FieldConstants;
 import frc.robot.util.constants.SwerveConstants;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.DoubleSupplier;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class ShootDriveCmd extends Command {
@@ -51,11 +50,12 @@ public class ShootDriveCmd extends Command {
     maxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
     maxAngularRate = RotationsPerSecond.of(1).in(RadiansPerSecond);
 
-    driveMaintainHeading = new SwerveRequest.FieldCentricFacingAngle()
-        .withDeadband(maxSpeed * 0.05)
-        .withRotationalDeadband(maxAngularRate * 0.05)
-        .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-        .withDesaturateWheelSpeeds(true);
+    driveMaintainHeading =
+        new SwerveRequest.FieldCentricFacingAngle()
+            .withDeadband(maxSpeed * 0.05)
+            .withRotationalDeadband(maxAngularRate * 0.05)
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+            .withDesaturateWheelSpeeds(true);
 
     /* Set the PID constants for the Maintain Heading controller */
     driveMaintainHeading.HeadingController.setPID(
@@ -69,8 +69,7 @@ public class ShootDriveCmd extends Command {
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {
-  }
+  public void initialize() {}
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
@@ -82,9 +81,10 @@ public class ShootDriveCmd extends Command {
     Optional<Alliance> alliance = DriverStation.getAlliance();
 
     // Choose which hub to aim to depending on alliance color
-    Translation2d hubToAimTowards = alliance.isPresent() && (alliance.get() == Alliance.Red)
-        ? FieldConstants.Hub.RED_CENTER_POSE
-        : FieldConstants.Hub.BLUE_CENTER_POSE;
+    Translation2d hubToAimTowards =
+        alliance.isPresent() && (alliance.get() == Alliance.Red)
+            ? FieldConstants.Hub.RED_CENTER_POSE
+            : FieldConstants.Hub.BLUE_CENTER_POSE;
 
     // Current robot translation (x,y) in field coordinates
     var robotTranslation = swerve.getState().Pose.getTranslation();
@@ -108,8 +108,7 @@ public class ShootDriveCmd extends Command {
 
   // Called once the command ends or is interrupted.
   @Override
-  public void end(boolean interrupted) {
-  }
+  public void end(boolean interrupted) {}
 
   // Returns true when the command should end.
   @Override
