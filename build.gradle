@@ -121,6 +121,25 @@ tasks.withType(JavaCompile) {
     options.compilerArgs.add '-XDstringConcat=inline'
 }
 
+def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
+def venvPython = isWindows ? file('.venv/Scripts/python.exe') : file('.venv/bin/python3')
+def pythonExecutable = System.getenv('PYTHON') ?: (venvPython.exists() ? venvPython.absolutePath : (isWindows ? 'python' : 'python3'))
+def mirrorScriptPath = 'scripts/mirror_pathplanner_autos.py'
+
+tasks.register('mirrorAutos', Exec) {
+    group = 'automation'
+    description = 'Generate right-side PathPlanner autos and paths from the canonical left-side assets.'
+    workingDir = projectDir
+    commandLine pythonExecutable, mirrorScriptPath
+}
+
+tasks.register('checkMirroredAutos', Exec) {
+    group = 'verification'
+    description = 'Validate that generated right-side PathPlanner autos and paths match the canonical left-side assets.'
+    workingDir = projectDir
+    commandLine pythonExecutable, mirrorScriptPath, '--check'
+}
+
 spotless {
     java {
         target fileTree('.') {
