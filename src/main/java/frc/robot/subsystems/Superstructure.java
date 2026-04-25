@@ -44,7 +44,7 @@ public class Superstructure extends SubsystemBase {
     INTAKE,
     OUTTAKE,
     SHOOT,
-    PURGE
+    // PURGE
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -377,28 +377,28 @@ public class Superstructure extends SubsystemBase {
                     () -> !manualShooterDistanceOverride))
             .withName("SuperState(SHOOT)");
 
-      case PURGE:
-        // SHOOT is special — it needs continuous polling for alignment.
-        // swerve is always required: when override is on, hold brake immediately;
-        // otherwise aim until AimAtTargetPoseCmd finishes on target, then hold
-        // brake so the default drive command cannot resume and fight the shot.
-        return Commands.run(
-            () -> {
-              setDesiredSuperState(SuperState.PURGE);
-              shooter.setDesiredState(ShooterState.SHOOT);
-              if (shooter.getCurrentState() == ShooterState.SHOOT) {
-                hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-                intake.setDesiredState(IntakeState.OUTTAKE);
-              } else {
-                hopper.setDesiredState(HopperState.STOP);
-                intake.setDesiredState(IntakeState.DEPLOYED);
-              }
-            },
-            shooter,
-            hopper,
-            intake)
-            .alongWith(Commands.run(() -> swerve.setControl(brake), swerve))
-            .withName("SuperState(PURGE)");
+      // case PURGE:
+      // // SHOOT is special — it needs continuous polling for alignment.
+      // // swerve is always required: when override is on, hold brake immediately;
+      // // otherwise aim until AimAtTargetPoseCmd finishes on target, then hold
+      // // brake so the default drive command cannot resume and fight the shot.
+      // return Commands.run(
+      // () -> {
+      // setDesiredSuperState(SuperState.PURGE);
+      // shooter.setDesiredState(ShooterState.PURGE);
+      // if (shooter.getCurrentState() == ShooterState.PURGE) {
+      // hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+      // intake.setDesiredState(IntakeState.OUTTAKE);
+      // } else {
+      // hopper.setDesiredState(HopperState.STOP);
+      // intake.setDesiredState(IntakeState.DEPLOYED);
+      // }
+      // },
+      // shooter,
+      // hopper,
+      // intake)
+      // .alongWith(Commands.run(() -> swerve.setControl(brake), swerve))
+      // .withName("SuperState(PURGE)");
       default:
         return Commands.none();
     }
