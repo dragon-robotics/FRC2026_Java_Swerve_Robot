@@ -107,7 +107,7 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void prepKicker() {
-    shooterKickerIO.setMotorPercentage(0.50); // Run kicker at 30% of full RPM for prep
+    shooterKickerIO.setMotorPercentage(0.50); // Run kicker at 50% of full RPM for prep
   }
 
   public void stopKicker() {
