@@ -1,13 +1,10 @@
 package frc.robot.subsystems.hopper;
 
-import static frc.robot.util.constants.HopperConstants.*;
-
 import dev.doglog.DogLog;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_DUTY_CYCLE;
 
 public class HopperSubsystem extends SubsystemBase {
 
@@ -29,8 +26,6 @@ public class HopperSubsystem extends SubsystemBase {
   // hardware layer
   private final MotorIOInputs leadRollerMotorIOInputs;
   private final MotorIOInputs followRollerMotorIOInputs;
-
-  private final NetworkTable hopperTable = NetworkTableInstance.getDefault().getTable("Hopper");
 
   /* Creates new HopperSubsystem */
   public HopperSubsystem(MotorIO leadRollerMotorIO, MotorIO followRollerMotorIO) {
