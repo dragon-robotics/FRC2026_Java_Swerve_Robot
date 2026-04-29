@@ -230,17 +230,6 @@
   ],
   "eventMarkers": [
     {
-      "name": "Intake",
-      "waypointRelativePos": 0.0,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "named",
-        "data": {
-          "name": "Intake"
-        }
-      }
-    },
-    {
       "name": "SOTM",
       "waypointRelativePos": 0,
       "endWaypointRelativePos": 0.8036080360803911,
@@ -248,6 +237,17 @@
         "type": "named",
         "data": {
           "name": "Auto Shoot"
+        }
+      }
+    },
+    {
+      "name": "Intake",
+      "waypointRelativePos": 0.803608036080418,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "Intake"
         }
       }
     }
