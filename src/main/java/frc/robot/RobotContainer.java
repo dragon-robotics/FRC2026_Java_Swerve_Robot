@@ -52,10 +52,12 @@ import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Superstructure.ShootMode;
 import frc.robot.subsystems.Superstructure.SuperState;
 import frc.robot.subsystems.hopper.HopperSubsystem;
+import frc.robot.subsystems.hopper.HopperSubsystem.HopperState;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem.IntakeState;
 import frc.robot.subsystems.intake.IntakeSubsystemSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem.ShooterState;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.subsystems.vision.VisionSubsystem;
@@ -93,6 +95,7 @@ public class RobotContainer {
 
   /* Shooter Commands */
   private Command shootCommand;
+  private Command autoShootCommand;
 
   /* Path follower */
   private final SendableChooser<Command> autoChooser;
@@ -373,6 +376,7 @@ public class RobotContainer {
 
     NamedCommands.registerCommand("Intake", intakeCommand);
     NamedCommands.registerCommand("Shoot", shootCommand);
+    NamedCommands.registerCommand("Auto Shoot", autoShootCommand);
     NamedCommands.registerCommand("Drive", driveCommand);
 
     autoChooser = AutoBuilder.buildAutoChooser();
