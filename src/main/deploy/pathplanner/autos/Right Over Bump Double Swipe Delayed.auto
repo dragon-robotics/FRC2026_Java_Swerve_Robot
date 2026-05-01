@@ -5,15 +5,21 @@
     "data": {
       "commands": [
         {
-          "type": "path",
+          "type": "wait",
           "data": {
-            "pathName": "LTrench through NZ Safe"
+            "waitTime": 3.0
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Left NZ Cross Bump Safe"
+            "pathName": "RTrench through NZ"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right NZ Cross Bump"
           }
         },
         {
@@ -38,7 +44,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left Cross Trench to NZ"
+            "pathName": "Right Cross Trench to NZ"
           }
         },
         {
@@ -48,7 +54,7 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 5.0
+                  "waitTime": 3.5
                 }
               },
               {
