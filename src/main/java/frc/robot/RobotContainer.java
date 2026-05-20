@@ -12,8 +12,10 @@ import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_LEAD_TALONF
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_CANCODER_CONFIG;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_MOTOR_ID;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_TALONFX_CONFIG;
-import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_MOTOR_ID;
-import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TALONFX_CONFIG;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_FOLLOW_MOTOR_ID;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_LEAD_MOTOR_ID;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_LEAD_TALONFX_CONFIG;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_MOTOR_ID;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_FOLLOW_TALONFX_CONFIG;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_MOTOR_ID;
@@ -120,7 +122,12 @@ public class RobotContainer {
       case COMP:
         intakeSubsystem = new IntakeSubsystem(
             new TalonFXMotorIO(
-                INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
+                INTAKE_ROLLER_LEAD_MOTOR_ID, INTAKE_ROLLER_LEAD_TALONFX_CONFIG, "Intake Roller Lead"),
+            new TalonFXMotorIO(
+                INTAKE_ROLLER_FOLLOW_MOTOR_ID,
+                INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG,
+                "Intake Roller Follow",
+                new Follower(INTAKE_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
             new TalonFXMotorIO(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         hopperSubsystem = new HopperSubsystem(
             new TalonFXMotorIO(
@@ -160,10 +167,16 @@ public class RobotContainer {
       case SIM:
         intakeSubsystem = new IntakeSubsystemSim(
             new TalonFXMotorIOSim(
-                INTAKE_ROLLER_MOTOR_ID,
-                INTAKE_ROLLER_TALONFX_CONFIG,
+                INTAKE_ROLLER_LEAD_MOTOR_ID,
+                INTAKE_ROLLER_LEAD_TALONFX_CONFIG,
                 "KrakenX60",
-                "Intake Roller"),
+                "Intake Roller Lead"),
+            new TalonFXMotorIOSim(
+                INTAKE_ROLLER_FOLLOW_MOTOR_ID,
+                INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG,
+                "KrakenX60",
+                "Intake Roller Follow",
+                new Follower(INTAKE_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
             new TalonFXMotorIOSim(
                 INTAKE_ARM_MOTOR_ID,
                 INTAKE_ARM_TALONFX_CONFIG,
@@ -229,7 +242,10 @@ public class RobotContainer {
       case TEST:
         intakeSubsystem = new IntakeSubsystem(
             new TalonFXMotorIOTunable(
-                INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
+                INTAKE_ROLLER_LEAD_MOTOR_ID, INTAKE_ROLLER_LEAD_TALONFX_CONFIG, "Intake Roller Lead"),
+            new TalonFXMotorIOTunable(
+                INTAKE_ROLLER_FOLLOW_MOTOR_ID, INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG, "Intake Roller Follow",
+                new Follower(INTAKE_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
             new TalonFXMotorIOTunable(
                 INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         hopperSubsystem = new HopperSubsystem(
@@ -270,7 +286,10 @@ public class RobotContainer {
       default: // Default should be in comp mode //
         intakeSubsystem = new IntakeSubsystem(
             new TalonFXMotorIO(
-                INTAKE_ROLLER_MOTOR_ID, INTAKE_ROLLER_TALONFX_CONFIG, "Intake Roller"),
+                INTAKE_ROLLER_LEAD_MOTOR_ID, INTAKE_ROLLER_LEAD_TALONFX_CONFIG, "Intake Roller Lead"),
+            new TalonFXMotorIO(
+                INTAKE_ROLLER_FOLLOW_MOTOR_ID, INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG, "Intake Roller Follow",
+                new Follower(INTAKE_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
             new TalonFXMotorIO(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
         hopperSubsystem = new HopperSubsystem(
             new TalonFXMotorIO(

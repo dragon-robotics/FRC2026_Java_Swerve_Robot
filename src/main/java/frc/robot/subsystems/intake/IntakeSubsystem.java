@@ -4,7 +4,16 @@
 
 package frc.robot.subsystems.intake;
 
-import static frc.robot.util.constants.IntakeConstants.*;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_FAST_PID_SLOT;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_FINAL_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_PRE_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_POSITION_TOLERANCE;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_SLOW_PID_SLOT;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_WOKTOSS_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_DUTY_CYCLE;
+import static frc.robot.util.constants.IntakeConstants.OUTTAKE_ROLLER_DUTY_CYCLE;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -36,15 +45,16 @@ public class IntakeSubsystem extends SubsystemBase {
   protected IntakeState currIntakeState;
   protected IntakeState desiredIntakeState;
 
-  protected final MotorIO intakeRollerIO;
+  protected final MotorIO intakeRollerLeadIO, intakeRollerFollowIO;
   protected final MotorIO intakeArmIO;
-  protected final MotorIOInputs intakeRollerInputs;
+  protected final MotorIOInputs intakeRollerLeadInputs, intakeRollerFollowInputs;
   protected final MotorIOInputs intakeArmInputs;
 
   protected boolean wokTossMovingToDeployed;
 
   /**
-   * Tracks the last state for which CAN commands were sent, so we can skip redundant writes when
+   * Tracks the last state for which CAN commands were sent, so we can skip
+   * redundant writes when
    * the state hasn't changed. Reset to null on any state transition.
    */
   private IntakeState lastCommandedState = null;
@@ -54,11 +64,15 @@ public class IntakeSubsystem extends SubsystemBase {
   private JuicerPhase lastJuicerPhase = null;
 
   /** Creates a new IntakeSubsystem. */
-  public IntakeSubsystem(MotorIO intakeRollerIO, MotorIO intakeArmIO) {
-
-    this.intakeRollerIO = intakeRollerIO;
+  public IntakeSubsystem(
+      MotorIO intakeRollerLeadIO,
+      MotorIO intakeRollerFollowIO,
+      MotorIO intakeArmIO) {
+    this.intakeRollerLeadIO = intakeRollerLeadIO;
+    this.intakeRollerFollowIO = intakeRollerFollowIO;
     this.intakeArmIO = intakeArmIO;
-    this.intakeRollerInputs = new MotorIOInputs();
+    this.intakeRollerLeadInputs = new MotorIOInputs();
+    this.intakeRollerFollowInputs = new MotorIOInputs();
     this.intakeArmInputs = new MotorIOInputs();
 
     /* Initialize intake states */
@@ -72,28 +86,28 @@ public class IntakeSubsystem extends SubsystemBase {
   /* Setters */
 
   public void runIntakeRollerRPM(double rpm) {
-    intakeRollerIO.setMotorRPM(rpm);
+    intakeRollerLeadIO.setMotorRPM(rpm);
   }
 
   public void runIntakeRollerVoltage(double voltage) {
-    intakeRollerIO.setMotorVoltage(voltage);
+    intakeRollerLeadIO.setMotorVoltage(voltage);
   }
 
   public void runIntakeRollerPercentage(double percentage) {
-    intakeRollerIO.setMotorPercentage(percentage);
+    intakeRollerLeadIO.setMotorPercentage(percentage);
   }
 
   public void runIntake() {
     // runIntakeRollerPercentage(INTAKE_ROLLER_DUTY_CYCLE);
-    intakeRollerIO.setMotorPercentage(INTAKE_ROLLER_DUTY_CYCLE);
+    intakeRollerLeadIO.setMotorPercentage(INTAKE_ROLLER_DUTY_CYCLE);
   }
 
   public void runOuttake() {
-    intakeRollerIO.setMotorPercentage(OUTTAKE_ROLLER_DUTY_CYCLE);
+    intakeRollerLeadIO.setMotorPercentage(OUTTAKE_ROLLER_DUTY_CYCLE);
   }
 
   public void stopIntake() {
-    intakeRollerIO.setMotorPercentage(0.0);
+    intakeRollerLeadIO.setMotorPercentage(0.0);
   }
 
   public void setIntakeArmSetpoint(double setpoint, int slotID) {
@@ -106,7 +120,8 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /**
-   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity holds the arm down
+   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity
+   * holds the arm down
    * once deployed — no PID needed to maintain the down position.
    */
   public void coastIntakeArm() {
@@ -137,30 +152,26 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public double getIntakeRollerSpeed() {
-    return intakeRollerInputs.getMotorVelocity();
+    return intakeRollerLeadInputs.getMotorVelocity();
   }
 
   public boolean isIntakeArmAtDeployed() {
-    double positionError =
-        Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtStowed() {
-    double positionError =
-        Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtWokToss() {
-    double positionError =
-        Math.abs(INTAKE_ARM_WOKTOSS_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_WOKTOSS_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtPreJuice() {
-    double positionError =
-        Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
@@ -173,7 +184,7 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public double getIntakeRollerCurrent() {
-    return intakeRollerInputs.getMotorCurrent();
+    return intakeRollerLeadInputs.getMotorCurrent();
   }
 
   public double getIntakeArmCurrent() {
@@ -241,7 +252,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public void handleStateTransition() {
     // Handle the state transitions
     switch (currIntakeState) {
-        // ── Steady states: only send CAN commands on state entry ──
+      // ── Steady states: only send CAN commands on state entry ──
       case HOME:
         if (lastCommandedState != currIntakeState) {
           // Command arm to stow via PID and stop rollers on state entry.
@@ -279,15 +290,15 @@ public class IntakeSubsystem extends SubsystemBase {
         }
         break;
 
-        // ── Transition states: send arm + roller commands once on entry ──
-        // TalonFX maintains its onboard PID loop once commanded,
-        // so we only need to send the position setpoint once.
-        // We still check feedback each loop to know when to transition.
+      // ── Transition states: send arm + roller commands once on entry ──
+      // TalonFX maintains its onboard PID loop once commanded,
+      // so we only need to send the position setpoint once.
+      // We still check feedback each loop to know when to transition.
       case DEPLOYING:
         if (lastCommandedState != currIntakeState) {
           deployIntakeArm();
           if (DriverStation.isAutonomous()) {
-            intakeRollerIO.setMotorPercentage(-0.5);
+            intakeRollerLeadIO.setMotorPercentage(-0.5);
             // runOuttake();
           } else if (DriverStation.isTeleop()) {
             stopIntake();
@@ -375,7 +386,8 @@ public class IntakeSubsystem extends SubsystemBase {
     handleStateTransition();
 
     // This method will be called once per scheduler run
-    // intakeRollerIO.updateInputs(intakeRollerInputs);
+    intakeRollerLeadIO.updateInputs(intakeRollerLeadInputs);
+    intakeRollerFollowIO.updateInputs(intakeRollerFollowInputs);
     intakeArmIO.updateInputs(intakeArmInputs);
 
     DogLog.log("Intake/CurrentState", currIntakeState.toString());
