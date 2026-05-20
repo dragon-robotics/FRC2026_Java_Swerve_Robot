@@ -5,10 +5,14 @@ import static frc.robot.util.constants.VisionConstants.CONSTRAINED_HEADING_SCALE
 import static frc.robot.util.constants.VisionConstants.CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC;
 import static frc.robot.util.constants.VisionConstants.ENABLE_CONSTRAINED_FALLBACK;
 import static frc.robot.util.constants.VisionConstants.MAX_TAG_DISTANCE;
+import static frc.robot.util.constants.VisionConstants.CONSTRAINED_HEADING_SCALE_FACTOR;
+import static frc.robot.util.constants.VisionConstants.CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC;
+import static frc.robot.util.constants.VisionConstants.ENABLE_CONSTRAINED_FALLBACK;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;

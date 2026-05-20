@@ -12,19 +12,11 @@ import frc.robot.generated.TunerConstants;
 
 public final class VisionConstants {
   public static final String[] APTAG_CAMERA_NAMES = {
-<<<<<<< HEAD
-    "AprilTagPoseEstCameraF",
-    "AprilTagPoseEstCameraR",
-    "AprilTagPoseEstCameraB",
-    "AprilTagPoseEstCameraL"
-=======
-        "AprilTagPoseEstCameraF",
-        "AprilTagPoseEstCameraR",
-        "AprilTagPoseEstCameraB",
-        "AprilTagPoseEstCameraL"
->>>>>>> 4da7ae4 (vision:
-  add cross-camera constants and 4-
-  camera stddev factors)};
+      "AprilTagPoseEstCameraF",
+      "AprilTagPoseEstCameraR",
+      "AprilTagPoseEstCameraB",
+      "AprilTagPoseEstCameraL"
+  };
 
   public static final Transform3d APTAG_POSE_EST_CAM_F_POS = new Transform3d(
       new Translation3d(
