@@ -46,8 +46,8 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
    *
    * @param armSubsystem The arm subsystem to visualize
    */
-  public IntakeSubsystemSim(MotorIO intakeRollerIO, MotorIO intakeArmIO) {
-    super(intakeRollerIO, intakeArmIO);
+  public IntakeSubsystemSim(MotorIO intakeRollerLeadIO, MotorIO intakeRollerFollowIO, MotorIO intakeArmIO) {
+    super(intakeRollerLeadIO, intakeRollerFollowIO, intakeArmIO);
 
     // Get arm length from subsystem (in meters)
     armLength = 1;
@@ -60,45 +60,39 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
     root = mech.getRoot("ArmRoot", 200, 200);
 
     // Add arm base
-    MechanismLigament2d armBase =
-        root.append(
-            new MechanismLigament2d(
-                "Base", BASE_WIDTH, 0, BASE_HEIGHT, new Color8Bit(Color.kDarkGray)));
+    MechanismLigament2d armBase = root.append(
+        new MechanismLigament2d(
+            "Base", BASE_WIDTH, 0, BASE_HEIGHT, new Color8Bit(Color.kDarkGray)));
 
     // Add tower
-    MechanismLigament2d tower =
-        armBase.append(
-            new MechanismLigament2d(
-                "Tower", TOWER_HEIGHT, 90, BASE_HEIGHT / 2, new Color8Bit(Color.kGray)));
+    MechanismLigament2d tower = armBase.append(
+        new MechanismLigament2d(
+            "Tower", TOWER_HEIGHT, 90, BASE_HEIGHT / 2, new Color8Bit(Color.kGray)));
 
     // Add the arm pivot point
-    MechanismLigament2d pivot =
-        tower.append(new MechanismLigament2d("Pivot", 5, 0, 5, new Color8Bit(Color.kBlack)));
+    MechanismLigament2d pivot = tower.append(new MechanismLigament2d("Pivot", 5, 0, 5, new Color8Bit(Color.kBlack)));
 
     // Add the arm
-    armMech =
-        pivot.append(
-            new MechanismLigament2d(
-                "Arm", armLength * visualScaleFactor, 0, ARM_WIDTH, new Color8Bit(Color.kBlue)));
+    armMech = pivot.append(
+        new MechanismLigament2d(
+            "Arm", armLength * visualScaleFactor, 0, ARM_WIDTH, new Color8Bit(Color.kBlue)));
 
-    var motorType =
-        intakeArmIO instanceof TalonFXMotorIOSim
-            ? ((TalonFXMotorIOSim) intakeArmIO).getMotorType()
-            : ((SparkMaxMotorIOSim) intakeArmIO).getMotorType();
+    var motorType = intakeArmIO instanceof TalonFXMotorIOSim
+        ? ((TalonFXMotorIOSim) intakeArmIO).getMotorType()
+        : ((SparkMaxMotorIOSim) intakeArmIO).getMotorType();
 
     // Initialize simulation
-    intakeArmSim =
-        new SingleJointedArmSim(
-            motorType, // Motor type
-            INTAKE_ARM_GEAR_RATIO, // Gear ratio
-            SingleJointedArmSim.estimateMOI(
-                INTAKE_ARM_LENGTH_METERS, INTAKE_ARM_MASS_KG), // Arm moment of inertia
-            INTAKE_ARM_LENGTH_METERS, // Arm length (m)
-            INTAKE_MIN_ANGLE_RADIANS, // Min angle (rad)
-            INTAKE_MAX_ANGLE_RADIANS, // Max angle (rad)
-            true, // Simulate gravity
-            INTAKE_STARTING_ANGLE_RADIANS // Starting position (rad)
-            );
+    intakeArmSim = new SingleJointedArmSim(
+        motorType, // Motor type
+        INTAKE_ARM_GEAR_RATIO, // Gear ratio
+        SingleJointedArmSim.estimateMOI(
+            INTAKE_ARM_LENGTH_METERS, INTAKE_ARM_MASS_KG), // Arm moment of inertia
+        INTAKE_ARM_LENGTH_METERS, // Arm length (m)
+        INTAKE_MIN_ANGLE_RADIANS, // Min angle (rad)
+        INTAKE_MAX_ANGLE_RADIANS, // Max angle (rad)
+        true, // Simulate gravity
+        INTAKE_STARTING_ANGLE_RADIANS // Starting position (rad)
+    );
 
     // Initialize visualization
     SmartDashboard.putData("Intake Arm Sim", mech);
@@ -108,12 +102,14 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
   @Override
   public void simulationPeriodic() {
     // Set input voltage from motor controller to simulation
-    // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input.
+    // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the
+    // input.
     // armSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(armSim.getCurrentDrawAmps()),
     // armSim.getVelocityRadPerSec()));
     // armSim.setInput(getVoltage());
     // Sets input voltage based on whether it is talon fx or not
-    // Use motor voltage for TalonFX simulation input, otherwise get the motor voltage from inputs
+    // Use motor voltage for TalonFX simulation input, otherwise get the motor
+    // voltage from inputs
     if (intakeArmIO instanceof TalonFXMotorIOSim talonIO) {
       intakeArmSim.setInput(talonIO.getSimState().getMotorVoltage());
     } else {
@@ -125,11 +121,9 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
     RoboRioSim.setVInVoltage(
         BatterySim.calculateDefaultBatteryLoadedVoltage(intakeArmSim.getCurrentDrawAmps()));
 
-    double motorPosition =
-        Radians.of(intakeArmSim.getAngleRads() * INTAKE_ARM_GEAR_RATIO).in(Rotations);
-    double motorVelocity =
-        RadiansPerSecond.of(intakeArmSim.getVelocityRadPerSec() * INTAKE_ARM_GEAR_RATIO)
-            .in(RotationsPerSecond);
+    double motorPosition = Radians.of(intakeArmSim.getAngleRads() * INTAKE_ARM_GEAR_RATIO).in(Rotations);
+    double motorVelocity = RadiansPerSecond.of(intakeArmSim.getVelocityRadPerSec() * INTAKE_ARM_GEAR_RATIO)
+        .in(RotationsPerSecond);
 
     if (intakeArmIO instanceof TalonFXMotorIOSim talonIO) {
       DogLog.log("Intake/Simulated Motor Position (rotations)", motorPosition);
@@ -161,7 +155,8 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
     DogLog.log("Intake/Intake Arm Current (A)", String.valueOf(intakeArmSim.getCurrentDrawAmps()));
 
     // This method will be called once per scheduler run
-    intakeRollerIO.updateInputs(intakeRollerInputs);
+    intakeRollerLeadIO.updateInputs(intakeRollerLeadInputs);
+    intakeRollerFollowIO.updateInputs(intakeRollerFollowInputs);
     intakeArmIO.updateInputs(intakeArmInputs);
   }
 }

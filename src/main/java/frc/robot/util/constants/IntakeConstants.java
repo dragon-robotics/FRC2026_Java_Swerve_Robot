@@ -36,8 +36,9 @@ import edu.wpi.first.math.util.Units;
 
 public final class IntakeConstants {
 
-  public static final int INTAKE_ROLLER_MOTOR_ID = 12;
-  public static final int INTAKE_ARM_MOTOR_ID = 11;
+  public static final int INTAKE_ROLLER_LEAD_MOTOR_ID = 11;
+  public static final int INTAKE_ROLLER_FOLLOW_MOTOR_ID = 12;
+  public static final int INTAKE_ARM_MOTOR_ID = 10;
   public static final int INTAKE_ARM_CANCODER_ID = 0;
   public static final int INTAKE_ROLLER_CANCODER_ID = 1;
 
@@ -68,13 +69,13 @@ public final class IntakeConstants {
   public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0;
   public static final double INTAKE_ARM_POSITION_TOLERANCE = 0.025;
 
-  public static final TalonFXConfiguration INTAKE_ROLLER_TALONFX_CONFIG = new TalonFXConfiguration()
+  public static final TalonFXConfiguration INTAKE_ROLLER_LEAD_TALONFX_CONFIG = new TalonFXConfiguration()
       .withCurrentLimits(
           new CurrentLimitsConfigs()
               .withStatorCurrentLimitEnable(true)
-              .withStatorCurrentLimit(Amps.of(58))
+              .withStatorCurrentLimit(Amps.of(60))
               .withSupplyCurrentLimitEnable(true)
-              .withSupplyCurrentLimit(Amps.of(40))
+              .withSupplyCurrentLimit(Amps.of(30))
               .withSupplyCurrentLowerLimit(Amps.of(20))
               .withSupplyCurrentLowerTime(Seconds.of(0.2)))
       .withVoltage(
@@ -91,13 +92,13 @@ public final class IntakeConstants {
               .withNeutralMode(NeutralModeValue.Coast)
               .withInverted(InvertedValue.Clockwise_Positive));
 
-  public static final SparkBaseConfig INTAKE_ROLLER_SPARKMAX_CONFIG = new SparkMaxConfig()
+  public static final SparkBaseConfig INTAKE_ROLLER_LEAD_SPARKMAX_CONFIG = new SparkMaxConfig()
       .apply(
           new SparkMaxConfig()
               .voltageCompensation(10)
-              .smartCurrentLimit(40, 20)
+              .smartCurrentLimit(30, 20)
               .secondaryCurrentLimit(60)
-              .openLoopRampRate(0.1)
+              .openLoopRampRate(0.15)
               .idleMode(IdleMode.kCoast))
       .apply(
           new ClosedLoopConfig()
@@ -109,6 +110,33 @@ public final class IntakeConstants {
                       .cruiseVelocity(4000, ClosedLoopSlot.kSlot0)
                       .maxAcceleration(8000, ClosedLoopSlot.kSlot0)
                       .allowedProfileError(40, ClosedLoopSlot.kSlot0)));
+
+  public static final TalonFXConfiguration INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG = new TalonFXConfiguration()
+      .withCurrentLimits(
+          new CurrentLimitsConfigs()
+              .withStatorCurrentLimitEnable(true)
+              .withStatorCurrentLimit(Amps.of(60))
+              .withSupplyCurrentLimitEnable(true)
+              .withSupplyCurrentLimit(Amps.of(30))
+              .withSupplyCurrentLowerLimit(Amps.of(20))
+              .withSupplyCurrentLowerTime(Seconds.of(0.2)))
+      .withVoltage(
+          new VoltageConfigs()
+              .withPeakForwardVoltage(Volts.of(12))
+              .withPeakReverseVoltage(Volts.of(-12)))
+      .withMotorOutput(
+          new MotorOutputConfigs()
+              .withNeutralMode(NeutralModeValue.Coast));
+
+  public static final SparkBaseConfig INTAKE_ROLLER_FOLLOW_SPARKMAX_CONFIG = new SparkMaxConfig()
+      .apply(
+          new SparkMaxConfig()
+              .voltageCompensation(10)
+              .smartCurrentLimit(30, 20)
+              .secondaryCurrentLimit(60)
+              .openLoopRampRate(0.15)
+              .idleMode(IdleMode.kCoast)
+              .follow(INTAKE_ROLLER_LEAD_MOTOR_ID));
 
   public static final TalonFXConfiguration INTAKE_ARM_TALONFX_CONFIG = new TalonFXConfiguration()
       .withCurrentLimits(
@@ -148,8 +176,8 @@ public final class IntakeConstants {
               .withGravityType(GravityTypeValue.Arm_Cosine)
               .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
       /*
-       * Slow profile for deploying the intake to overcome the constant force spring
-       * of the extending hopper
+       * Slow profile for retracting the intake to push balls into the shooter (juicer
+       * mode)
        */
       .withSlot1(
           new Slot1Configs()
