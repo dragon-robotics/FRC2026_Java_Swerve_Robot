@@ -57,10 +57,10 @@ public final class VisionConstants {
   public static final Matrix<N3, N1> MULTI_TAG_STDDEV = VecBuilder.fill(0.5, 0.5, 1);
   public static final Matrix<N3, N1> DEFAULT_TAG_STDDEV = VecBuilder.fill(0.9, 0.9, 0.9);
 
-  public static double MAX_AMBIGUITY = 0.3;
+  public static final double MAX_AMBIGUITY = 0.3;
   // Z error tolerance for accepted poses. Widened to 0.5m temporarily for
   // camera transform Z debugging — tighten once transforms are confirmed correct.
-  public static double MAX_Z_ERROR = 0.5;
+  public static final double MAX_Z_ERROR = 0.5;
 
   // ── Coplanar / Single-Tag Flip Rejection ────────────────────────────────
   // Two tags on the same hub face (coplanar) give the multi-tag PnP solver
