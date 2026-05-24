@@ -36,8 +36,8 @@ import edu.wpi.first.math.util.Units;
 
 public final class IntakeConstants {
 
-  public static final int INTAKE_ROLLER_LEAD_MOTOR_ID = 11;
-  public static final int INTAKE_ROLLER_FOLLOW_MOTOR_ID = 12;
+  public static final int INTAKE_ROLLER_LEAD_MOTOR_ID = 20;
+  public static final int INTAKE_ROLLER_FOLLOW_MOTOR_ID = 21;
   public static final int INTAKE_ARM_MOTOR_ID = 10;
   public static final int INTAKE_ARM_CANCODER_ID = 0;
   public static final int INTAKE_ROLLER_CANCODER_ID = 1;
@@ -52,10 +52,10 @@ public final class IntakeConstants {
   public static final double INTAKE_MAX_ANGLE_RADIANS = Units.degreesToRadians(90);
   public static final double INTAKE_STARTING_ANGLE_RADIANS = INTAKE_MIN_ANGLE_RADIANS;
 
-  public static final double INTAKE_ROLLER_DUTY_CYCLE = 1.0;
+  public static final double INTAKE_ROLLER_DUTY_CYCLE = 0.8;
   public static final double INTAKE_ROLLER_VOLTAGE = 12;
   public static final double INTAKE_ROLLER_RPM = 6000.0;
-  public static final double OUTTAKE_ROLLER_DUTY_CYCLE = -1.0;
+  public static final double OUTTAKE_ROLLER_DUTY_CYCLE = -0.8;
   public static final double OUTTAKE_ROLLER_VOLTAGE = -12.0;
   public static final double OUTTAKE_ROLLER_RPM = -6000.0;
 
@@ -90,7 +90,7 @@ public final class IntakeConstants {
       .withMotorOutput(
           new MotorOutputConfigs()
               .withNeutralMode(NeutralModeValue.Coast)
-              .withInverted(InvertedValue.Clockwise_Positive));
+              .withInverted(InvertedValue.CounterClockwise_Positive));
 
   public static final SparkBaseConfig INTAKE_ROLLER_LEAD_SPARKMAX_CONFIG = new SparkMaxConfig()
       .apply(
