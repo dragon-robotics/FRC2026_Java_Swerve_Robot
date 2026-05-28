@@ -259,8 +259,7 @@ public class IntakeSubsystem extends SubsystemBase {
         if (lastCommandedState != currIntakeState) {
           deployIntakeArm();
           if (DriverStation.isAutonomous()) {
-            intakeRollerLeadIO.setMotorPercentage(-0.5);
-            // runOuttake();
+            runIntakeRollerPercentage(-0.3);
           } else if (DriverStation.isTeleop()) {
             stopIntake();
           } else {
