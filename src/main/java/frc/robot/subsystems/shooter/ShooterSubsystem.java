@@ -196,11 +196,11 @@ public class ShooterSubsystem extends SubsystemBase {
         runKicker();
         setHoodAngle(hoodAngle);
         break;
-      // case PURGE:
-      // runShooter();
-      // runKicker();
-      // setHoodAngle(2.5);
-      // break;
+        // case PURGE:
+        // runShooter();
+        // runKicker();
+        // setHoodAngle(2.5);
+        // break;
       case TRANSITION:
         switch (desiredShooterState) {
           case STOP:
