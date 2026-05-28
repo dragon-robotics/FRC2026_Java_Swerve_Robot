@@ -47,7 +47,7 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
    * @param intakeRollerLeadIO   The intake roller lead motor IO
    * @param intakeRollerFollowIO The intake roller follow motor IO
    * @param intakeArmIO          The intake arm motor IO
-   * 
+   *
    */
   public IntakeSubsystemSim(
       MotorIO intakeRollerLeadIO, MotorIO intakeRollerFollowIO, MotorIO intakeArmIO) {
