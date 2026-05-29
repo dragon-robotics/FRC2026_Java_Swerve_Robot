@@ -8,11 +8,11 @@ import static frc.robot.util.constants.VisionConstants.MAX_TAG_DISTANCE;
 import static frc.robot.util.constants.VisionConstants.CONSTRAINED_HEADING_SCALE_FACTOR;
 import static frc.robot.util.constants.VisionConstants.CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC;
 import static frc.robot.util.constants.VisionConstants.ENABLE_CONSTRAINED_FALLBACK;
+import static frc.robot.util.constants.VisionConstants.MAX_TAG_DISTANCE;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -33,7 +33,8 @@ public class VisionIOPhotonVision implements VisionIO {
   protected final PhotonPoseEstimator poseEstimator;
   private VisionHeadingProvider headingProvider;
 
-  private static final TargetObservation NO_TARGET = new TargetObservation(new Rotation2d(), new Rotation2d());
+  private static final TargetObservation NO_TARGET =
+      new TargetObservation(new Rotation2d(), new Rotation2d());
 
   private static final int MAX_RESULTS_PER_UPDATE = 2;
 
@@ -133,11 +134,13 @@ public class VisionIOPhotonVision implements VisionIO {
       return Optional.empty();
     }
 
-    if (Math.abs(headingProvider.getAngularRateRadPerSec()) > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
+    if (Math.abs(headingProvider.getAngularRateRadPerSec())
+        > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
       return Optional.empty();
     }
 
-    Optional<Rotation2d> headingSample = headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
+    Optional<Rotation2d> headingSample =
+        headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
     if (headingSample.isEmpty()) {
       return Optional.empty();
     }
