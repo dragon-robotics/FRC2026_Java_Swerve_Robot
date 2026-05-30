@@ -7,13 +7,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "RTrench through NZ Lite"
+            "pathName": "LTrench through NZ Safe"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "NZ back to Right Trench Lite"
+            "pathName": "Left NZ Cross Bump Safe"
           }
         },
         {
@@ -38,13 +38,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Right Trench Lite to NZ"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "NZ back to Right Trench Lite Flipped Rotation"
+            "pathName": "Left Cross Trench to NZ"
           }
         },
         {
