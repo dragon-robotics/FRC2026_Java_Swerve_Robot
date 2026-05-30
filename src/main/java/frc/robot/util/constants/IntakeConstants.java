@@ -1,5 +1,9 @@
 package frc.robot.util.constants;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
+
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -28,11 +32,7 @@ import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
-
 import edu.wpi.first.math.util.Units;
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volts;
 
 public final class IntakeConstants {
 
@@ -61,7 +61,8 @@ public final class IntakeConstants {
 
   public static final double INTAKE_ARM_STOWED_POSITION = 0.37;
   public static final double INTAKE_ARM_WOKTOSS_POSITION = 0.15;
-  public static final double INTAKE_ARM_JUICER_PRE_POSITION = 0.15; // Intake arm moves quickly to prevent the intake
+  public static final double INTAKE_ARM_JUICER_PRE_POSITION =
+      0.15; // Intake arm moves quickly to prevent the intake
   // from getting stuck on the hopper wall,
   // then moves slowly to the final juicer position to ensure the ball is fully
   // intaken
@@ -69,175 +70,182 @@ public final class IntakeConstants {
   public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0;
   public static final double INTAKE_ARM_POSITION_TOLERANCE = 0.025;
 
-  public static final TalonFXConfiguration INTAKE_ROLLER_LEAD_TALONFX_CONFIG = new TalonFXConfiguration()
-      .withCurrentLimits(
-          new CurrentLimitsConfigs()
-              .withStatorCurrentLimitEnable(true)
-              .withStatorCurrentLimit(Amps.of(60))
-              .withSupplyCurrentLimitEnable(true)
-              .withSupplyCurrentLimit(Amps.of(30))
-              .withSupplyCurrentLowerLimit(Amps.of(20))
-              .withSupplyCurrentLowerTime(Seconds.of(0.2)))
-      .withVoltage(
-          new VoltageConfigs()
-              .withPeakForwardVoltage(Volts.of(12))
-              .withPeakReverseVoltage(Volts.of(-12)))
-      .withOpenLoopRamps(
-          new OpenLoopRampsConfigs()
-              .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.15))
-              .withTorqueOpenLoopRampPeriod(Seconds.of(0.15))
-              .withVoltageOpenLoopRampPeriod(Seconds.of(0.15)))
-      .withMotorOutput(
-          new MotorOutputConfigs()
-              .withNeutralMode(NeutralModeValue.Coast)
-              .withInverted(InvertedValue.Clockwise_Positive));
+  public static final TalonFXConfiguration INTAKE_ROLLER_LEAD_TALONFX_CONFIG =
+      new TalonFXConfiguration()
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(Amps.of(60))
+                  .withSupplyCurrentLimitEnable(true)
+                  .withSupplyCurrentLimit(Amps.of(30))
+                  .withSupplyCurrentLowerLimit(Amps.of(20))
+                  .withSupplyCurrentLowerTime(Seconds.of(0.2)))
+          .withVoltage(
+              new VoltageConfigs()
+                  .withPeakForwardVoltage(Volts.of(12))
+                  .withPeakReverseVoltage(Volts.of(-12)))
+          .withOpenLoopRamps(
+              new OpenLoopRampsConfigs()
+                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.15))
+                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.15))
+                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.15)))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.Clockwise_Positive));
 
-  public static final SparkBaseConfig INTAKE_ROLLER_LEAD_SPARKMAX_CONFIG = new SparkMaxConfig()
-      .apply(
-          new SparkMaxConfig()
-              .voltageCompensation(10)
-              .smartCurrentLimit(30, 20)
-              .secondaryCurrentLimit(60)
-              .openLoopRampRate(0.15)
-              .idleMode(IdleMode.kCoast))
-      .apply(
-          new ClosedLoopConfig()
-              .feedbackSensor(FeedbackSensor.kAlternateOrExternalEncoder)
-              .outputRange(-1, 1)
-              .pid(0.0, 0.0, 0.0, ClosedLoopSlot.kSlot0)
-              .apply(
-                  new MAXMotionConfig()
-                      .cruiseVelocity(4000, ClosedLoopSlot.kSlot0)
-                      .maxAcceleration(8000, ClosedLoopSlot.kSlot0)
-                      .allowedProfileError(40, ClosedLoopSlot.kSlot0)));
+  public static final SparkBaseConfig INTAKE_ROLLER_LEAD_SPARKMAX_CONFIG =
+      new SparkMaxConfig()
+          .apply(
+              new SparkMaxConfig()
+                  .voltageCompensation(10)
+                  .smartCurrentLimit(30, 20)
+                  .secondaryCurrentLimit(60)
+                  .openLoopRampRate(0.15)
+                  .idleMode(IdleMode.kCoast))
+          .apply(
+              new ClosedLoopConfig()
+                  .feedbackSensor(FeedbackSensor.kAlternateOrExternalEncoder)
+                  .outputRange(-1, 1)
+                  .pid(0.0, 0.0, 0.0, ClosedLoopSlot.kSlot0)
+                  .apply(
+                      new MAXMotionConfig()
+                          .cruiseVelocity(4000, ClosedLoopSlot.kSlot0)
+                          .maxAcceleration(8000, ClosedLoopSlot.kSlot0)
+                          .allowedProfileError(40, ClosedLoopSlot.kSlot0)));
 
-  public static final TalonFXConfiguration INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG = new TalonFXConfiguration()
-      .withCurrentLimits(
-          new CurrentLimitsConfigs()
-              .withStatorCurrentLimitEnable(true)
-              .withStatorCurrentLimit(Amps.of(60))
-              .withSupplyCurrentLimitEnable(true)
-              .withSupplyCurrentLimit(Amps.of(30))
-              .withSupplyCurrentLowerLimit(Amps.of(20))
-              .withSupplyCurrentLowerTime(Seconds.of(0.2)))
-      .withVoltage(
-          new VoltageConfigs()
-              .withPeakForwardVoltage(Volts.of(12))
-              .withPeakReverseVoltage(Volts.of(-12)))
-      .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
+  public static final TalonFXConfiguration INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG =
+      new TalonFXConfiguration()
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(Amps.of(60))
+                  .withSupplyCurrentLimitEnable(true)
+                  .withSupplyCurrentLimit(Amps.of(30))
+                  .withSupplyCurrentLowerLimit(Amps.of(20))
+                  .withSupplyCurrentLowerTime(Seconds.of(0.2)))
+          .withVoltage(
+              new VoltageConfigs()
+                  .withPeakForwardVoltage(Volts.of(12))
+                  .withPeakReverseVoltage(Volts.of(-12)))
+          .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
 
-  public static final SparkBaseConfig INTAKE_ROLLER_FOLLOW_SPARKMAX_CONFIG = new SparkMaxConfig()
-      .apply(
-          new SparkMaxConfig()
-              .voltageCompensation(10)
-              .smartCurrentLimit(30, 20)
-              .secondaryCurrentLimit(60)
-              .openLoopRampRate(0.15)
-              .idleMode(IdleMode.kCoast)
-              .follow(INTAKE_ROLLER_LEAD_MOTOR_ID));
+  public static final SparkBaseConfig INTAKE_ROLLER_FOLLOW_SPARKMAX_CONFIG =
+      new SparkMaxConfig()
+          .apply(
+              new SparkMaxConfig()
+                  .voltageCompensation(10)
+                  .smartCurrentLimit(30, 20)
+                  .secondaryCurrentLimit(60)
+                  .openLoopRampRate(0.15)
+                  .idleMode(IdleMode.kCoast)
+                  .follow(INTAKE_ROLLER_LEAD_MOTOR_ID));
 
-  public static final TalonFXConfiguration INTAKE_ARM_TALONFX_CONFIG = new TalonFXConfiguration()
-      .withCurrentLimits(
-          new CurrentLimitsConfigs()
-              .withStatorCurrentLimitEnable(true)
-              .withStatorCurrentLimit(Amps.of(50))
-              .withSupplyCurrentLimitEnable(true)
-              .withSupplyCurrentLimit(Amps.of(30))
-              .withSupplyCurrentLowerLimit(Amps.of(20))
-              .withSupplyCurrentLowerTime(Seconds.of(0.2)))
-      .withVoltage(
-          new VoltageConfigs()
-              .withPeakForwardVoltage(Volts.of(10))
-              .withPeakReverseVoltage(Volts.of(-10)))
-      .withOpenLoopRamps(
-          new OpenLoopRampsConfigs()
-              .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.15))
-              .withTorqueOpenLoopRampPeriod(Seconds.of(0.15))
-              .withVoltageOpenLoopRampPeriod(Seconds.of(0.15)))
-      .withMotorOutput(
-          new MotorOutputConfigs()
-              .withNeutralMode(NeutralModeValue.Brake)
-              .withInverted(InvertedValue.Clockwise_Positive))
-      /*
-       * Fast profile for deploying the intake to overcome the constant force spring
-       * of the extending hopper
-       */
-      .withSlot0(
-          new Slot0Configs()
-              .withKP(20)
-              .withKI(0)
-              .withKD(0)
-              .withKS(0)
-              .withKV(2.4)
-              .withKA(0)
-              .withKG(0.55)
-              .withGravityType(GravityTypeValue.Arm_Cosine)
-              .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
-      /*
-       * Slow profile for retracting the intake to push balls into the shooter (juicer
-       * mode)
-       */
-      .withSlot1(
-          new Slot1Configs()
-              .withKP(8)
-              .withKI(0)
-              .withKD(0)
-              .withKS(0)
-              .withKV(2.4)
-              .withKA(0)
-              .withKG(0.55)
-              .withGravityType(GravityTypeValue.Arm_Cosine)
-              .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
-      .withMotionMagic(
-          new MotionMagicConfigs()
-              .withMotionMagicCruiseVelocity(0)
-              .withMotionMagicAcceleration(200)
-              .withMotionMagicJerk(200)
-              .withMotionMagicExpo_kV(2.0)
-              .withMotionMagicExpo_kA(2.0))
-      .withFeedback(
-          new FeedbackConfigs()
-              .withFusedCANcoder(new CoreCANcoder(INTAKE_ARM_CANCODER_ID))
-              .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
-              .withSensorToMechanismRatio(1)
-              .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
-              .withFeedbackRotorOffset(0));
+  public static final TalonFXConfiguration INTAKE_ARM_TALONFX_CONFIG =
+      new TalonFXConfiguration()
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(Amps.of(50))
+                  .withSupplyCurrentLimitEnable(true)
+                  .withSupplyCurrentLimit(Amps.of(30))
+                  .withSupplyCurrentLowerLimit(Amps.of(20))
+                  .withSupplyCurrentLowerTime(Seconds.of(0.2)))
+          .withVoltage(
+              new VoltageConfigs()
+                  .withPeakForwardVoltage(Volts.of(10))
+                  .withPeakReverseVoltage(Volts.of(-10)))
+          .withOpenLoopRamps(
+              new OpenLoopRampsConfigs()
+                  .withDutyCycleOpenLoopRampPeriod(Seconds.of(0.15))
+                  .withTorqueOpenLoopRampPeriod(Seconds.of(0.15))
+                  .withVoltageOpenLoopRampPeriod(Seconds.of(0.15)))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Brake)
+                  .withInverted(InvertedValue.Clockwise_Positive))
+          /*
+           * Fast profile for deploying the intake to overcome the constant force spring
+           * of the extending hopper
+           */
+          .withSlot0(
+              new Slot0Configs()
+                  .withKP(20)
+                  .withKI(0)
+                  .withKD(0)
+                  .withKS(0)
+                  .withKV(2.4)
+                  .withKA(0)
+                  .withKG(0.55)
+                  .withGravityType(GravityTypeValue.Arm_Cosine)
+                  .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
+          /*
+           * Slow profile for retracting the intake to push balls into the shooter (juicer
+           * mode)
+           */
+          .withSlot1(
+              new Slot1Configs()
+                  .withKP(8)
+                  .withKI(0)
+                  .withKD(0)
+                  .withKS(0)
+                  .withKV(2.4)
+                  .withKA(0)
+                  .withKG(0.55)
+                  .withGravityType(GravityTypeValue.Arm_Cosine)
+                  .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(0)
+                  .withMotionMagicAcceleration(200)
+                  .withMotionMagicJerk(200)
+                  .withMotionMagicExpo_kV(2.0)
+                  .withMotionMagicExpo_kA(2.0))
+          .withFeedback(
+              new FeedbackConfigs()
+                  .withFusedCANcoder(new CoreCANcoder(INTAKE_ARM_CANCODER_ID))
+                  .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
+                  .withSensorToMechanismRatio(1)
+                  .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
+                  .withFeedbackRotorOffset(0));
 
-  public static final CANcoderConfiguration INTAKE_ARM_CANCODER_CONFIG = new CANcoderConfiguration()
-      .withMagnetSensor(
-          new MagnetSensorConfigs()
-              .withAbsoluteSensorDiscontinuityPoint(0.5)
-              .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
-              .withMagnetOffset(0.841134765625));
+  public static final CANcoderConfiguration INTAKE_ARM_CANCODER_CONFIG =
+      new CANcoderConfiguration()
+          .withMagnetSensor(
+              new MagnetSensorConfigs()
+                  .withAbsoluteSensorDiscontinuityPoint(0.5)
+                  .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
+                  .withMagnetOffset(0.841134765625));
 
-  public static final SparkBaseConfig INTAKE_ARM_SPARKMAX_CONFIG = new SparkMaxConfig()
-      .apply(
-          new SparkMaxConfig()
-              .voltageCompensation(10)
-              .smartCurrentLimit(40, 20)
-              .secondaryCurrentLimit(60)
-              .openLoopRampRate(0.2)
-              .idleMode(IdleMode.kBrake))
-      .apply(new AbsoluteEncoderConfig().zeroOffset(0).inverted(false))
-      .apply(
-          new ClosedLoopConfig()
-              .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-              .pid(0.0, 0.0, 0.0, ClosedLoopSlot.kSlot0)
-              .outputRange(-1, 1)
-              .apply(
-                  new FeedForwardConfig()
-                      .kS(0.0, ClosedLoopSlot.kSlot0)
-                      .kV(0.0, ClosedLoopSlot.kSlot0)
-                      .kA(0.0, ClosedLoopSlot.kSlot0)
-                      .kG(0.0, ClosedLoopSlot.kSlot0))
-              .apply(
-                  new MAXMotionConfig()
-                      .cruiseVelocity(4000, ClosedLoopSlot.kSlot0)
-                      .maxAcceleration(8000, ClosedLoopSlot.kSlot0)
-                      .allowedProfileError(5, ClosedLoopSlot.kSlot0)
-                      .positionMode(
-                          MAXMotionPositionMode.kMAXMotionTrapezoidal, ClosedLoopSlot.kSlot0)));
+  public static final SparkBaseConfig INTAKE_ARM_SPARKMAX_CONFIG =
+      new SparkMaxConfig()
+          .apply(
+              new SparkMaxConfig()
+                  .voltageCompensation(10)
+                  .smartCurrentLimit(40, 20)
+                  .secondaryCurrentLimit(60)
+                  .openLoopRampRate(0.2)
+                  .idleMode(IdleMode.kBrake))
+          .apply(new AbsoluteEncoderConfig().zeroOffset(0).inverted(false))
+          .apply(
+              new ClosedLoopConfig()
+                  .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+                  .pid(0.0, 0.0, 0.0, ClosedLoopSlot.kSlot0)
+                  .outputRange(-1, 1)
+                  .apply(
+                      new FeedForwardConfig()
+                          .kS(0.0, ClosedLoopSlot.kSlot0)
+                          .kV(0.0, ClosedLoopSlot.kSlot0)
+                          .kA(0.0, ClosedLoopSlot.kSlot0)
+                          .kG(0.0, ClosedLoopSlot.kSlot0))
+                  .apply(
+                      new MAXMotionConfig()
+                          .cruiseVelocity(4000, ClosedLoopSlot.kSlot0)
+                          .maxAcceleration(8000, ClosedLoopSlot.kSlot0)
+                          .allowedProfileError(5, ClosedLoopSlot.kSlot0)
+                          .positionMode(
+                              MAXMotionPositionMode.kMAXMotionTrapezoidal, ClosedLoopSlot.kSlot0)));
 
-  public static final AbsoluteEncoderConfig INTAKE_ARM_ENCODER_CONFIG = new AbsoluteEncoderConfig().zeroOffset(0)
-      .inverted(false).zeroCentered(true);
+  public static final AbsoluteEncoderConfig INTAKE_ARM_ENCODER_CONFIG =
+      new AbsoluteEncoderConfig().zeroOffset(0).inverted(false).zeroCentered(true);
 }
