@@ -66,7 +66,7 @@ public final class IntakeConstants {
   // then moves slowly to the final juicer position to ensure the ball is fully
   // intaken
   public static final double INTAKE_ARM_JUICER_FINAL_POSITION = 0.25;
-  public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0;
+  public static final double INTAKE_ARM_DEPLOYED_POSITION = -0.01;
   public static final double INTAKE_ARM_POSITION_TOLERANCE = 0.025;
 
   public static final TalonFXConfiguration INTAKE_ROLLER_LEAD_TALONFX_CONFIG = new TalonFXConfiguration()
@@ -75,8 +75,8 @@ public final class IntakeConstants {
               .withStatorCurrentLimitEnable(true)
               .withStatorCurrentLimit(Amps.of(50))
               .withSupplyCurrentLimitEnable(true)
-              .withSupplyCurrentLimit(Amps.of(30))
-              .withSupplyCurrentLowerLimit(Amps.of(15))
+              .withSupplyCurrentLimit(Amps.of(40))
+              .withSupplyCurrentLowerLimit(Amps.of(20))
               .withSupplyCurrentLowerTime(Seconds.of(0.2)))
       .withVoltage(
           new VoltageConfigs()
