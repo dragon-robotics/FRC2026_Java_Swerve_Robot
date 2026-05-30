@@ -1,9 +1,5 @@
 package frc.robot.util.constants;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volts;
-
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -32,7 +28,11 @@ import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
 import edu.wpi.first.math.util.Units;
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
 
 public final class IntakeConstants {
 
@@ -52,10 +52,10 @@ public final class IntakeConstants {
   public static final double INTAKE_MAX_ANGLE_RADIANS = Units.degreesToRadians(90);
   public static final double INTAKE_STARTING_ANGLE_RADIANS = INTAKE_MIN_ANGLE_RADIANS;
 
-  public static final double INTAKE_ROLLER_DUTY_CYCLE = 0.8;
+  public static final double INTAKE_ROLLER_DUTY_CYCLE = 0.75;
   public static final double INTAKE_ROLLER_VOLTAGE = 12;
   public static final double INTAKE_ROLLER_RPM = 6000.0;
-  public static final double OUTTAKE_ROLLER_DUTY_CYCLE = -0.8;
+  public static final double OUTTAKE_ROLLER_DUTY_CYCLE = -0.75;
   public static final double OUTTAKE_ROLLER_VOLTAGE = -12.0;
   public static final double OUTTAKE_ROLLER_RPM = -6000.0;
 
@@ -170,7 +170,7 @@ public final class IntakeConstants {
               .withKS(0)
               .withKV(2.4)
               .withKA(0)
-              .withKG(0.45)
+              .withKG(0.55)
               .withGravityType(GravityTypeValue.Arm_Cosine)
               .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
       /*
@@ -179,13 +179,13 @@ public final class IntakeConstants {
        */
       .withSlot1(
           new Slot1Configs()
-              .withKP(7)
+              .withKP(8)
               .withKI(0)
               .withKD(0)
               .withKS(0)
               .withKV(2.4)
               .withKA(0)
-              .withKG(0.45)
+              .withKG(0.55)
               .withGravityType(GravityTypeValue.Arm_Cosine)
               .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
       .withMotionMagic(
