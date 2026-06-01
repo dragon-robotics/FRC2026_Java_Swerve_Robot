@@ -124,24 +124,25 @@ public class VisionPoseValidator {
       }
     }
 
-    // ── Layer 2: Tighter ambiguity for flip-vulnerable observations ──────
-    // Single-tag gets the tightest threshold (highest flip risk).
-    // Coplanar multi-tag gets a more relaxed threshold — multiple tags
-    // improve translational accuracy, and the distance gate + inter-frame
-    // jump check provide additional flip protection.
-    if (effectivelySingleTag) {
-      double maxAmbiguity = actuallySingleTag ? SINGLE_TAG_MAX_AMBIGUITY : COPLANAR_MAX_AMBIGUITY;
+    // // ── Layer 2: Tighter ambiguity for flip-vulnerable observations ──────
+    // // Single-tag gets the tightest threshold (highest flip risk).
+    // // Coplanar multi-tag gets a more relaxed threshold — multiple tags
+    // // improve translational accuracy, and the distance gate + inter-frame
+    // // jump check provide additional flip protection.
+    // if (effectivelySingleTag) {
+    // double maxAmbiguity = actuallySingleTag ? SINGLE_TAG_MAX_AMBIGUITY :
+    // COPLANAR_MAX_AMBIGUITY;
 
-      if (observation.ambiguity() > maxAmbiguity) {
-        RejectionReason reason = actuallySingleTag
-            ? RejectionReason.SINGLE_TAG_HIGH_AMBIGUITY
-            : RejectionReason.COPLANAR_HIGH_AMBIGUITY;
-        return new RejectedPose(
-            observation,
-            reason,
-            "Ambiguity: %.3f > %.3f".formatted(observation.ambiguity(), maxAmbiguity));
-      }
-    }
+    // if (observation.ambiguity() > maxAmbiguity) {
+    // RejectionReason reason = actuallySingleTag
+    // ? RejectionReason.SINGLE_TAG_HIGH_AMBIGUITY
+    // : RejectionReason.COPLANAR_HIGH_AMBIGUITY;
+    // return new RejectedPose(
+    // observation,
+    // reason,
+    // "Ambiguity: %.3f > %.3f".formatted(observation.ambiguity(), maxAmbiguity));
+    // }
+    // }
 
     // ── General ambiguity check (true multi-tag) ─────────────────────────
     if (!effectivelySingleTag && observation.ambiguity() > MAX_AMBIGUITY) {
