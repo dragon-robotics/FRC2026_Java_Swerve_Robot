@@ -73,10 +73,10 @@ public final class IntakeConstants {
       .withCurrentLimits(
           new CurrentLimitsConfigs()
               .withStatorCurrentLimitEnable(true)
-              .withStatorCurrentLimit(Amps.of(50))
+              .withStatorCurrentLimit(Amps.of(55))
               .withSupplyCurrentLimitEnable(true)
               .withSupplyCurrentLimit(Amps.of(40))
-              .withSupplyCurrentLowerLimit(Amps.of(20))
+              .withSupplyCurrentLowerLimit(Amps.of(25))
               .withSupplyCurrentLowerTime(Seconds.of(0.2)))
       .withVoltage(
           new VoltageConfigs()
@@ -110,11 +110,11 @@ public final class IntakeConstants {
       .withCurrentLimits(
           new CurrentLimitsConfigs()
               .withStatorCurrentLimitEnable(true)
-              .withStatorCurrentLimit(Amps.of(50))
+              .withStatorCurrentLimit(Amps.of(55))
               .withSupplyCurrentLimitEnable(true)
               .withSupplyCurrentLimit(Amps.of(40))
-              .withSupplyCurrentLowerLimit(Amps.of(20))
-              .withSupplyCurrentLowerTime(Seconds.of(0.25)))
+              .withSupplyCurrentLowerLimit(Amps.of(25))
+              .withSupplyCurrentLowerTime(Seconds.of(0.2)))
       .withVoltage(
           new VoltageConfigs()
               .withPeakForwardVoltage(Volts.of(12))
@@ -159,13 +159,13 @@ public final class IntakeConstants {
        */
       .withSlot0(
           new Slot0Configs()
-              .withKP(20)
+              .withKP(18)
               .withKI(0)
               .withKD(0)
               .withKS(0)
               .withKV(2.4)
               .withKA(0)
-              .withKG(0.55)
+              .withKG(0.5)
               .withGravityType(GravityTypeValue.Arm_Cosine)
               .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
       /*
@@ -180,7 +180,7 @@ public final class IntakeConstants {
               .withKS(0)
               .withKV(2.4)
               .withKA(0)
-              .withKG(0.55)
+              .withKG(0.5)
               .withGravityType(GravityTypeValue.Arm_Cosine)
               .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
       .withMotionMagic(
