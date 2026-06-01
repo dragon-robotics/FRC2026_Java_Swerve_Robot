@@ -44,6 +44,7 @@ public class Superstructure extends SubsystemBase {
     INTAKE,
     OUTTAKE,
     SHOOT,
+    MANUAL_SHOOT,
     // PURGE
   }
 
@@ -79,7 +80,7 @@ public class Superstructure extends SubsystemBase {
   // Alignment & Targeting
   // ──────────────────────────────────────────────────────────────────────────
 
-  private static final double ALIGNMENT_TOLERANCE_DEGREES = 3.0;
+  private static final double ALIGNMENT_TOLERANCE_DEGREES = 5;
   private boolean alignedToTarget = false;
   private Translation2d cachedHubTarget;
   private boolean allianceConfirmed = false;
@@ -376,7 +377,36 @@ public class Superstructure extends SubsystemBase {
                     Commands.run(() -> swerve.setControl(brake), swerve),
                     () -> !manualShooterDistanceOverride))
             .withName("SuperState(SHOOT)");
-
+      case MANUAL_SHOOT:
+        // SHOOT is special — it needs continuous polling for alignment.
+        // swerve is always required: when override is on, hold brake immediately;
+        // otherwise aim until AimAtTargetPoseCmd finishes on target, then hold
+        // brake so the default drive command cannot resume and fight the shot.
+        return Commands.run(
+            () -> {
+              setDesiredSuperState(SuperState.MANUAL_SHOOT);
+              shooter.setDesiredState(ShooterState.SHOOT);
+              if (manualShooterDistanceOverride) {
+                // Override active: brake held by parallel command; just gate hopper
+                if (shooter.getCurrentState() == ShooterState.SHOOT) {
+                  hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+                } else {
+                  hopper.setDesiredState(HopperState.STOP);
+                }
+              } else {
+                // Normal: require alignment before feeding;
+                // AimAtTargetPoseCmd handles swerve in parallel
+                if (shooter.getCurrentState() == ShooterState.SHOOT) {
+                  hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+                } else {
+                  hopper.setDesiredState(HopperState.STOP);
+                }
+              }
+            },
+            shooter,
+            hopper)
+            .alongWith(Commands.run(() -> swerve.setControl(brake), swerve))
+            .withName("SuperState(MANUAL_SHOOT)");
       // case PURGE:
       // // SHOOT is special — it needs continuous polling for alignment.
       // // swerve is always required: when override is on, hold brake immediately;
