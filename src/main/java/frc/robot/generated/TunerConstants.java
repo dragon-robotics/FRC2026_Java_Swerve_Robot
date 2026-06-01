@@ -63,10 +63,10 @@ public class TunerConstants {
       .withCurrentLimits(
           new CurrentLimitsConfigs()
               .withStatorCurrentLimitEnable(true)
-              .withStatorCurrentLimit(Amps.of(60))
+              .withStatorCurrentLimit(Amps.of(70))
               .withSupplyCurrentLimitEnable(true)
-              .withSupplyCurrentLimit(Amps.of(40))
-              .withSupplyCurrentLowerLimit(Amps.of(20))
+              .withSupplyCurrentLimit(Amps.of(50))
+              .withSupplyCurrentLowerLimit(Amps.of(30))
               .withSupplyCurrentLowerTime(Seconds.of(0.25)))
       .withVoltage(
           new VoltageConfigs()
@@ -108,7 +108,7 @@ public class TunerConstants {
 
   private static final double kDriveGearRatio = 6.48;
   private static final double kSteerGearRatio = 12.1;
-  private static final Distance kWheelRadius = Inches.of(1.933);
+  private static final Distance kWheelRadius = Inches.of(1.9);
 
   private static final boolean kInvertLeftSide = false;
   private static final boolean kInvertRightSide = true;
