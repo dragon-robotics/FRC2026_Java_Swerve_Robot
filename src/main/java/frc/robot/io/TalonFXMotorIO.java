@@ -129,10 +129,11 @@ public class TalonFXMotorIO implements MotorIO {
         ccCfg -> {
           canCoder = new CANcoder(canID);
           canCoder.getConfigurator().apply(ccCfg);
-          TalonFXConfiguration updatedConfig = config.withFeedback(
-              new FeedbackConfigs()
-                  .withFeedbackRemoteSensorID(canCoder.getDeviceID())
-                  .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder));
+          TalonFXConfiguration updatedConfig =
+              config.withFeedback(
+                  new FeedbackConfigs()
+                      .withFeedbackRemoteSensorID(canCoder.getDeviceID())
+                      .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder));
           motor.getConfigurator().apply(updatedConfig);
 
           canCoder.optimizeBusUtilization(0);
@@ -185,13 +186,13 @@ public class TalonFXMotorIO implements MotorIO {
   @Override
   public BaseStatusSignal[] getStatusSignals() {
     return new BaseStatusSignal[] {
-        motorVoltageSignal,
-        statorCurrentSignal,
-        deviceTempSignal,
-        velocitySignal,
-        positionSignal,
-        dutyCycleSignal,
-        torqueCurrentSignal
+      motorVoltageSignal,
+      statorCurrentSignal,
+      deviceTempSignal,
+      velocitySignal,
+      positionSignal,
+      dutyCycleSignal,
+      torqueCurrentSignal
     };
   }
 
