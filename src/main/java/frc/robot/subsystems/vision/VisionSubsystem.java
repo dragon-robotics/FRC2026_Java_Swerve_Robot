@@ -69,8 +69,9 @@ public class VisionSubsystem extends SubsystemBase {
 
     for (int i = 0; i < io.length; i++) {
       inputs[i] = new VisionIOInputs();
-      disconnectedAlerts[i] = new Alert(
-          "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
+      disconnectedAlerts[i] =
+          new Alert(
+              "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
       validators[i] = new VisionPoseValidator();
 
       if (io[i] instanceof VisionIOPhotonVision photonVisionIo) {
@@ -119,7 +120,8 @@ public class VisionSubsystem extends SubsystemBase {
         // Pre-check against odometry BEFORE running the validator so that erratic
         // poses never contaminate the validator's inter-frame jump baseline.
         if (odometryInitialized) {
-          double discrepancy = swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
+          double discrepancy =
+              swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
           if (discrepancy > MAX_POSE_DISCREPANCY_METERS) {
             continue;
           }
@@ -127,39 +129,38 @@ public class VisionSubsystem extends SubsystemBase {
 
         PoseValidationResult result = validator.validatePose(observation);
         if (result instanceof RejectedPose rejected) {
-          if (!odometryInitialized)
-            stablePoseCounter = 5;
+          if (!odometryInitialized) stablePoseCounter = 5;
           DogLog.log(camKey + "/RejectedPose/Reason", rejected.reason().name());
           DogLog.log(camKey + "/RejectedPose/Details", rejected.details());
           continue;
         }
 
         if (!passesCrossCameraConsistency(cameraIndex, visionPose, observation.timestamp())) {
-          if (!odometryInitialized)
-            stablePoseCounter = 5;
+          if (!odometryInitialized) stablePoseCounter = 5;
           continue;
         }
 
         if (!passesCoplanarHistoricalYawConsistency(
             cameraIndex, visionPose, validator, observation)) {
-          if (!odometryInitialized)
-            stablePoseCounter = 5;
+          if (!odometryInitialized) stablePoseCounter = 5;
           continue;
         }
 
         if (!passesCoplanarYawConsistency(cameraIndex, visionPose, validator, observation)) {
-          if (!odometryInitialized)
-            stablePoseCounter = 5;
+          if (!odometryInitialized) stablePoseCounter = 5;
           continue;
         }
 
         // Write per-camera accepted poses for observability.
-        if (acceptedPoseByCameraCount[cameraIndex] >= acceptedPoseByCameraBuffer[cameraIndex].length) {
-          acceptedPoseByCameraBuffer[cameraIndex] = Arrays.copyOf(
-              acceptedPoseByCameraBuffer[cameraIndex],
-              acceptedPoseByCameraBuffer[cameraIndex].length * 2);
+        if (acceptedPoseByCameraCount[cameraIndex]
+            >= acceptedPoseByCameraBuffer[cameraIndex].length) {
+          acceptedPoseByCameraBuffer[cameraIndex] =
+              Arrays.copyOf(
+                  acceptedPoseByCameraBuffer[cameraIndex],
+                  acceptedPoseByCameraBuffer[cameraIndex].length * 2);
         }
-        acceptedPoseByCameraBuffer[cameraIndex][acceptedPoseByCameraCount[cameraIndex]++] = observation.pose();
+        acceptedPoseByCameraBuffer[cameraIndex][acceptedPoseByCameraCount[cameraIndex]++] =
+            observation.pose();
 
         // Write into pre-allocated buffer — grow only if needed (rare)
         if (acceptedPoseCount >= acceptedPoseBuffer.length) {
@@ -221,18 +222,16 @@ public class VisionSubsystem extends SubsystemBase {
       int cameraIndex, Pose2d candidatePose, double candidateTimestamp) {
     String camKey = "Vision/" + inputs[cameraIndex].getCameraName();
     for (int otherIndex = 0; otherIndex < io.length; otherIndex++) {
-      if (otherIndex == cameraIndex)
-        continue;
-      if (lastAcceptedPoseByCamera[otherIndex] == null)
-        continue;
+      if (otherIndex == cameraIndex) continue;
+      if (lastAcceptedPoseByCamera[otherIndex] == null) continue;
 
       double age = Math.abs(candidateTimestamp - lastAcceptedTimestampByCamera[otherIndex]);
-      if (age > CROSS_CAMERA_MAX_AGE_SECONDS)
-        continue;
+      if (age > CROSS_CAMERA_MAX_AGE_SECONDS) continue;
 
-      double discrepancy = candidatePose
-          .getTranslation()
-          .getDistance(lastAcceptedPoseByCamera[otherIndex].getTranslation());
+      double discrepancy =
+          candidatePose
+              .getTranslation()
+              .getDistance(lastAcceptedPoseByCamera[otherIndex].getTranslation());
       if (discrepancy > MAX_CROSS_CAMERA_DISCREPANCY_METERS) {
         DogLog.log(camKey + "/RejectedPose/Reason", "CROSS_CAMERA_DISCREPANCY");
         DogLog.log(
@@ -263,10 +262,11 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     String camKey = "Vision/" + inputs[cameraIndex].getCameraName();
-    double yawErrorRad = Math.abs(
-        MathUtil.angleModulus(
-            candidatePose.getRotation().getRadians()
-                - swerve.getState().Pose.getRotation().getRadians()));
+    double yawErrorRad =
+        Math.abs(
+            MathUtil.angleModulus(
+                candidatePose.getRotation().getRadians()
+                    - swerve.getState().Pose.getRotation().getRadians()));
     double maxYawErrorRad = Math.toRadians(COPLANAR_MAX_YAW_DISCREPANCY_DEG);
 
     if (yawErrorRad > maxYawErrorRad) {
@@ -300,10 +300,11 @@ public class VisionSubsystem extends SubsystemBase {
     String camKey = "Vision/" + inputs[cameraIndex].getCameraName();
     Pose2d historicalPose = historicalPoseOpt.get();
 
-    double yawErrorRad = Math.abs(
-        MathUtil.angleModulus(
-            candidatePose.getRotation().getRadians()
-                - historicalPose.getRotation().getRadians()));
+    double yawErrorRad =
+        Math.abs(
+            MathUtil.angleModulus(
+                candidatePose.getRotation().getRadians()
+                    - historicalPose.getRotation().getRadians()));
     double maxYawErrorRad = Math.toRadians(COPLANAR_HISTORICAL_MAX_YAW_DISCREPANCY_DEG);
 
     if (yawErrorRad > maxYawErrorRad) {
@@ -349,9 +350,10 @@ public class VisionSubsystem extends SubsystemBase {
     // have 180° rotational ambiguity (flip-vulnerable). Only true multi-tag
     // observations (tags on different planes) provide a reliable rotational
     // constraint.
-    double angularStdDev = validator.isEffectivelySingleTag(obs)
-        ? Double.MAX_VALUE
-        : ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor);
+    double angularStdDev =
+        validator.isEffectivelySingleTag(obs)
+            ? Double.MAX_VALUE
+            : ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor);
 
     int factorIndex = Math.min(cameraIndex, CAMERA_STDDEV_FACTORS.length - 1);
     double cameraFactor = CAMERA_STDDEV_FACTORS[factorIndex];
@@ -371,17 +373,14 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * If odometry has drifted more than {@code POSE_RESEED_THRESHOLD_METERS} from
-   * the best
-   * high-confidence vision fix this cycle, hard-resets the pose estimator. Call
-   * from {@code
+   * If odometry has drifted more than {@code POSE_RESEED_THRESHOLD_METERS} from the best
+   * high-confidence vision fix this cycle, hard-resets the pose estimator. Call from {@code
    * Superstructure.periodic()}.
    *
    * @return {@code true} if a reseed was performed
    */
   public boolean tryReseedFromVision(Pose2d currentPose) {
-    if (bestReseedCandidate == null)
-      return false;
+    if (bestReseedCandidate == null) return false;
 
     Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
     double drift = currentPose.getTranslation().getDistance(visionPose.getTranslation());
@@ -399,15 +398,13 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Unconditionally reseeds from the best high-confidence vision fix this cycle.
-   * For
+   * Unconditionally reseeds from the best high-confidence vision fix this cycle. For
    * operator-triggered recovery when odometry has gone badly wrong.
    *
    * @return {@code true} if a qualifying pose was available
    */
   public boolean forceReseedFromVision() {
-    if (bestReseedCandidate == null)
-      return false;
+    if (bestReseedCandidate == null) return false;
 
     Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
     swerve.resetPose(visionPose);
@@ -424,12 +421,9 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Resets the odometry-initialized flag so that vision will re-seed the pose
-   * estimator from
-   * scratch on the next accepted observation. Call this at the start of
-   * autonomous so vision
-   * re-confirms the robot's starting pose from tags rather than carrying over a
-   * potentially stale
+   * Resets the odometry-initialized flag so that vision will re-seed the pose estimator from
+   * scratch on the next accepted observation. Call this at the start of autonomous so vision
+   * re-confirms the robot's starting pose from tags rather than carrying over a potentially stale
    * teleop pose.
    */
   public void resetOdometryInitialized() {
