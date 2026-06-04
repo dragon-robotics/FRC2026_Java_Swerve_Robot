@@ -1,7 +1,12 @@
 package frc.robot.subsystems;
 
+import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -28,9 +33,6 @@ import frc.robot.util.HubShiftUtil.ShiftInfo;
 import frc.robot.util.Telemetry;
 import frc.robot.util.constants.FieldConstants;
 import frc.robot.util.constants.FieldConstants.FieldZones;
-import java.util.Optional;
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
 
 public class Superstructure extends SubsystemBase {
 
@@ -345,8 +347,10 @@ public class Superstructure extends SubsystemBase {
       case SHOOT:
         // SHOOT is special — it needs continuous polling for alignment.
         // swerve is always required: when override is on, hold brake immediately;
-        // otherwise aim until AimAtTargetPoseCmd finishes on target, then hold
-        // brake so the default drive command cannot resume and fight the shot.
+        // otherwise actively aim until the synchronous alignment flag is true,
+        // then switch to brake (X-lock) and hold that for the rest of the trigger
+        // hold. This preserves deterministic handoff without relying on the CTRE
+        // async heading controller state.
         return Commands.run(
             () -> {
               setDesiredSuperState(SuperState.SHOOT);
@@ -373,6 +377,7 @@ public class Superstructure extends SubsystemBase {
             .alongWith(
                 Commands.either(
                     new AimAtTargetPoseCmd(swerve, this::setCurrentHeading)
+                        .until(this::isAlignedToTarget)
                         .andThen(Commands.run(() -> swerve.setControl(brake), swerve)),
                     Commands.run(() -> swerve.setControl(brake), swerve),
                     () -> !manualShooterDistanceOverride))
@@ -515,6 +520,13 @@ public class Superstructure extends SubsystemBase {
     double dx = hubTarget.getX() - currentPose.getX();
     double dy = hubTarget.getY() - currentPose.getY();
     double targetAngleRad = Math.atan2(dy, dx);
+
+    // Match AimAtTargetPoseCmd heading convention exactly so hopper feed gating
+    // and aim completion use the same notion of "aligned".
+    if (alliance == DriverStation.Alliance.Red) {
+      targetAngleRad += Math.PI;
+      targetAngleRad = Math.IEEEremainder(targetAngleRad, 2.0 * Math.PI);
+    }
 
     double headingErrorRad = currentPose.getRotation().getRadians() - targetAngleRad;
     headingErrorRad = Math.IEEEremainder(headingErrorRad, 2.0 * Math.PI);
