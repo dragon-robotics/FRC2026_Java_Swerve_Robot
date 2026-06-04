@@ -391,21 +391,10 @@ public class Superstructure extends SubsystemBase {
             () -> {
               setDesiredSuperState(SuperState.MANUAL_SHOOT);
               shooter.setDesiredState(ShooterState.SHOOT);
-              if (manualShooterDistanceOverride) {
-                // Override active: brake held by parallel command; just gate hopper
-                if (shooter.getCurrentState() == ShooterState.SHOOT) {
-                  hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-                } else {
-                  hopper.setDesiredState(HopperState.STOP);
-                }
+              if (shooter.getCurrentState() == ShooterState.SHOOT) {
+                hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
               } else {
-                // Normal: require alignment before feeding;
-                // AimAtTargetPoseCmd handles swerve in parallel
-                if (shooter.getCurrentState() == ShooterState.SHOOT) {
-                  hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-                } else {
-                  hopper.setDesiredState(HopperState.STOP);
-                }
+                hopper.setDesiredState(HopperState.STOP);
               }
             },
             shooter,
