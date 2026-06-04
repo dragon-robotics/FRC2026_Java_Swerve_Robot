@@ -12,45 +12,49 @@ import frc.robot.generated.TunerConstants;
 
 public final class VisionConstants {
   public static final String[] APTAG_CAMERA_NAMES = {
-      "AprilTagPoseEstCameraF",
-      "AprilTagPoseEstCameraR",
-      "AprilTagPoseEstCameraB",
-      "AprilTagPoseEstCameraL"
+    "AprilTagPoseEstCameraF",
+    "AprilTagPoseEstCameraR",
+    "AprilTagPoseEstCameraB",
+    "AprilTagPoseEstCameraL"
   };
 
-  public static final Transform3d APTAG_POSE_EST_CAM_F_POS = new Transform3d(
-      new Translation3d(
-          Units.inchesToMeters(-11.152),
-          Units.inchesToMeters(-7.579),
-          Units.inchesToMeters(20.930)),
-      new Rotation3d(0, Units.degreesToRadians(-15), 0));
+  public static final Transform3d APTAG_POSE_EST_CAM_F_POS =
+      new Transform3d(
+          new Translation3d(
+              Units.inchesToMeters(-11.152),
+              Units.inchesToMeters(-7.579),
+              Units.inchesToMeters(20.930)),
+          new Rotation3d(0, Units.degreesToRadians(-15), 0));
 
-  public static final Transform3d APTAG_POSE_EST_CAM_R_POS = new Transform3d(
-      new Translation3d(
-          Units.inchesToMeters(-8.387),
-          Units.inchesToMeters(-13.355),
-          Units.inchesToMeters(15.931)),
-      new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(-90)));
+  public static final Transform3d APTAG_POSE_EST_CAM_R_POS =
+      new Transform3d(
+          new Translation3d(
+              Units.inchesToMeters(-8.387),
+              Units.inchesToMeters(-13.355),
+              Units.inchesToMeters(15.931)),
+          new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(-90)));
 
-  public static final Transform3d APTAG_POSE_EST_CAM_B_POS = new Transform3d(
-      new Translation3d(
-          Units.inchesToMeters(-9.164),
-          Units.inchesToMeters(12.5),
-          Units.inchesToMeters(20.839)),
-      new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(180)));
+  public static final Transform3d APTAG_POSE_EST_CAM_B_POS =
+      new Transform3d(
+          new Translation3d(
+              Units.inchesToMeters(-9.164),
+              Units.inchesToMeters(12.5),
+              Units.inchesToMeters(20.839)),
+          new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(180)));
 
-  public static final Transform3d APTAG_POSE_EST_CAM_L_POS = new Transform3d(
-      new Translation3d(
-          Units.inchesToMeters(-8.387),
-          Units.inchesToMeters(13.355),
-          Units.inchesToMeters(15.931)),
-      new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(90)));
+  public static final Transform3d APTAG_POSE_EST_CAM_L_POS =
+      new Transform3d(
+          new Translation3d(
+              Units.inchesToMeters(-8.387),
+              Units.inchesToMeters(13.355),
+              Units.inchesToMeters(15.931)),
+          new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(90)));
 
   public static final Transform3d[] APTAG_POSE_EST_CAM_POSITIONS = {
-      APTAG_POSE_EST_CAM_F_POS,
-      APTAG_POSE_EST_CAM_R_POS,
-      APTAG_POSE_EST_CAM_B_POS,
-      APTAG_POSE_EST_CAM_L_POS
+    APTAG_POSE_EST_CAM_F_POS,
+    APTAG_POSE_EST_CAM_R_POS,
+    APTAG_POSE_EST_CAM_B_POS,
+    APTAG_POSE_EST_CAM_L_POS
   };
 
   public static final Matrix<N3, N1> SINGLE_TAG_STDDEV = VecBuilder.fill(4, 4, 8);
@@ -72,51 +76,41 @@ public final class VisionConstants {
   public static final double COPLANAR_ANGLE_THRESHOLD_DEG = 10.0;
 
   /**
-   * Maximum allowable yaw discrepancy (degrees) between a coplanar/single-tag
-   * vision pose and
-   * current odometry heading. A coplanar flip is typically near 180 degrees, so
-   * this gate blocks
+   * Maximum allowable yaw discrepancy (degrees) between a coplanar/single-tag vision pose and
+   * current odometry heading. A coplanar flip is typically near 180 degrees, so this gate blocks
    * flips while still allowing timing latency.
    */
   public static final double COPLANAR_MAX_YAW_DISCREPANCY_DEG = 75.0;
 
   /**
-   * Maximum allowable yaw discrepancy (degrees) between coplanar/single-tag
-   * vision and
+   * Maximum allowable yaw discrepancy (degrees) between coplanar/single-tag vision and
    * latency-compensated historical drivetrain heading.
    */
   public static final double COPLANAR_HISTORICAL_MAX_YAW_DISCREPANCY_DEG = 45.0;
 
   /**
-   * Maximum distance for coplanar multi-tag observations. More generous than
-   * single-tag because
-   * multiple coplanar tags improve translational accuracy even when rotational
-   * ambiguity persists.
-   * Rotation is already distrusted (angular stddev = MAX_VALUE), and the
-   * inter-frame jump check is
+   * Maximum distance for coplanar multi-tag observations. More generous than single-tag because
+   * multiple coplanar tags improve translational accuracy even when rotational ambiguity persists.
+   * Rotation is already distrusted (angular stddev = MAX_VALUE), and the inter-frame jump check is
    * the primary safety net against actual flips.
    */
   public static final double COPLANAR_MAX_DISTANCE_METERS = 7.0;
 
   /**
-   * Maximum distance for true single-tag observations. Beyond this the PnP solver
-   * cannot reliably
+   * Maximum distance for true single-tag observations. Beyond this the PnP solver cannot reliably
    * distinguish the true pose from the 180°-flipped alternate.
    */
   public static final double SINGLE_TAG_MAX_DISTANCE_METERS = 5.0;
 
   /**
-   * Maximum ambiguity for true single-tag observations. Tighter than general
-   * because a single tag
+   * Maximum ambiguity for true single-tag observations. Tighter than general because a single tag
    * at medium range is the highest flip risk.
    */
   public static final double SINGLE_TAG_MAX_AMBIGUITY = 0.3;
 
   /**
-   * Maximum ambiguity for coplanar multi-tag observations. Uses the same
-   * threshold as general
-   * multi-tag — the distance gate and inter-frame jump check provide the primary
-   * flip protection,
+   * Maximum ambiguity for coplanar multi-tag observations. Uses the same threshold as general
+   * multi-tag — the distance gate and inter-frame jump check provide the primary flip protection,
    * not the ambiguity gate.
    */
   public static final double COPLANAR_MAX_AMBIGUITY = MAX_AMBIGUITY;
@@ -127,33 +121,27 @@ public final class VisionConstants {
   // PHYSICALLY POSSIBLE given the elapsed time. No odometry dependency.
 
   /**
-   * Maximum physical robot speed in m/s. Sourced from TunerConstants to stay in
-   * sync with the
+   * Maximum physical robot speed in m/s. Sourced from TunerConstants to stay in sync with the
    * actual drivetrain configuration.
    */
-  public static final double MAX_ROBOT_SPEED_MPS = TunerConstants.kSpeedAt12Volts
-      .in(edu.wpi.first.units.Units.MetersPerSecond);
+  public static final double MAX_ROBOT_SPEED_MPS =
+      TunerConstants.kSpeedAt12Volts.in(edu.wpi.first.units.Units.MetersPerSecond);
 
   /**
-   * Multiplier on top of max speed to account for encoder noise, wheel slip, and
-   * brief speed spikes
+   * Multiplier on top of max speed to account for encoder noise, wheel slip, and brief speed spikes
    * during collisions.
    */
   public static final double SPEED_TOLERANCE_MULTIPLIER = 1.5;
 
   /**
-   * Minimum displacement tolerance (meters) applied regardless of dt. Handles
-   * vision jitter, small
-   * corrections, and prevents false positives on the first frames after a
-   * detection gap.
+   * Minimum displacement tolerance (meters) applied regardless of dt. Handles vision jitter, small
+   * corrections, and prevents false positives on the first frames after a detection gap.
    */
   public static final double BASE_JUMP_TOLERANCE_METERS = 0.5;
 
   /**
-   * Maximum dt (seconds) used for flip detection. If the gap between observations
-   * exceeds this, dt
-   * is clamped to prevent unbounded tolerance. At 3s: max = 3*4.76*1.5+0.5 =
-   * 21.9m — well above any
+   * Maximum dt (seconds) used for flip detection. If the gap between observations exceeds this, dt
+   * is clamped to prevent unbounded tolerance. At 3s: max = 3*4.76*1.5+0.5 = 21.9m — well above any
    * flip (2-5m) but prevents overflow after very long gaps.
    */
   public static final double MAX_FLIP_DETECTION_DT_SECONDS = 3.0;
@@ -185,16 +173,12 @@ public final class VisionConstants {
   public static final boolean ENABLE_CONSTRAINED_FALLBACK = true;
 
   /**
-   * Skip constrained fallback when rotating too quickly, since gyro/vision
-   * latency mismatch can
+   * Skip constrained fallback when rotating too quickly, since gyro/vision latency mismatch can
    * induce drift.
    */
   public static final double CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC = 4.5;
 
-  /**
-   * Weight on heading error in constrained solve. Higher values trust heading
-   * more strongly.
-   */
+  /** Weight on heading error in constrained solve. Higher values trust heading more strongly. */
   public static final double CONSTRAINED_HEADING_SCALE_FACTOR = 0.2;
 
   // Minimum number of AprilTags required for a pose to be used as a reseed
@@ -212,8 +196,9 @@ public final class VisionConstants {
   public static final double CAMERA_ASPECT_RATIO_WIDTH = 4.0;
   public static final double CAMERA_ASPECT_RATIO_HEIGHT = 3.0;
 
-  public static final double CAMERA_FOV_VERTICAL_DEGREES = calculateVerticalFOV(
-      CAMERA_FOV_HORIZONTAL_DEGREES, CAMERA_ASPECT_RATIO_WIDTH, CAMERA_ASPECT_RATIO_HEIGHT);
+  public static final double CAMERA_FOV_VERTICAL_DEGREES =
+      calculateVerticalFOV(
+          CAMERA_FOV_HORIZONTAL_DEGREES, CAMERA_ASPECT_RATIO_WIDTH, CAMERA_ASPECT_RATIO_HEIGHT);
 
   private static double calculateVerticalFOV(
       double horizontalFOV, double aspectRatioWidth, double aspectRatioHeight) {
@@ -224,7 +209,7 @@ public final class VisionConstants {
     return Math.toDegrees(vFOV_half_rad * 2.0);
   }
 
-  public static double[] CAMERA_STDDEV_FACTORS = new double[] { 1.0, 1.0, 1.0, 1.0 };
+  public static double[] CAMERA_STDDEV_FACTORS = new double[] {1.0, 1.0, 1.0, 1.0};
 
   public static double LINEAR_STDDEV_MEGATAG2_FACTOR = 0.5;
   public static double ANGULAR_STDDEV_MEGATAG2_ANGLE_FACTOR = Double.MAX_VALUE;
