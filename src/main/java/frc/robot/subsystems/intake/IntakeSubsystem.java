@@ -12,14 +12,13 @@ import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_POSITION_TOLER
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_SLOW_PID_SLOT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_WOKTOSS_POSITION;
-import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_DUTY_CYCLE;
-import static frc.robot.util.constants.IntakeConstants.OUTTAKE_ROLLER_DUTY_CYCLE;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_VOLTAGE;
+import static frc.robot.util.constants.IntakeConstants.OUTTAKE_ROLLER_VOLTAGE;
 
 public class IntakeSubsystem extends SubsystemBase {
 
@@ -53,7 +52,8 @@ public class IntakeSubsystem extends SubsystemBase {
   protected boolean wokTossMovingToDeployed;
 
   /**
-   * Tracks the last state for which CAN commands were sent, so we can skip redundant writes when
+   * Tracks the last state for which CAN commands were sent, so we can skip
+   * redundant writes when
    * the state hasn't changed. Reset to null on any state transition.
    */
   private IntakeState lastCommandedState = null;
@@ -95,12 +95,11 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void runIntake() {
-    // runIntakeRollerPercentage(INTAKE_ROLLER_DUTY_CYCLE);
-    intakeRollerLeadIO.setMotorPercentage(INTAKE_ROLLER_DUTY_CYCLE);
+    runIntakeRollerVoltage(INTAKE_ROLLER_VOLTAGE);
   }
 
   public void runOuttake() {
-    intakeRollerLeadIO.setMotorPercentage(OUTTAKE_ROLLER_DUTY_CYCLE);
+    runIntakeRollerVoltage(OUTTAKE_ROLLER_VOLTAGE);
   }
 
   public void stopIntake() {
@@ -113,11 +112,11 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public void deployIntakeArm() {
     intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_FAST_PID_SLOT);
-    // intakeRollerIO.setMotorPercentage(0.5);
   }
 
   /**
-   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity holds the arm down
+   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity
+   * holds the arm down
    * once deployed — no PID needed to maintain the down position.
    */
   public void coastIntakeArm() {
@@ -152,26 +151,22 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public boolean isIntakeArmAtDeployed() {
-    double positionError =
-        Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtStowed() {
-    double positionError =
-        Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtWokToss() {
-    double positionError =
-        Math.abs(INTAKE_ARM_WOKTOSS_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_WOKTOSS_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtPreJuice() {
-    double positionError =
-        Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
@@ -252,7 +247,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public void handleStateTransition() {
     // Handle the state transitions
     switch (currIntakeState) {
-        // ── Steady states: only send CAN commands on state entry ──
+      // ── Steady states: only send CAN commands on state entry ──
       case HOME:
         if (lastCommandedState != currIntakeState) {
           // Command arm to stow via PID and stop rollers on state entry.
@@ -290,10 +285,10 @@ public class IntakeSubsystem extends SubsystemBase {
         }
         break;
 
-        // ── Transition states: send arm + roller commands once on entry ──
-        // TalonFX maintains its onboard PID loop once commanded,
-        // so we only need to send the position setpoint once.
-        // We still check feedback each loop to know when to transition.
+      // ── Transition states: send arm + roller commands once on entry ──
+      // TalonFX maintains its onboard PID loop once commanded,
+      // so we only need to send the position setpoint once.
+      // We still check feedback each loop to know when to transition.
       case DEPLOYING:
         if (lastCommandedState != currIntakeState) {
           deployIntakeArm();
@@ -311,13 +306,11 @@ public class IntakeSubsystem extends SubsystemBase {
         // depending on desired state
         if (isIntakeArmAtDeployed()) {
           lastCommandedState = null; // Reset so next state sends commands
-          if (desiredIntakeState == IntakeState.INTAKE) {
-            currIntakeState = IntakeState.INTAKE;
-          } else if (desiredIntakeState == IntakeState.OUTTAKE) {
-            currIntakeState = IntakeState.OUTTAKE;
-          } else {
-            currIntakeState = IntakeState.DEPLOYED;
-          }
+          currIntakeState = switch (desiredIntakeState) {
+            case INTAKE -> IntakeState.INTAKE;
+            case OUTTAKE -> IntakeState.OUTTAKE;
+            default -> IntakeState.DEPLOYED;
+          };
         }
         break;
       case STOWING:
