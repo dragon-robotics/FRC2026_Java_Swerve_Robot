@@ -247,7 +247,7 @@ public final class FieldConstants {
     public static final Translation2d BLUE_HUB_CENTER = Hub.BLUE_CENTER_POSE;
     public static final Translation2d RED_HUB_CENTER = Hub.RED_CENTER_POSE;
 
-    private static final double BLUE_NEUTRAL_AIM_X = LinesVertical.ALLIANCE_ZONE * 0.75;
+    private static final double BLUE_NEUTRAL_AIM_X = LinesVertical.ALLIANCE_ZONE * 0.90;
     private static final double RED_NEUTRAL_AIM_X = FIELD_LENGTH - BLUE_NEUTRAL_AIM_X;
 
     /* Blue */
