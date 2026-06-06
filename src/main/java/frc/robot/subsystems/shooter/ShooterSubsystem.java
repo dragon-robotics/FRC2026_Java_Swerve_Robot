@@ -34,10 +34,6 @@ public class ShooterSubsystem extends SubsystemBase {
   protected double targetRPM;
   protected double hoodAngle;
 
-  protected boolean manualDistanceOverride;
-  protected double manualOverrideRPM;
-  protected double manualOverrideHoodAngle;
-
   // Timer to keep kicker running after shooting stops
   private final Timer kickerStopTimer = new Timer();
   private boolean kickerStopTimerRunning = false;
@@ -65,10 +61,6 @@ public class ShooterSubsystem extends SubsystemBase {
     // Initialize target RPM and hood angle to default values
     this.targetRPM = ShooterConstants.SHOOTER_LEAD_RPM;
     this.hoodAngle = ShooterConstants.SHOOTER_HOOD_SETTING; // default to home position
-
-    this.manualDistanceOverride = false;
-    this.manualOverrideRPM = ShooterConstants.SHOOTER_LEAD_RPM;
-    this.manualOverrideHoodAngle = ShooterConstants.SHOOTER_HOOD_SETTING;
   }
 
   public ShooterState getCurrentState() {
@@ -122,8 +114,13 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void setSetpointForDistance(double distanceToTarget) {
     ShooterSetpoint setpoint = getSetpointForDistance(distanceToTarget);
-    targetRPM = manualDistanceOverride ? manualOverrideRPM : setpoint.shooterRPM();
-    hoodAngle = manualDistanceOverride ? manualOverrideHoodAngle : setpoint.hoodAngle();
+    targetRPM = setpoint.shooterRPM();
+    hoodAngle = setpoint.hoodAngle();
+  }
+
+  public void setSetpoint(double shooterRPM, double hoodAngle) {
+    targetRPM = shooterRPM;
+    this.hoodAngle = hoodAngle;
   }
 
   /* Returns the speed in RPM */
@@ -141,15 +138,6 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public double getTargetRPM() {
     return targetRPM;
-  }
-
-  public void setManualDistanceOverride(boolean enabled) {
-    manualDistanceOverride = enabled;
-  }
-
-  public void setManualDistanceOverrideSetpoint(double shooterRPM, double hoodAngle) {
-    manualOverrideRPM = shooterRPM;
-    manualOverrideHoodAngle = hoodAngle;
   }
 
   /* State Management */
@@ -260,9 +248,6 @@ public class ShooterSubsystem extends SubsystemBase {
     DogLog.log("Shooter/SpeedRPM", getShooterSpeed());
     DogLog.log("Shooter/TargetRPM", targetRPM);
     DogLog.log("Shooter/HoodAngle", hoodAngle);
-    DogLog.log("Shooter/ManualOverride", manualDistanceOverride);
-    DogLog.log("Shooter/ManualOverrideTargetRPM", manualOverrideRPM);
-    DogLog.log("Shooter/ManualOverrideHoodAngle", manualOverrideHoodAngle);
     DogLog.timeEnd("Perf/Shooter");
   }
 }

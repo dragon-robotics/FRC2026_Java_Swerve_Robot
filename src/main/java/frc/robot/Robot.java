@@ -106,6 +106,9 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(m_autonomousCommand);
     }
+
+    // Start the hub shift timer — tracks which alliance's hub is active
+    HubShiftUtil.initialize();
   }
 
   @Override
@@ -121,9 +124,6 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       CommandScheduler.getInstance().cancel(m_autonomousCommand);
     }
-
-    // Start the hub shift timer — tracks which alliance's hub is active
-    HubShiftUtil.initialize();
   }
 
   @Override
