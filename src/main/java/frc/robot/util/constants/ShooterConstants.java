@@ -164,8 +164,8 @@ public final class ShooterConstants {
               .withSupplyCurrentLowerTime(Seconds.of(0.25)))
       .withVoltage(
           new VoltageConfigs()
-              .withPeakForwardVoltage(Volts.of(11))
-              .withPeakReverseVoltage(Volts.of(-11)))
+              .withPeakForwardVoltage(Volts.of(12))
+              .withPeakReverseVoltage(Volts.of(-12)))
       .withMotorOutput(
           new MotorOutputConfigs()
               .withNeutralMode(NeutralModeValue.Coast)
