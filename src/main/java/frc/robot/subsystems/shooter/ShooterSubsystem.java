@@ -95,12 +95,14 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void runKicker() {
-    shooterKickerIO.setMotorVoltage(ShooterConstants.SHOOTER_KICKER_VOLTAGE); // Run kicker at full voltage for shooting
+    shooterKickerIO.setMotorVoltage(
+        ShooterConstants.SHOOTER_KICKER_VOLTAGE); // Run kicker at full voltage for shooting
   }
 
   public void prepKicker() {
-    shooterKickerIO.setMotorVoltage(ShooterConstants.SHOOTER_KICKER_PREP_VOLTAGE); // Run kicker at 50% of full RPM for
-                                                                                   // prep
+    shooterKickerIO.setMotorVoltage(
+        ShooterConstants.SHOOTER_KICKER_PREP_VOLTAGE); // Run kicker at 50% of full RPM for
+    // prep
   }
 
   public void stopKicker() {

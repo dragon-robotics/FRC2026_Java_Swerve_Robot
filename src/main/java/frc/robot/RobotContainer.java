@@ -52,12 +52,10 @@ import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Superstructure.ShootMode;
 import frc.robot.subsystems.Superstructure.SuperState;
 import frc.robot.subsystems.hopper.HopperSubsystem;
-import frc.robot.subsystems.hopper.HopperSubsystem.HopperState;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem.IntakeState;
 import frc.robot.subsystems.intake.IntakeSubsystemSim;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
-import frc.robot.subsystems.shooter.ShooterSubsystem.ShooterState;
 import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.subsystems.vision.VisionSubsystem;
@@ -65,6 +63,7 @@ import frc.robot.util.HubShiftUtil;
 import frc.robot.util.constants.OperatorConstants;
 import frc.robot.util.constants.SwerveConstants;
 import frc.robot.util.constants.VisionConstants;
+
 import java.util.Optional;
 import java.util.Set;
 
@@ -386,7 +385,6 @@ public class RobotContainer {
 
     // Warmup PathPlanner to avoid Java pauses
     CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
-
     // ── Hub Shift Override ─────────────────────────────────────────────────
     // Allows manual override of who "won auto" for testing/practice.
     // Set "HubShift/WonAuto" on SmartDashboard:
