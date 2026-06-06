@@ -114,7 +114,7 @@ public class HubShiftUtil {
       active = true;
       currentShift = ShiftEnum.AUTO;
     } else if (DriverStation.isEnabled()) {
-      // Adjust the current offset if the time difference above the theshold
+// Adjust the current offset if the time difference above the threshold
       if (Math.abs(fieldTeleopTime - currentTime) >= timeResetThreshold
           && fieldTeleopTime <= 135
           && DriverStation.isFMSAttached()) {
