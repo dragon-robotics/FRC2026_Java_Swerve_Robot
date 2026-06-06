@@ -491,8 +491,6 @@ public class RobotContainer {
     // () -> intakeSubsystem.setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION, 0),
     // intakeSubsystem));
 
-    // operatorController.b().whileTrue(wokTossIntakeCommand).onFalse(deployIntakeCommand);
-
     // /* Manual Intake Roller */
     // operatorController
     // .leftBumper()

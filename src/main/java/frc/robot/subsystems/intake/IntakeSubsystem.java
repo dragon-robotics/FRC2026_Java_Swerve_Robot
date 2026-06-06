@@ -11,7 +11,6 @@ import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_PRE_POS
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_POSITION_TOLERANCE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_SLOW_PID_SLOT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
-import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_WOKTOSS_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_VOLTAGE;
 import static frc.robot.util.constants.IntakeConstants.OUTTAKE_ROLLER_VOLTAGE;
 
@@ -30,9 +29,6 @@ public class IntakeSubsystem extends SubsystemBase {
     DEPLOYED,
     DEPLOYING,
     STOWING,
-    WOKTOSS,
-    WOKTOSSING,
-    AUTO_WOKTOSSING,
     JUICER
   }
 
@@ -49,8 +45,6 @@ public class IntakeSubsystem extends SubsystemBase {
   protected final MotorIO intakeArmIO;
   protected final MotorIOInputs intakeRollerLeadInputs, intakeRollerFollowInputs;
   protected final MotorIOInputs intakeArmInputs;
-
-  protected boolean wokTossMovingToDeployed;
 
   /**
    * Tracks the last state for which CAN commands were sent, so we can skip
@@ -76,9 +70,6 @@ public class IntakeSubsystem extends SubsystemBase {
     /* Initialize intake states */
     currIntakeState = IntakeState.HOME;
     desiredIntakeState = IntakeState.HOME;
-
-    /* Initialize wok toss state */
-    wokTossMovingToDeployed = false;
   }
 
   /* Setters */
@@ -128,10 +119,6 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeArmIO.setMotorPosition(INTAKE_ARM_STOWED_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
   }
 
-  public void wokTossIntakeArm() {
-    intakeArmIO.setMotorPosition(INTAKE_ARM_WOKTOSS_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
-  }
-
   /* Getters */
 
   public IntakeState getCurrentState() {
@@ -157,11 +144,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public boolean isIntakeArmAtStowed() {
     double positionError = Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
-    return positionError < INTAKE_ARM_POSITION_TOLERANCE;
-  }
-
-  public boolean isIntakeArmAtWokToss() {
-    double positionError = Math.abs(INTAKE_ARM_WOKTOSS_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
@@ -225,14 +207,6 @@ public class IntakeSubsystem extends SubsystemBase {
       case DEPLOYED:
         currIntakeState = IntakeState.DEPLOYING;
         break;
-      case WOKTOSS:
-        currIntakeState = IntakeState.WOKTOSSING;
-        wokTossMovingToDeployed = true;
-        break;
-      case AUTO_WOKTOSSING:
-        currIntakeState = IntakeState.AUTO_WOKTOSSING;
-        wokTossMovingToDeployed = true;
-        break;
       case JUICER:
         currIntakeState = IntakeState.JUICER;
         // Always restart the juicer sequence from PRE_JUICE on (re-)entry
@@ -277,14 +251,6 @@ public class IntakeSubsystem extends SubsystemBase {
           lastCommandedState = currIntakeState;
         }
         break;
-      case WOKTOSS:
-        if (lastCommandedState != currIntakeState) {
-          wokTossIntakeArm();
-          runIntake();
-          lastCommandedState = currIntakeState;
-        }
-        break;
-
       // ── Transition states: send arm + roller commands once on entry ──
       // TalonFX maintains its onboard PID loop once commanded,
       // so we only need to send the position setpoint once.
@@ -324,23 +290,6 @@ public class IntakeSubsystem extends SubsystemBase {
           lastCommandedState = null; // Reset so next state sends commands
           currIntakeState = IntakeState.HOME;
         }
-        break;
-      case WOKTOSSING:
-        if (lastCommandedState != currIntakeState) {
-          wokTossIntakeArm();
-          runIntake();
-          lastCommandedState = currIntakeState;
-        }
-        // When intake arm reaches setpoint, transition to WOKTOSS state
-        if (isIntakeArmAtWokToss()) {
-          lastCommandedState = null; // Reset so next state sends commands
-          currIntakeState = IntakeState.WOKTOSS;
-        }
-        break;
-      case AUTO_WOKTOSSING:
-        // Intake arm oscillate between deployed and woktoss setpoints in a set sequence
-        // 1. Do nothing for the first 3 seconds
-        // 2. Then oscillate between deployed and woktoss setpoints every 0.5 seconds
         break;
       case JUICER:
         if (lastCommandedState != currIntakeState) {
