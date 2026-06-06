@@ -1,11 +1,10 @@
 package frc.robot.subsystems.hopper;
 
-import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_DUTY_CYCLE;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MAX_VOLTAGE;
 
 public class HopperSubsystem extends SubsystemBase {
 
@@ -68,15 +67,15 @@ public class HopperSubsystem extends SubsystemBase {
   }
 
   public void indexToShooter() {
-    leadRollerMotorIO.setMotorPercentage(HOPPER_ROLLER_DUTY_CYCLE);
+    leadRollerMotorIO.setMotorVoltage(HOPPER_ROLLER_MAX_VOLTAGE.magnitude());
   }
 
   public void indexToIntake() {
-    leadRollerMotorIO.setMotorPercentage(-HOPPER_ROLLER_DUTY_CYCLE);
+    leadRollerMotorIO.setMotorVoltage(-HOPPER_ROLLER_MAX_VOLTAGE.magnitude());
   }
 
   public void stopHopperRoller() {
-    leadRollerMotorIO.setMotorPercentage(0);
+    leadRollerMotorIO.setMotorVoltage(0);
   }
 
   /* State Managemeent */
