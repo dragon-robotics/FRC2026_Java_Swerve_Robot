@@ -64,6 +64,7 @@ import frc.robot.util.constants.OperatorConstants;
 import frc.robot.util.constants.SwerveConstants;
 import frc.robot.util.constants.VisionConstants;
 import java.util.Optional;
+import java.util.Set;
 
 public class RobotContainer {
 
@@ -435,7 +436,10 @@ public class RobotContainer {
     /* Shoot */
     driverController
         .rightTrigger(0.2)
-        .whileTrue(superstructureSubsystem.selectedShootModeCmd())
+        .whileTrue(
+            Commands.defer(
+                superstructureSubsystem::selectedShootModeCmd,
+                Set.of(swerveSubsystem, intakeSubsystem, hopperSubsystem, shooterSubsystem)))
         .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
 
     /* Driver can control the Juicer mode if needed */
