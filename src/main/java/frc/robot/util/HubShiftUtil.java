@@ -82,7 +82,7 @@ public class HubShiftUtil {
     return alliance == Alliance.Blue ? Alliance.Red : Alliance.Blue;
   }
 
-  /** Starts the timer at the begining of teleop. */
+/** Starts the timer at the beginning of teleop. */
   public static void initialize() {
     shiftTimerOffset = 0;
     shiftTimer.restart();
