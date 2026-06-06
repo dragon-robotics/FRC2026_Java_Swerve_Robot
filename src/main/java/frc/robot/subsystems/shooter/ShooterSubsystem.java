@@ -35,6 +35,8 @@ public class ShooterSubsystem extends SubsystemBase {
   protected double hoodAngle;
 
   protected boolean manualDistanceOverride;
+  protected double manualOverrideRPM;
+  protected double manualOverrideHoodAngle;
 
   // Timer to keep kicker running after shooting stops
   private final Timer kickerStopTimer = new Timer();
@@ -65,6 +67,8 @@ public class ShooterSubsystem extends SubsystemBase {
     this.hoodAngle = ShooterConstants.SHOOTER_HOOD_SETTING; // default to home position
 
     this.manualDistanceOverride = false;
+    this.manualOverrideRPM = ShooterConstants.SHOOTER_LEAD_RPM;
+    this.manualOverrideHoodAngle = ShooterConstants.SHOOTER_HOOD_SETTING;
   }
 
   public ShooterState getCurrentState() {
@@ -118,8 +122,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void setSetpointForDistance(double distanceToTarget) {
     ShooterSetpoint setpoint = getSetpointForDistance(distanceToTarget);
-    targetRPM = manualDistanceOverride ? 2500 : setpoint.shooterRPM();
-    hoodAngle = manualDistanceOverride ? 0 : setpoint.hoodAngle();
+    targetRPM = manualDistanceOverride ? manualOverrideRPM : setpoint.shooterRPM();
+    hoodAngle = manualDistanceOverride ? manualOverrideHoodAngle : setpoint.hoodAngle();
   }
 
   /* Returns the speed in RPM */
@@ -141,6 +145,11 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public void setManualDistanceOverride(boolean enabled) {
     manualDistanceOverride = enabled;
+  }
+
+  public void setManualDistanceOverrideSetpoint(double shooterRPM, double hoodAngle) {
+    manualOverrideRPM = shooterRPM;
+    manualOverrideHoodAngle = hoodAngle;
   }
 
   /* State Management */
@@ -196,11 +205,6 @@ public class ShooterSubsystem extends SubsystemBase {
         runKicker();
         setHoodAngle(hoodAngle);
         break;
-        // case PURGE:
-        // runShooter();
-        // runKicker();
-        // setHoodAngle(2.5);
-        // break;
       case TRANSITION:
         switch (desiredShooterState) {
           case STOP:
@@ -235,14 +239,6 @@ public class ShooterSubsystem extends SubsystemBase {
                 && MathUtil.isNear(hoodAngle, shooterHoodInputs.getMotorPosition(), 0.125)) {
               currShooterState = ShooterState.SHOOT;
             }
-            // case PURGE:
-            // runShooter();
-            // setHoodAngle(2.5);
-            // if (MathUtil.isNear(2450, getShooterSpeed(), 60)
-            // && MathUtil.isNear(2.5, shooterHoodInputs.getMotorPosition(), 0.125)) {
-            // currShooterState = ShooterState.PURGE;
-            // }
-            // break;
           default:
             break;
         }
@@ -254,7 +250,7 @@ public class ShooterSubsystem extends SubsystemBase {
     DogLog.time("Perf/Shooter");
     shooterLeadIO.updateInputs(shooterLeadInputs);
     // shooterFollowIO.updateInputs(shooterFollowInputs);
-    // shooterKickerIO.updateInputs(shooterKickerInputs);
+    shooterKickerIO.updateInputs(shooterKickerInputs);
     shooterHoodIO.updateInputs(shooterHoodInputs);
 
     handleStateTransition();
@@ -265,6 +261,8 @@ public class ShooterSubsystem extends SubsystemBase {
     DogLog.log("Shooter/TargetRPM", targetRPM);
     DogLog.log("Shooter/HoodAngle", hoodAngle);
     DogLog.log("Shooter/ManualOverride", manualDistanceOverride);
+    DogLog.log("Shooter/ManualOverrideTargetRPM", manualOverrideRPM);
+    DogLog.log("Shooter/ManualOverrideHoodAngle", manualOverrideHoodAngle);
     DogLog.timeEnd("Perf/Shooter");
   }
 }
