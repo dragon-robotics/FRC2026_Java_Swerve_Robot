@@ -13,6 +13,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -45,9 +46,20 @@ public class Superstructure extends SubsystemBase {
     DRIVE,
     INTAKE,
     OUTTAKE,
-    SHOOT,
-    MANUAL_SHOOT,
-    // PURGE
+    SHOOT_WITH_AIM, // Shooting while aiming with vision assistance (default shoot behavior)
+    SHOOT_NO_AIM, // Shooting without aiming assistance, but still calculating shooter setpoint
+    // based on distance using vision pose estimation (e.g., bumper up shot)
+    MANUAL_SHOOT, // Shooting with manual setpoint and no vision assistance if vision is bad or
+    // unavailable
+    PURGE // Shooting while outtaking to get rid of FUEL as fast as possible for passing
+    // purposes
+  }
+
+  // Used to select which shooting state we are in
+  public enum ShootMode {
+    DEFAULT_SHOOT_WITH_AIM,
+    MANUAL_BUMPER_UP,
+    MANUAL_TRENCH
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -84,10 +96,16 @@ public class Superstructure extends SubsystemBase {
 
   private static final double ALIGNMENT_TOLERANCE_DEGREES = 5;
   private boolean alignedToTarget = false;
-  private Translation2d cachedHubTarget;
   private boolean allianceConfirmed = false;
   private FieldZones currentZone;
-  private boolean manualShooterDistanceOverride = false;
+  private ShootMode shootMode = ShootMode.DEFAULT_SHOOT_WITH_AIM;
+
+  // Used for manual override if vision fails and we need to shoot with driver
+  // manually aiming
+  private static final double MANUAL_BUMPER_UP_RPM = 2500.0;
+  private static final double MANUAL_BUMPER_UP_HOOD = 0.0;
+  private static final double MANUAL_TRENCH_RPM = 2900.0;
+  private static final double MANUAL_TRENCH_HOOD = 0.75;
 
   // Pre-cached zone name strings — avoids .name() heap allocation every cycle
   private static final String[] ZONE_NAMES;
@@ -148,7 +166,6 @@ public class Superstructure extends SubsystemBase {
 
     /* Default to blue until Driver Station alliance becomes available. */
     alliance = DriverStation.Alliance.Blue;
-    cachedHubTarget = FieldConstants.Hub.BLUE_CENTER_POSE;
     currentZone = null;
     refreshAllianceAndCachedHubTarget();
 
@@ -173,9 +190,175 @@ public class Superstructure extends SubsystemBase {
 
   private void setAlliance(DriverStation.Alliance newAlliance) {
     alliance = newAlliance;
-    cachedHubTarget = alliance == DriverStation.Alliance.Red
+  }
+
+  private Translation2d getHubTargetForAlliance() {
+    return alliance == DriverStation.Alliance.Red
         ? FieldConstants.Hub.RED_CENTER_POSE
         : FieldConstants.Hub.BLUE_CENTER_POSE;
+  }
+
+  private Translation2d getCurrentAimTarget() {
+    if (!allianceConfirmed || currentZone == null) {
+      return getHubTargetForAlliance();
+    }
+
+    boolean isRed = alliance == DriverStation.Alliance.Red;
+    return switch (currentZone) {
+      case NEUTRAL_LEFT_SHOOT -> isRed
+          ? FieldConstants.AimPoints.RED_LEFT_SHOOT_POINT
+          : FieldConstants.AimPoints.BLUE_LEFT_SHOOT_POINT;
+      case NEUTRAL_RIGHT_SHOOT -> isRed
+          ? FieldConstants.AimPoints.RED_RIGHT_SHOOT_POINT
+          : FieldConstants.AimPoints.BLUE_RIGHT_SHOOT_POINT;
+      case NEUTRAL_LEFT_PURGE -> isRed
+          ? FieldConstants.AimPoints.RED_LEFT_PURGE_POINT
+          : FieldConstants.AimPoints.BLUE_LEFT_PURGE_POINT;
+      case NEUTRAL_RIGHT_PURGE -> isRed
+          ? FieldConstants.AimPoints.RED_RIGHT_PURGE_POINT
+          : FieldConstants.AimPoints.BLUE_RIGHT_PURGE_POINT;
+      default -> getHubTargetForAlliance();
+    };
+  }
+
+  private boolean isShootAllowedZone() {
+    if (!allianceConfirmed || currentZone == null) {
+      return false;
+    }
+
+    return switch (currentZone) {
+      case ALLIANCE_LEFT,
+          ALLIANCE_RIGHT,
+          NEUTRAL_LEFT_SHOOT,
+          NEUTRAL_RIGHT_SHOOT,
+          NEUTRAL_LEFT_PURGE,
+          NEUTRAL_RIGHT_PURGE ->
+        true;
+      default -> false;
+    };
+  }
+
+  private boolean isPurgeZone() {
+    if (!allianceConfirmed || currentZone == null) {
+      return false;
+    }
+
+    return switch (currentZone) {
+      case NEUTRAL_LEFT_PURGE, NEUTRAL_RIGHT_PURGE -> true;
+      default -> false;
+    };
+  }
+
+  private Command createShootStateCommand(boolean withAim) {
+    return Commands.run(
+        () -> {
+          setDesiredSuperState(withAim ? SuperState.SHOOT_WITH_AIM : SuperState.SHOOT_NO_AIM);
+          shooter.setDesiredState(ShooterState.SHOOT);
+          // Require alignment before feeding; AimAtTargetPoseCmd handles swerve in
+          // parallel.
+          if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
+            hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+          } else {
+            hopper.setDesiredState(HopperState.STOP);
+          }
+        },
+        shooter,
+        hopper)
+        .alongWith(
+            new AimAtTargetPoseCmd(swerve, this::setCurrentHeading, this::getCurrentAimTarget)
+                .until(this::isAlignedToTarget)
+                .andThen(Commands.run(() -> swerve.setControl(brake), swerve)));
+  }
+
+  private Command createPurgeStateCommand() {
+    return Commands.run(
+        () -> {
+          setDesiredSuperState(SuperState.PURGE);
+          intake.setDesiredState(IntakeState.OUTTAKE);
+          shooter.setDesiredState(ShooterState.SHOOT);
+          if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
+            hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+          } else {
+            hopper.setDesiredState(HopperState.STOP);
+          }
+        },
+        intake,
+        shooter,
+        hopper)
+        .alongWith(
+            new AimAtTargetPoseCmd(swerve, this::setCurrentHeading, this::getCurrentAimTarget)
+                .until(this::isAlignedToTarget)
+                .andThen(Commands.run(() -> swerve.setControl(brake), swerve)));
+  }
+
+  private Command createManualShootStateCommand(double shooterRpm, double hoodAngle) {
+    return Commands.run(
+        () -> {
+          shooter.setSetpoint(shooterRpm, hoodAngle);
+          setDesiredSuperState(SuperState.MANUAL_SHOOT);
+          shooter.setDesiredState(ShooterState.SHOOT);
+          if (shooter.getCurrentState() == ShooterState.SHOOT) {
+            hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+          } else {
+            hopper.setDesiredState(HopperState.STOP);
+          }
+        },
+        shooter,
+        hopper)
+        .alongWith(Commands.run(() -> swerve.setControl(brake), swerve))
+        .withName("SuperState(MANUAL_SHOOT)");
+  }
+
+  /**
+   * Shoot with aim, transitioning intake to JUICER after 1.5 s. Owns intake,
+   * shooter, hopper, and swerve in a single command group so there is no
+   * parallel-requirements conflict. Intended for autonomous use.
+   */
+  public Command shootWithJuicerDelayCmd() {
+    Timer juicerTimer = new Timer();
+    return Commands.runOnce(juicerTimer::restart)
+        .andThen(
+            Commands.run(
+                () -> {
+                  boolean purge = isPurgeZone();
+                  setDesiredSuperState(
+                      purge ? SuperState.PURGE : SuperState.SHOOT_WITH_AIM);
+                  if (purge) {
+                    intake.setDesiredState(IntakeState.OUTTAKE);
+                  } else {
+                    intake.setDesiredState(
+                        juicerTimer.hasElapsed(1.5)
+                            ? IntakeState.JUICER
+                            : IntakeState.DEPLOYED);
+                  }
+                  shooter.setDesiredState(ShooterState.SHOOT);
+                  if (shooter.getCurrentState() == ShooterState.SHOOT
+                      && isAlignedToTarget()) {
+                    hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+                  } else {
+                    hopper.setDesiredState(HopperState.STOP);
+                  }
+                },
+                intake,
+                shooter,
+                hopper)
+                .alongWith(
+                    new AimAtTargetPoseCmd(
+                        swerve, this::setCurrentHeading, this::getCurrentAimTarget)
+                        .until(this::isAlignedToTarget)
+                        .andThen(Commands.run(() -> swerve.setControl(brake), swerve))))
+        .withName("SuperState(SHOOT_WITH_AIM+Juicer)");
+  }
+
+  public Command selectedShootModeCmd() {
+    return switch (shootMode) {
+      case DEFAULT_SHOOT_WITH_AIM -> setStateCmd(SuperState.SHOOT_WITH_AIM);
+      case MANUAL_BUMPER_UP -> createManualShootStateCommand(
+          MANUAL_BUMPER_UP_RPM, MANUAL_BUMPER_UP_HOOD)
+          .withName("SuperState(SHOOT->MANUAL_BUMPER_UP)");
+      case MANUAL_TRENCH -> createManualShootStateCommand(MANUAL_TRENCH_RPM, MANUAL_TRENCH_HOOD)
+          .withName("SuperState(SHOOT->MANUAL_TRENCH)");
+    };
   }
 
   private void refreshAllianceAndCachedHubTarget() {
@@ -237,7 +420,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   public Command aimAtTargetPose() {
-    return new AimAtTargetPoseCmd(swerve, this::setCurrentHeading);
+    return new AimAtTargetPoseCmd(swerve, this::setCurrentHeading, this::getCurrentAimTarget);
   }
 
   public Command swerveBrakeCmd() {
@@ -344,49 +527,20 @@ public class Superstructure extends SubsystemBase {
             shooter)
             .withName("SuperState(OUTTAKE)");
 
-      case SHOOT:
-        // SHOOT is special — it needs continuous polling for alignment.
-        // swerve is always required: when override is on, hold brake immediately;
-        // otherwise actively aim until the synchronous alignment flag is true,
-        // then switch to brake (X-lock) and hold that for the rest of the trigger
-        // hold. This preserves deterministic handoff without relying on the CTRE
-        // async heading controller state.
-        return Commands.run(
-            () -> {
-              setDesiredSuperState(SuperState.SHOOT);
-              shooter.setDesiredState(ShooterState.SHOOT);
-              if (manualShooterDistanceOverride) {
-                // Override active: brake held by parallel command; just gate hopper
-                if (shooter.getCurrentState() == ShooterState.SHOOT) {
-                  hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-                } else {
-                  hopper.setDesiredState(HopperState.STOP);
-                }
-              } else {
-                // Normal: require alignment before feeding;
-                // AimAtTargetPoseCmd handles swerve in parallel
-                if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-                  hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-                } else {
-                  hopper.setDesiredState(HopperState.STOP);
-                }
-              }
-            },
-            shooter,
-            hopper)
-            .alongWith(
-                Commands.either(
-                    new AimAtTargetPoseCmd(swerve, this::setCurrentHeading)
-                        .until(this::isAlignedToTarget)
-                        .andThen(Commands.run(() -> swerve.setControl(brake), swerve)),
-                    Commands.run(() -> swerve.setControl(brake), swerve),
-                    () -> !manualShooterDistanceOverride))
-            .withName("SuperState(SHOOT)");
+      case SHOOT_WITH_AIM:
+        // SHOOT_WITH_AIM is only enabled in designated field zones.
+        return Commands.either(
+            Commands.either(
+                createPurgeStateCommand(), createShootStateCommand(true), this::isPurgeZone),
+            Commands.idle(),
+            this::isShootAllowedZone)
+            .withName("SuperState(SHOOT_WITH_AIM)");
+      case SHOOT_NO_AIM:
+        // SHOOT_NO_AIM is only enabled in designated field zones.
+        return Commands.either(
+            createShootStateCommand(false), Commands.idle(), this::isShootAllowedZone)
+            .withName("SuperState(SHOOT_NO_AIM)");
       case MANUAL_SHOOT:
-        // SHOOT is special — it needs continuous polling for alignment.
-        // swerve is always required: when override is on, hold brake immediately;
-        // otherwise aim until AimAtTargetPoseCmd finishes on target, then hold
-        // brake so the default drive command cannot resume and fight the shot.
         return Commands.run(
             () -> {
               setDesiredSuperState(SuperState.MANUAL_SHOOT);
@@ -401,28 +555,9 @@ public class Superstructure extends SubsystemBase {
             hopper)
             .alongWith(Commands.run(() -> swerve.setControl(brake), swerve))
             .withName("SuperState(MANUAL_SHOOT)");
-      // case PURGE:
-      // // SHOOT is special — it needs continuous polling for alignment.
-      // // swerve is always required: when override is on, hold brake immediately;
-      // // otherwise aim until AimAtTargetPoseCmd finishes on target, then hold
-      // // brake so the default drive command cannot resume and fight the shot.
-      // return Commands.run(
-      // () -> {
-      // setDesiredSuperState(SuperState.PURGE);
-      // shooter.setDesiredState(ShooterState.PURGE);
-      // if (shooter.getCurrentState() == ShooterState.PURGE) {
-      // hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-      // intake.setDesiredState(IntakeState.OUTTAKE);
-      // } else {
-      // hopper.setDesiredState(HopperState.STOP);
-      // intake.setDesiredState(IntakeState.DEPLOYED);
-      // }
-      // },
-      // shooter,
-      // hopper,
-      // intake)
-      // .alongWith(Commands.run(() -> swerve.setControl(brake), swerve))
-      // .withName("SuperState(PURGE)");
+      case PURGE:
+        return Commands.either(createPurgeStateCommand(), Commands.idle(), this::isPurgeZone)
+            .withName("SuperState(PURGE)");
       default:
         return Commands.none();
     }
@@ -457,39 +592,25 @@ public class Superstructure extends SubsystemBase {
         .withName("ShooterOverride(" + shooterState.name() + ")");
   }
 
-  public Command enableManualShooterDistanceOverrideCmd() {
-    // When this is enabled, only do bumper up shot settings. Ignore all calculated
-    // values
-    return Commands.runOnce(
-        () -> {
-          manualShooterDistanceOverride = true;
-          shooter.setManualDistanceOverride(manualShooterDistanceOverride);
-        },
-        shooter)
-        .withName("ShooterOverride(Manual Distance Override Enable)");
+  public ShootMode getShootMode() {
+    return shootMode;
   }
 
-  public Command disableManualShooterDistanceOverrideCmd() {
-    // When this is disabled, revert to calculated shot settings.
-    return Commands.runOnce(
-        () -> {
-          manualShooterDistanceOverride = false;
-          shooter.setManualDistanceOverride(manualShooterDistanceOverride);
-        },
-        shooter)
-        .withName("ShooterOverride(Manual Distance Override Disable)");
+  public void setShootMode(ShootMode shootMode) {
+    this.shootMode = shootMode;
+    DogLog.log("Superstructure/ShootMode", shootMode.name());
   }
 
-  public Command toggleManualShooterDistanceOverrideCmd() {
-    // Each press flips the override state: enabled → disabled → enabled...
+  public Command setShootModeCmd(ShootMode shootMode) {
+    return Commands.runOnce(() -> setShootMode(shootMode));
+  }
+
+  public Command toggleShootModeCmd(ShootMode manualMode) {
     return Commands.runOnce(
         () -> {
-          manualShooterDistanceOverride = !manualShooterDistanceOverride;
-          shooter.setManualDistanceOverride(manualShooterDistanceOverride);
-          DogLog.log("Shooter/ManualDistanceOverride", manualShooterDistanceOverride);
-        },
-        shooter)
-        .withName("ShooterOverride(Toggle Manual Distance Override)");
+          ShootMode nextMode = shootMode == manualMode ? ShootMode.DEFAULT_SHOOT_WITH_AIM : manualMode;
+          setShootMode(nextMode);
+        });
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -537,9 +658,17 @@ public class Superstructure extends SubsystemBase {
     double rightLockDegrees = alliance == DriverStation.Alliance.Red ? -135.0 : 45.0;
 
     return switch (currentZone) {
-      case ALLIANCE_LEFT, NEUTRAL_LEFT_SHOOT, NEUTRAL_LEFT_PURGE, NEUTRAL_LEFT, OPPONENT_LEFT ->
+      case ALLIANCE_LEFT,
+          NEUTRAL_LEFT_SHOOT,
+          NEUTRAL_LEFT_PURGE,
+          NEUTRAL_LEFT,
+          OPPONENT_LEFT ->
         Optional.of(Rotation2d.fromDegrees(leftLockDegrees));
-      case ALLIANCE_RIGHT, NEUTRAL_RIGHT_SHOOT, NEUTRAL_RIGHT_PURGE, NEUTRAL_RIGHT, OPPONENT_RIGHT ->
+      case ALLIANCE_RIGHT,
+          NEUTRAL_RIGHT_SHOOT,
+          NEUTRAL_RIGHT_PURGE,
+          NEUTRAL_RIGHT,
+          OPPONENT_RIGHT ->
         Optional.of(Rotation2d.fromDegrees(rightLockDegrees));
       default -> Optional.empty();
     };
@@ -596,11 +725,12 @@ public class Superstructure extends SubsystemBase {
     }
 
     // ── Distance + alignment (needed by SHOOT command group) ──────────────
-    if (cachedHubTarget != null) {
-      double distanceToHub = currentPose.getTranslation().getDistance(cachedHubTarget);
+    Translation2d aimTarget = getCurrentAimTarget();
+    if (aimTarget != null) {
+      double distanceToHub = currentPose.getTranslation().getDistance(aimTarget);
       DogLog.log("Superstructure/Distance to Hub (feet)", Units.metersToFeet(distanceToHub));
       shooter.setSetpointForDistance(distanceToHub);
-      updateAlignmentStatus(currentPose, cachedHubTarget);
+      updateAlignmentStatus(currentPose, aimTarget);
     }
 
     // // ── Vision reseed — no-op if no qualifying fix available ──────────────
@@ -631,6 +761,11 @@ public class Superstructure extends SubsystemBase {
 
     DogLog.log("SuperStructure/SuperStructure_CurrentState", state.toString());
     DogLog.log("SuperStructure/SuperStructure_IsAlignedToTarget", alignedToTarget);
+    DogLog.log(
+        "Superstructure/ShootMode/DefaultShootWithAim",
+        shootMode == ShootMode.DEFAULT_SHOOT_WITH_AIM);
+    DogLog.log("Superstructure/ShootMode/ManualBumperUp", shootMode == ShootMode.MANUAL_BUMPER_UP);
+    DogLog.log("Superstructure/ShootMode/ManualTrench", shootMode == ShootMode.MANUAL_TRENCH);
 
     DogLog.timeEnd("Perf/Superstructure");
   }
