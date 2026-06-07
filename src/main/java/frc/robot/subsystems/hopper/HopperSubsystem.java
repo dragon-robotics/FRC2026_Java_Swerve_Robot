@@ -1,10 +1,11 @@
 package frc.robot.subsystems.hopper;
 
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MAX_VOLTAGE;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
-import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MAX_VOLTAGE;
 
 public class HopperSubsystem extends SubsystemBase {
 
