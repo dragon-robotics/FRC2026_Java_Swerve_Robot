@@ -1,10 +1,11 @@
 package frc.robot.subsystems.hopper;
 
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MAX_VOLTAGE;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
-import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MAX_VOLTAGE;
 
 public class HopperSubsystem extends SubsystemBase {
 
@@ -78,22 +79,9 @@ public class HopperSubsystem extends SubsystemBase {
     leadRollerMotorIO.setMotorVoltage(0);
   }
 
-  /* State Managemeent */
+  /* State Management */
   public void setDesiredState(HopperState state) {
     this.currHopperState = state;
-    // switch (desiredHopperState) {
-    // case STOP:
-    // currHopperState = HopperState.STOP;
-    // break;
-    // case INDEXTOINTAKE:
-    // currHopperState = HopperState.INDEXTOINTAKE;
-    // break;
-    // case INDEXTOSHOOTER:
-    // currHopperState = HopperState.INDEXTOSHOOTER;
-    // break;
-    // default:
-    // break;
-    // }
   }
 
   // Track the last state we sent CAN commands for to avoid redundant writes
@@ -108,20 +96,10 @@ public class HopperSubsystem extends SubsystemBase {
 
     /* Handle the state transitions */
     switch (currHopperState) {
-      case STOP:
-        /* Stop rollers */
-        stopHopperRoller();
-        break;
-      case INDEXTOSHOOTER:
-        /* set hopper rollers to index to shooter speed */
-        indexToShooter();
-        break;
-      case INDEXTOINTAKE:
-        /* set hopper rollers to index to outtake speed */
-        indexToIntake();
-        break;
-      default:
-        break;
+      case STOP -> /* Stop rollers */ stopHopperRoller();
+      case INDEXTOSHOOTER -> /* set hopper rollers to index to shooter speed */ indexToShooter();
+      case INDEXTOINTAKE -> /* set hopper rollers to index to outtake speed */ indexToIntake();
+      default -> {}
     }
   }
 
@@ -134,6 +112,5 @@ public class HopperSubsystem extends SubsystemBase {
     followRollerMotorIO.updateInputs(followRollerMotorIOInputs);
 
     DogLog.log("Hopper/CurrentState", currHopperState.toString());
-
   }
 }

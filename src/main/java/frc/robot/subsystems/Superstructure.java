@@ -1,12 +1,7 @@
 package frc.robot.subsystems;
 
-import java.util.Optional;
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -34,6 +29,9 @@ import frc.robot.util.HubShiftUtil.ShiftInfo;
 import frc.robot.util.Telemetry;
 import frc.robot.util.constants.FieldConstants;
 import frc.robot.util.constants.FieldConstants.FieldZones;
+import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 public class Superstructure extends SubsystemBase {
 
@@ -152,12 +150,14 @@ public class Superstructure extends SubsystemBase {
 
     brake = new SwerveRequest.SwerveDriveBrake();
     point = new SwerveRequest.PointWheelsAt();
-    applyFieldSpeeds = new SwerveRequest.ApplyFieldSpeeds()
-        .withDesaturateWheelSpeeds(true)
-        .withDriveRequestType(DriveRequestType.Velocity);
-    applyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds()
-        .withDesaturateWheelSpeeds(true)
-        .withDriveRequestType(DriveRequestType.Velocity);
+    applyFieldSpeeds =
+        new SwerveRequest.ApplyFieldSpeeds()
+            .withDesaturateWheelSpeeds(true)
+            .withDriveRequestType(DriveRequestType.Velocity);
+    applyRobotSpeeds =
+        new SwerveRequest.ApplyRobotSpeeds()
+            .withDesaturateWheelSpeeds(true)
+            .withDriveRequestType(DriveRequestType.Velocity);
 
     currentHeading = Optional.empty();
     rotationLastTriggered = 0.0;
@@ -233,8 +233,7 @@ public class Superstructure extends SubsystemBase {
           NEUTRAL_LEFT_SHOOT,
           NEUTRAL_RIGHT_SHOOT,
           NEUTRAL_LEFT_PURGE,
-          NEUTRAL_RIGHT_PURGE ->
-        true;
+          NEUTRAL_RIGHT_PURGE -> true;
       default -> false;
     };
   }
@@ -263,19 +262,19 @@ public class Superstructure extends SubsystemBase {
 
   private Command createShootStateCommand(boolean withAim) {
     return Commands.run(
-        () -> {
-          setDesiredSuperState(withAim ? SuperState.SHOOT_WITH_AIM : SuperState.SHOOT_NO_AIM);
-          shooter.setDesiredState(ShooterState.SHOOT);
-          // Require alignment before feeding; AimAtTargetPoseCmd handles swerve in
-          // parallel.
-          if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-            hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-          } else {
-            hopper.setDesiredState(HopperState.STOP);
-          }
-        },
-        shooter,
-        hopper)
+            () -> {
+              setDesiredSuperState(withAim ? SuperState.SHOOT_WITH_AIM : SuperState.SHOOT_NO_AIM);
+              shooter.setDesiredState(ShooterState.SHOOT);
+              // Require alignment before feeding; AimAtTargetPoseCmd handles swerve in
+              // parallel.
+              if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
+                hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+              } else {
+                hopper.setDesiredState(HopperState.STOP);
+              }
+            },
+            shooter,
+            hopper)
         .alongWith(
             new AimAtTargetPoseCmd(swerve, this::setCurrentHeading, this::getCurrentAimTarget)
                 .until(this::isAlignedToTarget)
@@ -284,19 +283,19 @@ public class Superstructure extends SubsystemBase {
 
   private Command createPurgeStateCommand() {
     return Commands.run(
-        () -> {
-          setDesiredSuperState(SuperState.PURGE);
-          intake.setDesiredState(IntakeState.OUTTAKE);
-          shooter.setDesiredState(ShooterState.SHOOT);
-          if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-            hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-          } else {
-            hopper.setDesiredState(HopperState.STOP);
-          }
-        },
-        intake,
-        shooter,
-        hopper)
+            () -> {
+              setDesiredSuperState(SuperState.PURGE);
+              intake.setDesiredState(IntakeState.OUTTAKE);
+              shooter.setDesiredState(ShooterState.SHOOT);
+              if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
+                hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+              } else {
+                hopper.setDesiredState(HopperState.STOP);
+              }
+            },
+            intake,
+            shooter,
+            hopper)
         .alongWith(
             new AimAtTargetPoseCmd(swerve, this::setCurrentHeading, this::getCurrentAimTarget)
                 .until(this::isAlignedToTarget)
@@ -305,27 +304,25 @@ public class Superstructure extends SubsystemBase {
 
   private Command createManualShootStateCommand(double shooterRpm, double hoodAngle) {
     return Commands.run(
-        () -> {
-          shooter.setSetpoint(shooterRpm, hoodAngle);
-          setDesiredSuperState(SuperState.MANUAL_SHOOT);
-          shooter.setDesiredState(ShooterState.SHOOT);
-          if (shooter.getCurrentState() == ShooterState.SHOOT) {
-            hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-          } else {
-            hopper.setDesiredState(HopperState.STOP);
-          }
-        },
-        shooter,
-        hopper)
+            () -> {
+              shooter.setSetpoint(shooterRpm, hoodAngle);
+              setDesiredSuperState(SuperState.MANUAL_SHOOT);
+              shooter.setDesiredState(ShooterState.SHOOT);
+              if (shooter.getCurrentState() == ShooterState.SHOOT) {
+                hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+              } else {
+                hopper.setDesiredState(HopperState.STOP);
+              }
+            },
+            shooter,
+            hopper)
         .alongWith(Commands.run(() -> swerve.setControl(brake), swerve))
         .withName("SuperState(MANUAL_SHOOT)");
   }
 
   /**
-   * Shoot with aim, transitioning intake to JUICER after 1.5 s. Owns intake,
-   * shooter, hopper, and
-   * swerve in a single command group so there is no parallel-requirements
-   * conflict. Intended for
+   * Shoot with aim, transitioning intake to JUICER after 1.5 s. Owns intake, shooter, hopper, and
+   * swerve in a single command group so there is no parallel-requirements conflict. Intended for
    * autonomous use.
    */
   public Command shootWithJuicerDelayCmd() {
@@ -333,30 +330,30 @@ public class Superstructure extends SubsystemBase {
     return Commands.runOnce(juicerTimer::restart)
         .andThen(
             Commands.run(
-                () -> {
-                  boolean purge = isPurgeZone();
-                  setDesiredSuperState(purge ? SuperState.PURGE : SuperState.SHOOT_WITH_AIM);
-                  if (purge) {
-                    intake.setDesiredState(IntakeState.OUTTAKE);
-                  } else {
-                    intake.setDesiredState(
-                        juicerTimer.hasElapsed(1.5)
-                            ? IntakeState.JUICER
-                            : IntakeState.DEPLOYED);
-                  }
-                  shooter.setDesiredState(ShooterState.SHOOT);
-                  if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-                    hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-                  } else {
-                    hopper.setDesiredState(HopperState.STOP);
-                  }
-                },
-                intake,
-                shooter,
-                hopper)
+                    () -> {
+                      boolean purge = isPurgeZone();
+                      setDesiredSuperState(purge ? SuperState.PURGE : SuperState.SHOOT_WITH_AIM);
+                      if (purge) {
+                        intake.setDesiredState(IntakeState.OUTTAKE);
+                      } else {
+                        intake.setDesiredState(
+                            juicerTimer.hasElapsed(1.5)
+                                ? IntakeState.JUICER
+                                : IntakeState.DEPLOYED);
+                      }
+                      shooter.setDesiredState(ShooterState.SHOOT);
+                      if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
+                        hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+                      } else {
+                        hopper.setDesiredState(HopperState.STOP);
+                      }
+                    },
+                    intake,
+                    shooter,
+                    hopper)
                 .alongWith(
                     new AimAtTargetPoseCmd(
-                        swerve, this::setCurrentHeading, this::getCurrentAimTarget)
+                            swerve, this::setCurrentHeading, this::getCurrentAimTarget)
                         .until(this::isAlignedToTarget)
                         .andThen(Commands.run(() -> swerve.setControl(brake), swerve))))
         .withName("SuperState(SHOOT_WITH_AIM+Juicer)");
@@ -373,7 +370,7 @@ public class Superstructure extends SubsystemBase {
         yield createShootStateCommand(true).withName("SuperState(SHOOT_WITH_AIM)");
       }
       case MANUAL_BUMPER_UP -> createManualShootStateCommand(
-          MANUAL_BUMPER_UP_RPM, MANUAL_BUMPER_UP_HOOD)
+              MANUAL_BUMPER_UP_RPM, MANUAL_BUMPER_UP_HOOD)
           .withName("SuperState(SHOOT->MANUAL_BUMPER_UP)");
       case MANUAL_TRENCH -> createManualShootStateCommand(MANUAL_TRENCH_RPM, MANUAL_TRENCH_HOOD)
           .withName("SuperState(SHOOT->MANUAL_TRENCH)");
@@ -464,10 +461,8 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Operator-triggered vision reseed command. Unconditionally snaps swerve
-   * odometry to the best
-   * available multi-tag vision fix regardless of drift magnitude. Fires once on
-   * button press
+   * Operator-triggered vision reseed command. Unconditionally snaps swerve odometry to the best
+   * available multi-tag vision fix regardless of drift magnitude. Fires once on button press
    * (InstantCommand). No-op if no vision fix is available.
    */
   public Command forceReseedFromVisionCmd() {
@@ -489,15 +484,11 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Returns a command that transitions relevant subsystems to the requested
-   * SuperState. Each
-   * subsystem is controlled through proper WPILib command requirements — not
-   * direct calls from
+   * Returns a command that transitions relevant subsystems to the requested SuperState. Each
+   * subsystem is controlled through proper WPILib command requirements — not direct calls from
    * periodic().
    *
-   * <p>
-   * When the returned command ends (button released), the scheduler resumes the
-   * default commands
+   * <p>When the returned command ends (button released), the scheduler resumes the default commands
    * on each required subsystem automatically.
    *
    * @param desiredState The SuperState to transition to
@@ -505,61 +496,65 @@ public class Superstructure extends SubsystemBase {
    */
   public Command setStateCmd(SuperState desiredState) {
     switch (desiredState) {
-      case DRIVE_STARTING_CONFIG:
+      case DRIVE_STARTING_CONFIG -> {
         return Commands.run(
-            () -> {
-              setDesiredSuperState(SuperState.DRIVE_STARTING_CONFIG);
-              intake.setDesiredState(IntakeState.HOME);
-              hopper.setDesiredState(HopperState.STOP);
-              shooter.setDesiredState(ShooterState.PREPFUEL);
-            },
-            intake,
-            hopper,
-            shooter)
+                () -> {
+                  setDesiredSuperState(SuperState.DRIVE_STARTING_CONFIG);
+                  intake.setDesiredState(IntakeState.HOME);
+                  hopper.setDesiredState(HopperState.STOP);
+                  shooter.setDesiredState(ShooterState.PREPFUEL);
+                },
+                intake,
+                hopper,
+                shooter)
             .withName("SuperState(DRIVE_STARTING_CONFIG)");
-      case DRIVE:
+      }
+      case DRIVE -> {
         // No subsystem commands needed — releasing any other state command
         // causes the scheduler to resume default commands, which already
         // implement DRIVE behavior (intake=DEPLOYED, hopper=STOP, shooter=PREPFUEL).
         return Commands.run(
-            () -> {
-              setDesiredSuperState(SuperState.DRIVE);
-              intake.setDesiredState(IntakeState.DEPLOYED);
-              hopper.setDesiredState(HopperState.STOP);
-              shooter.setDesiredState(ShooterState.PREPFUEL);
-            },
-            intake,
-            hopper,
-            shooter)
+                () -> {
+                  setDesiredSuperState(SuperState.DRIVE);
+                  intake.setDesiredState(IntakeState.DEPLOYED);
+                  hopper.setDesiredState(HopperState.STOP);
+                  shooter.setDesiredState(ShooterState.PREPFUEL);
+                },
+                intake,
+                hopper,
+                shooter)
             .withName("SuperState(DRIVE)");
+      }
 
-      case INTAKE:
+      case INTAKE -> {
         return Commands.run(
-            () -> {
-              setDesiredSuperState(SuperState.INTAKE);
-              intake.setDesiredState(IntakeState.INTAKE);
-              hopper.setDesiredState(HopperState.STOP);
-              shooter.setDesiredState(ShooterState.PREPFUEL);
-            },
-            intake,
-            hopper,
-            shooter)
+                () -> {
+                  setDesiredSuperState(SuperState.INTAKE);
+                  intake.setDesiredState(IntakeState.INTAKE);
+                  hopper.setDesiredState(HopperState.STOP);
+                  shooter.setDesiredState(ShooterState.PREPFUEL);
+                },
+                intake,
+                hopper,
+                shooter)
             .withName("SuperState(INTAKE)");
+      }
 
-      case OUTTAKE:
+      case OUTTAKE -> {
         return Commands.run(
-            () -> {
-              setDesiredSuperState(SuperState.OUTTAKE);
-              intake.setDesiredState(IntakeState.OUTTAKE);
-              hopper.setDesiredState(HopperState.INDEXTOINTAKE);
-              shooter.setDesiredState(ShooterState.PREPFUEL);
-            },
-            intake,
-            hopper,
-            shooter)
+                () -> {
+                  setDesiredSuperState(SuperState.OUTTAKE);
+                  intake.setDesiredState(IntakeState.OUTTAKE);
+                  hopper.setDesiredState(HopperState.INDEXTOINTAKE);
+                  shooter.setDesiredState(ShooterState.PREPFUEL);
+                },
+                intake,
+                hopper,
+                shooter)
             .withName("SuperState(OUTTAKE)");
+      }
 
-      case SHOOT_WITH_AIM:
+      case SHOOT_WITH_AIM -> {
         // SHOOT_WITH_AIM is only enabled in designated field zones.
         if (!isShootAllowedZone()) {
           return Commands.idle().withName("SuperState(SHOOT_WITH_AIM:DISALLOWED)");
@@ -568,34 +563,39 @@ public class Superstructure extends SubsystemBase {
           return createPurgeStateCommand().withName("SuperState(SHOOT_WITH_AIM->PURGE)");
         }
         return createShootStateCommand(true).withName("SuperState(SHOOT_WITH_AIM)");
-      case SHOOT_NO_AIM:
+      }
+      case SHOOT_NO_AIM -> {
         // SHOOT_NO_AIM is only enabled in designated field zones.
         if (!isShootAllowedZone()) {
           return Commands.idle().withName("SuperState(SHOOT_NO_AIM:DISALLOWED)");
         }
         return createShootStateCommand(false).withName("SuperState(SHOOT_NO_AIM)");
-      case MANUAL_SHOOT:
+      }
+      case MANUAL_SHOOT -> {
         return Commands.run(
-            () -> {
-              setDesiredSuperState(SuperState.MANUAL_SHOOT);
-              shooter.setDesiredState(ShooterState.SHOOT);
-              if (shooter.getCurrentState() == ShooterState.SHOOT) {
-                hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-              } else {
-                hopper.setDesiredState(HopperState.STOP);
-              }
-            },
-            shooter,
-            hopper)
+                () -> {
+                  setDesiredSuperState(SuperState.MANUAL_SHOOT);
+                  shooter.setDesiredState(ShooterState.SHOOT);
+                  if (shooter.getCurrentState() == ShooterState.SHOOT) {
+                    hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
+                  } else {
+                    hopper.setDesiredState(HopperState.STOP);
+                  }
+                },
+                shooter,
+                hopper)
             .alongWith(Commands.run(() -> swerve.setControl(brake), swerve))
             .withName("SuperState(MANUAL_SHOOT)");
-      case PURGE:
+      }
+      case PURGE -> {
         if (!isPurgeZone()) {
           return Commands.idle().withName("SuperState(PURGE:DISALLOWED)");
         }
         return createPurgeStateCommand().withName("SuperState(PURGE)");
-      default:
+      }
+      default -> {
         return Commands.none();
+      }
     }
   }
 
@@ -607,10 +607,7 @@ public class Superstructure extends SubsystemBase {
   // the default command resumes automatically.
   // ──────────────────────────────────────────────────────────────────────────
 
-  /**
-   * Override intake independently — preempts default, doesn't touch
-   * hopper/shooter.
-   */
+  /** Override intake independently — preempts default, doesn't touch hopper/shooter. */
   public Command intakeOverrideCmd(IntakeState intakeState) {
     return Commands.run(() -> intake.setDesiredState(intakeState), intake)
         .withName("IntakeOverride(" + intakeState.name() + ")");
@@ -644,7 +641,8 @@ public class Superstructure extends SubsystemBase {
   public Command toggleShootModeCmd(ShootMode manualMode) {
     return Commands.runOnce(
         () -> {
-          ShootMode nextMode = shootMode == manualMode ? ShootMode.DEFAULT_SHOOT_WITH_AIM : manualMode;
+          ShootMode nextMode =
+              shootMode == manualMode ? ShootMode.DEFAULT_SHOOT_WITH_AIM : manualMode;
           setShootMode(nextMode);
         });
   }
@@ -653,10 +651,7 @@ public class Superstructure extends SubsystemBase {
   // Alignment
   // ──────────────────────────────────────────────────────────────────────────
 
-  /**
-   * Returns true if the robot heading is within tolerance of the angle to the
-   * hub.
-   */
+  /** Returns true if the robot heading is within tolerance of the angle to the hub. */
   public boolean isAlignedToTarget() {
     return alignedToTarget;
   }
@@ -682,13 +677,11 @@ public class Superstructure extends SubsystemBase {
 
   // Heading Lock based on zone based on user input
   /**
-   * Returns the desired locked heading angle (in degrees) based on the current
-   * field zone and
+   * Returns the desired locked heading angle (in degrees) based on the current field zone and
    * alliance. Returns empty if no lock is defined for the zone.
    */
   public Optional<Rotation2d> getZoneLockedHeading() {
-    if (!allianceConfirmed || currentZone == null)
-      return Optional.empty();
+    if (!allianceConfirmed || currentZone == null) return Optional.empty();
 
     double leftLockDegrees = alliance == DriverStation.Alliance.Red ? 135.0 : -45.0;
     double rightLockDegrees = alliance == DriverStation.Alliance.Red ? -135.0 : 45.0;
@@ -698,14 +691,12 @@ public class Superstructure extends SubsystemBase {
           NEUTRAL_LEFT_SHOOT,
           NEUTRAL_LEFT_PURGE,
           NEUTRAL_LEFT,
-          OPPONENT_LEFT ->
-        Optional.of(Rotation2d.fromDegrees(leftLockDegrees));
+          OPPONENT_LEFT -> Optional.of(Rotation2d.fromDegrees(leftLockDegrees));
       case ALLIANCE_RIGHT,
           NEUTRAL_RIGHT_SHOOT,
           NEUTRAL_RIGHT_PURGE,
           NEUTRAL_RIGHT,
-          OPPONENT_RIGHT ->
-        Optional.of(Rotation2d.fromDegrees(rightLockDegrees));
+          OPPONENT_RIGHT -> Optional.of(Rotation2d.fromDegrees(rightLockDegrees));
       default -> Optional.empty();
     };
   }
@@ -715,13 +706,10 @@ public class Superstructure extends SubsystemBase {
   // ──────────────────────────────────────────────────────────────────────────
 
   /**
-   * Returns true if our hub is currently active and we should be shooting. Uses
-   * the shifted
+   * Returns true if our hub is currently active and we should be shooting. Uses the shifted
    * (fudged) timing so fuel arrives within the active window.
    *
-   * <p>
-   * During auto, always returns true (hub is always active for your alliance).
-   * During disabled,
+   * <p>During auto, always returns true (hub is always active for your alliance). During disabled,
    * returns false.
    */
   public boolean isHubActive() {
@@ -729,10 +717,8 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Returns the time remaining in the current shift (using shifted timing).
-   * Drivers can use this to
-   * decide whether to commit to a scoring cycle or reposition for the next active
-   * shift.
+   * Returns the time remaining in the current shift (using shifted timing). Drivers can use this to
+   * decide whether to commit to a scoring cycle or reposition for the next active shift.
    */
   public double getShiftTimeRemaining() {
     return HubShiftUtil.getShiftedShiftInfo().remainingTime();
