@@ -238,9 +238,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    DogLog.time("Perf/Shooter");
     shooterLeadIO.updateInputs(shooterLeadInputs);
-    // shooterFollowIO.updateInputs(shooterFollowInputs);
+    shooterFollowIO.updateInputs(shooterFollowInputs);
     shooterKickerIO.updateInputs(shooterKickerInputs);
     shooterHoodIO.updateInputs(shooterHoodInputs);
 
@@ -251,6 +250,5 @@ public class ShooterSubsystem extends SubsystemBase {
     DogLog.log("Shooter/SpeedRPM", getShooterSpeed());
     DogLog.log("Shooter/TargetRPM", targetRPM);
     DogLog.log("Shooter/HoodAngle", hoodAngle);
-    DogLog.timeEnd("Perf/Shooter");
   }
 }

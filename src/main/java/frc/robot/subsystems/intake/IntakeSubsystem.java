@@ -47,7 +47,8 @@ public class IntakeSubsystem extends SubsystemBase {
   protected final MotorIOInputs intakeArmInputs;
 
   /**
-   * Tracks the last state for which CAN commands were sent, so we can skip redundant writes when
+   * Tracks the last state for which CAN commands were sent, so we can skip
+   * redundant writes when
    * the state hasn't changed. Reset to null on any state transition.
    */
   private IntakeState lastCommandedState = null;
@@ -106,7 +107,8 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /**
-   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity holds the arm down
+   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity
+   * holds the arm down
    * once deployed — no PID needed to maintain the down position.
    */
   public void coastIntakeArm() {
@@ -136,20 +138,17 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public boolean isIntakeArmAtDeployed() {
-    double positionError =
-        Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtStowed() {
-    double positionError =
-        Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtPreJuice() {
-    double positionError =
-        Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
@@ -222,7 +221,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public void handleStateTransition() {
     // Handle the state transitions
     switch (currIntakeState) {
-        // ── Steady states: only send CAN commands on state entry ──
+      // ── Steady states: only send CAN commands on state entry ──
       case HOME:
         if (lastCommandedState != currIntakeState) {
           // Command arm to stow via PID and stop rollers on state entry.
@@ -252,10 +251,10 @@ public class IntakeSubsystem extends SubsystemBase {
           lastCommandedState = currIntakeState;
         }
         break;
-        // ── Transition states: send arm + roller commands once on entry ──
-        // TalonFX maintains its onboard PID loop once commanded,
-        // so we only need to send the position setpoint once.
-        // We still check feedback each loop to know when to transition.
+      // ── Transition states: send arm + roller commands once on entry ──
+      // TalonFX maintains its onboard PID loop once commanded,
+      // so we only need to send the position setpoint once.
+      // We still check feedback each loop to know when to transition.
       case DEPLOYING:
         if (lastCommandedState != currIntakeState) {
           deployIntakeArm();
@@ -273,12 +272,11 @@ public class IntakeSubsystem extends SubsystemBase {
         // depending on desired state
         if (isIntakeArmAtDeployed()) {
           lastCommandedState = null; // Reset so next state sends commands
-          currIntakeState =
-              switch (desiredIntakeState) {
-                case INTAKE -> IntakeState.INTAKE;
-                case OUTTAKE -> IntakeState.OUTTAKE;
-                default -> IntakeState.DEPLOYED;
-              };
+          currIntakeState = switch (desiredIntakeState) {
+            case INTAKE -> IntakeState.INTAKE;
+            case OUTTAKE -> IntakeState.OUTTAKE;
+            default -> IntakeState.DEPLOYED;
+          };
         }
         break;
       case STOWING:
@@ -328,7 +326,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    DogLog.time("Perf/Intake");
     handleStateTransition();
 
     // This method will be called once per scheduler run
@@ -337,6 +334,5 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeArmIO.updateInputs(intakeArmInputs);
 
     DogLog.log("Intake/CurrentState", currIntakeState.toString());
-    DogLog.timeEnd("Perf/Intake");
   }
 }

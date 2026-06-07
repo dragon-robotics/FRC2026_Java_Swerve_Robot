@@ -399,7 +399,7 @@ public class Superstructure extends SubsystemBase {
             dsAlliance -> {
               setAlliance(dsAlliance);
               allianceConfirmed = true;
-              DogLog.log("Robot/AllianceConfirmed", dsAlliance.name());
+              DogLog.log("Superstructure/AllianceConfirmed", dsAlliance.name());
             });
   }
 
@@ -757,7 +757,7 @@ public class Superstructure extends SubsystemBase {
     // ── Zone detection (zero-alloc via pre-cached name strings) ────────────
     if (allianceConfirmed) {
       currentZone = FieldZones.fromPose(currentPose, alliance);
-      DogLog.log("Robot/Zone", ZONE_NAMES[currentZone.ordinal()]);
+      DogLog.log("Superstructure/Zone", ZONE_NAMES[currentZone.ordinal()]);
     }
 
     // ── Distance + alignment (needed by SHOOT command group) ──────────────
@@ -800,8 +800,8 @@ public class Superstructure extends SubsystemBase {
     // Which alliance goes first (for driver awareness)
     DogLog.log("HubShift/FirstActiveAlliance", HubShiftUtil.getFirstActiveAlliance().name());
 
-    DogLog.log("SuperStructure/SuperStructure_CurrentState", state.toString());
-    DogLog.log("SuperStructure/SuperStructure_IsAlignedToTarget", alignedToTarget);
+    DogLog.log("Superstructure/CurrentState", state.toString());
+    DogLog.log("Superstructure/IsAlignedToTarget", alignedToTarget);
     DogLog.log(
         "Superstructure/ShootMode/DefaultShootWithAim",
         shootMode == ShootMode.DEFAULT_SHOOT_WITH_AIM);

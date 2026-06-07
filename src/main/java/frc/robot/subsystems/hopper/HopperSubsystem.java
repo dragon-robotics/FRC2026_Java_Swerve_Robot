@@ -1,11 +1,10 @@
 package frc.robot.subsystems.hopper;
 
-import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MAX_VOLTAGE;
-
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
+import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MAX_VOLTAGE;
 
 public class HopperSubsystem extends SubsystemBase {
 
@@ -128,14 +127,13 @@ public class HopperSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    DogLog.time("Perf/Hopper");
     /* This method will be called once per scheduler run */
     handleStateTransition();
 
-    DogLog.log("Hopper/Hopper_CurrentState", currHopperState.toString());
+    leadRollerMotorIO.updateInputs(leadRollerMotorIOInputs);
+    followRollerMotorIO.updateInputs(followRollerMotorIOInputs);
 
-    // leadRollerMotorIO.updateInputs(leadRollerMotorIOInputs);
-    // followRollerMotorIO.updateInputs(followRollerMotorIOInputs);
-    DogLog.timeEnd("Perf/Hopper");
+    DogLog.log("Hopper/CurrentState", currHopperState.toString());
+
   }
 }
