@@ -47,8 +47,7 @@ public class IntakeSubsystem extends SubsystemBase {
   protected final MotorIOInputs intakeArmInputs;
 
   /**
-   * Tracks the last state for which CAN commands were sent, so we can skip
-   * redundant writes when
+   * Tracks the last state for which CAN commands were sent, so we can skip redundant writes when
    * the state hasn't changed. Reset to null on any state transition.
    */
   private IntakeState lastCommandedState = null;
@@ -107,8 +106,7 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /**
-   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity
-   * holds the arm down
+   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity holds the arm down
    * once deployed — no PID needed to maintain the down position.
    */
   public void coastIntakeArm() {
@@ -138,17 +136,20 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public boolean isIntakeArmAtDeployed() {
-    double positionError = Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError =
+        Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtStowed() {
-    double positionError = Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError =
+        Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
   public boolean isIntakeArmAtPreJuice() {
-    double positionError = Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError =
+        Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
@@ -183,10 +184,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
     // Handle state transitions
     switch (desiredIntakeState) {
-      case HOME:
-        currIntakeState = IntakeState.STOWING;
-        break;
-      case INTAKE:
+      case HOME -> currIntakeState = IntakeState.STOWING;
+      case INTAKE -> {
         if (currIntakeState == IntakeState.OUTTAKE
             || currIntakeState == IntakeState.DEPLOYED
             || currIntakeState == IntakeState.INTAKE) {
@@ -194,8 +193,8 @@ public class IntakeSubsystem extends SubsystemBase {
         } else {
           currIntakeState = IntakeState.DEPLOYING;
         }
-        break;
-      case OUTTAKE:
+      }
+      case OUTTAKE -> {
         if (currIntakeState == IntakeState.INTAKE
             || currIntakeState == IntakeState.DEPLOYED
             || currIntakeState == IntakeState.OUTTAKE) {
@@ -203,64 +202,57 @@ public class IntakeSubsystem extends SubsystemBase {
         } else {
           currIntakeState = IntakeState.DEPLOYING;
         }
-        break;
-      case DEPLOYED:
-        currIntakeState = IntakeState.DEPLOYING;
-        break;
-      case JUICER:
+      }
+      case DEPLOYED -> currIntakeState = IntakeState.DEPLOYING;
+      case JUICER -> {
         currIntakeState = IntakeState.JUICER;
         // Always restart the juicer sequence from PRE_JUICE on (re-)entry
         juicerPhase = JuicerPhase.PRE_JUICE;
         lastJuicerPhase = null;
-        break;
-      default:
-        break;
+      }
+      default -> {}
     }
   }
 
   public void handleStateTransition() {
     // Handle the state transitions
     switch (currIntakeState) {
-      // ── Steady states: only send CAN commands on state entry ──
-      case HOME:
+      case HOME -> {
         if (lastCommandedState != currIntakeState) {
           // Command arm to stow via PID and stop rollers on state entry.
           stowIntakeArm();
           stopIntake();
           lastCommandedState = currIntakeState;
         }
-        break;
-      case INTAKE:
+      }
+      case INTAKE -> {
         if (lastCommandedState != currIntakeState) {
           deployIntakeArm();
           runIntake();
           lastCommandedState = currIntakeState;
         }
-        break;
-      case OUTTAKE:
+      }
+      case OUTTAKE -> {
         if (lastCommandedState != currIntakeState) {
           deployIntakeArm();
           runOuttake();
           lastCommandedState = currIntakeState;
         }
-        break;
-      case DEPLOYED:
+      }
+      case DEPLOYED -> {
         if (lastCommandedState != currIntakeState) {
           deployIntakeArm();
           stopIntake();
           lastCommandedState = currIntakeState;
         }
-        break;
-      // ── Transition states: send arm + roller commands once on entry ──
-      // TalonFX maintains its onboard PID loop once commanded,
-      // so we only need to send the position setpoint once.
-      // We still check feedback each loop to know when to transition.
-      case DEPLOYING:
+      }
+      case DEPLOYING -> {
         if (lastCommandedState != currIntakeState) {
           deployIntakeArm();
           if (DriverStation.isAutonomous()) {
-            intakeRollerLeadIO.setMotorPercentage(-0.5);
-            // runOuttake();
+            runIntakeRollerVoltage(
+                -INTAKE_ROLLER_VOLTAGE * 0.5); // Start rollers at half speed when deploying in auto
+            // to help get the first ball in quicker
           } else if (DriverStation.isTeleop()) {
             stopIntake();
           } else {
@@ -272,14 +264,15 @@ public class IntakeSubsystem extends SubsystemBase {
         // depending on desired state
         if (isIntakeArmAtDeployed()) {
           lastCommandedState = null; // Reset so next state sends commands
-          currIntakeState = switch (desiredIntakeState) {
-            case INTAKE -> IntakeState.INTAKE;
-            case OUTTAKE -> IntakeState.OUTTAKE;
-            default -> IntakeState.DEPLOYED;
-          };
+          currIntakeState =
+              switch (desiredIntakeState) {
+                case INTAKE -> IntakeState.INTAKE;
+                case OUTTAKE -> IntakeState.OUTTAKE;
+                default -> IntakeState.DEPLOYED;
+              };
         }
-        break;
-      case STOWING:
+      }
+      case STOWING -> {
         if (lastCommandedState != currIntakeState) {
           stowIntakeArm();
           stopIntake();
@@ -290,38 +283,46 @@ public class IntakeSubsystem extends SubsystemBase {
           lastCommandedState = null; // Reset so next state sends commands
           currIntakeState = IntakeState.HOME;
         }
-        break;
-      case JUICER:
+      }
+      case JUICER -> {
         if (lastCommandedState != currIntakeState) {
           lastCommandedState = currIntakeState;
           lastJuicerPhase = null; // Reset so first phase sends its arm command
         }
         switch (juicerPhase) {
-          case PRE_JUICE:
+          case PRE_JUICE -> {
             if (lastJuicerPhase != juicerPhase) {
               // Move arm quickly to pre-juice setpoint to clear hopper wall
               setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
-              runIntakeRollerPercentage(
-                  0.5); // Start rollers at 50% when we start squeezing to help get rid of balls
+              runIntakeRollerVoltage(
+                  INTAKE_ROLLER_VOLTAGE * 0.5); // Start rollers at half speed when moving to
+              // pre-juice position
+              // to help get the first ball in quicker
               lastJuicerPhase = juicerPhase;
             }
             if (isIntakeArmAtPreJuice()) {
               juicerPhase = JuicerPhase.SQUEEZE;
             }
-            break;
-          case SQUEEZE:
+          }
+          case SQUEEZE -> {
             if (lastJuicerPhase != juicerPhase) {
               // Slowly move arm to final juice position to squeeze remaining balls
               setIntakeArmSetpoint(INTAKE_ARM_JUICER_FINAL_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
-              runIntakeRollerPercentage(
-                  0.5); // Start rollers at 50% when we start squeezing to help get rid of balls
+              runIntakeRollerVoltage(
+                  INTAKE_ROLLER_VOLTAGE * 0.5); // Start rollers at 50% when we start squeezing to
+              // help get rid of balls
               // from the intake during juicing.
               lastJuicerPhase = juicerPhase;
             }
-            break;
+          }
         }
-        break;
+      }
     }
+    // ── Steady states: only send CAN commands on state entry ──
+    // ── Transition states: send arm + roller commands once on entry ──
+    // TalonFX maintains its onboard PID loop once commanded,
+    // so we only need to send the position setpoint once.
+    // We still check feedback each loop to know when to transition.
   }
 
   @Override

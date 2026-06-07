@@ -75,38 +75,47 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterLeadIO.setMotorPercentage(percentage);
   }
 
-  public void runKickerMotorPercentage(double percentage) {
-    shooterKickerIO.setMotorPercentage(percentage);
+  public void runShooterMotorVoltage(double voltage) {
+    shooterLeadIO.setMotorVoltage(voltage);
+  }
+
+  public void runShooterMotorRPM(double rpm) {
+    shooterLeadIO.setMotorRPM(rpm);
   }
 
   public void runShooter() {
-    shooterLeadIO.setMotorRPM(targetRPM);
+    runShooterMotorRPM(targetRPM);
   }
 
   // runs the shooter at half speed
   public void prepShooter() {
-    shooterLeadIO.setMotorRPM(1200); // Run at 1500 RPM for prep
+    runShooterMotorRPM(1200); // Run at 50% of target RPM for prep
   }
 
   public void stopShooter() {
-    shooterLeadIO.setMotorRPM(0);
-    // Kicker is managed separately by stopKicker()/runKicker() — don't send
-    // conflicting commands
+    runShooterMotorVoltage(0);
+  }
+
+  public void runKickerMotorPercentage(double percentage) {
+    shooterKickerIO.setMotorPercentage(percentage);
+  }
+
+  public void runKickerMotorVoltage(double voltage) {
+    shooterKickerIO.setMotorVoltage(voltage);
   }
 
   public void runKicker() {
-    shooterKickerIO.setMotorVoltage(
+    runKickerMotorVoltage(
         ShooterConstants.SHOOTER_KICKER_VOLTAGE); // Run kicker at full voltage for shooting
   }
 
   public void prepKicker() {
-    shooterKickerIO.setMotorVoltage(
-        ShooterConstants.SHOOTER_KICKER_PREP_VOLTAGE); // Run kicker at 50% of full RPM for
-    // prep
+    runKickerMotorVoltage(
+        ShooterConstants.SHOOTER_KICKER_PREP_VOLTAGE); // Run kicker at 50% of full voltage for prep
   }
 
   public void stopKicker() {
-    shooterKickerIO.setMotorVoltage(0);
+    runKickerMotorVoltage(0);
   }
 
   /* Setters */
@@ -150,24 +159,17 @@ public class ShooterSubsystem extends SubsystemBase {
 
     if (desiredShooterState != currShooterState) {
       switch (desiredShooterState) {
-        case STOP:
-          currShooterState = ShooterState.TRANSITION;
-          break;
-        case PREPFUEL:
-          currShooterState = ShooterState.TRANSITION;
-          break;
-        case SHOOT:
-          currShooterState = ShooterState.TRANSITION;
-          break;
-        default:
-          break;
+        case STOP -> currShooterState = ShooterState.TRANSITION;
+        case PREPFUEL -> currShooterState = ShooterState.TRANSITION;
+        case SHOOT -> currShooterState = ShooterState.TRANSITION;
+        default -> {}
       }
     }
   }
 
   public void handleStateTransition() {
     switch (currShooterState) {
-      case STOP:
+      case STOP -> {
         // Only send CAN commands while kicker timer is active;
         // once fully stopped, motors hold their last command — no need to re-send every
         // loop
@@ -183,20 +185,20 @@ public class ShooterSubsystem extends SubsystemBase {
         }
         // Motors are already stopped from the TRANSITION→STOP path; no redundant writes
         // needed
-        break;
-      case PREPFUEL:
+      }
+      case PREPFUEL -> {
         kickerStopTimerRunning = false;
         kickerStopTimer.stop();
         kickerStopTimer.reset();
         prepShooter();
         prepKicker();
-        break;
-      case SHOOT:
+      }
+      case SHOOT -> {
         runShooter();
         runKicker();
         setHoodAngle(hoodAngle);
-        break;
-      case TRANSITION:
+      }
+      case TRANSITION -> {
         switch (desiredShooterState) {
           case STOP:
             stopShooter();
@@ -233,6 +235,7 @@ public class ShooterSubsystem extends SubsystemBase {
           default:
             break;
         }
+      }
     }
   }
 
