@@ -4,11 +4,17 @@
 
 package frc.robot.subsystems.vision;
 
-import static frc.robot.util.constants.VisionConstants.*;
+import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
+import static frc.robot.util.constants.VisionConstants.AIM_LINEAR_STDDEV_MULTIPLIER;
+import static frc.robot.util.constants.VisionConstants.CAMERA_STDDEV_FACTORS;
+import static frc.robot.util.constants.VisionConstants.HEADING_STDDEV_IGNORE;
+import static frc.robot.util.constants.VisionConstants.LINEAR_STDDEV_BASELINE;
+import static frc.robot.util.constants.VisionConstants.MAX_AMBIGUITY;
+import static frc.robot.util.constants.VisionConstants.MAX_AVG_TAG_DISTANCE_METERS;
+import static frc.robot.util.constants.VisionConstants.MAX_Z_ERROR;
 
 import com.ctre.phoenix6.Utils;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -22,16 +28,28 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.vision.VisionIO.PoseObservation;
-import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
-import frc.robot.util.vision.PoseValidationResult;
-import frc.robot.util.vision.RejectedPose;
-import frc.robot.util.vision.VisionPoseValidator;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
+/**
+ * Lean AprilTag pose-estimation subsystem.
+ *
+ * <p>Design (see {@code docs/superpowers/specs/2026-06-08-vision-rewrite-design.md}):
+ *
+ * <ul>
+ *   <li>Vision NEVER hard-resets the drivetrain pose during normal operation. It only feeds
+ *       weighted measurements through {@link VisionConsumer}; the pose estimator blends them.
+ *   <li>Vision heading is ignored (huge angular std-dev); the gyro is authoritative.
+ *   <li>Translation trust scales with distance and tightens while aiming.
+ *   <li>Simple, readable rejection: tag count, Z, field bounds, single-tag ambiguity, max distance.
+ * </ul>
+ */
 public class VisionSubsystem extends SubsystemBase {
 
+  /** Snapshots older than this are treated as stale by the dashboard accessor. */
   private static final double SNAPSHOT_MAX_AGE_SECONDS = 0.5;
 
   private final CommandSwerveDrivetrain swerve;
@@ -39,28 +57,15 @@ public class VisionSubsystem extends SubsystemBase {
   private final VisionIO[] io;
   private final VisionIOInputs[] inputs;
   private final Alert[] disconnectedAlerts;
-  private final VisionPoseValidator[] validators;
 
-  // Odometry initialization
-  private int stablePoseCounter = 5;
-  private boolean odometryInitialized = false;
+  /** True while the robot is actively aiming/aligning to score — tightens translation trust. */
+  private boolean aiming = false;
 
-  // Best high-confidence multi-tag pose this cycle — candidate for drift
-  // reseeding
-  private PoseObservation bestReseedCandidate = null;
+  /** Most recent accepted observation across all cameras (for the dashboard overlay). */
+  private Pose2d lastAcceptedPose = null;
 
-  // Pre-allocated pose buffer
-  private Pose3d[] acceptedPoseBuffer;
-  private int acceptedPoseCount = 0;
-
-  // Per-camera accepted pose logging buffers.
-  private Pose3d[][] acceptedPoseByCameraBuffer;
-  private int[] acceptedPoseByCameraCount;
-
-  // Most recent accepted pose per camera for cross-camera consistency checks.
-  private Pose2d[] lastAcceptedPoseByCamera;
-  private double[] lastAcceptedTimestampByCamera;
-  private PoseObservation[] lastAcceptedObservationByCamera;
+  private int[] lastAcceptedTagIDs = new int[0];
+  private double lastAcceptedTimestamp = -1.0;
 
   public VisionSubsystem(CommandSwerveDrivetrain swerve, VisionConsumer consumer, VisionIO... io) {
     this.swerve = swerve;
@@ -69,30 +74,16 @@ public class VisionSubsystem extends SubsystemBase {
 
     inputs = new VisionIOInputs[io.length];
     disconnectedAlerts = new Alert[io.length];
-    validators = new VisionPoseValidator[io.length];
 
     for (int i = 0; i < io.length; i++) {
       inputs[i] = new VisionIOInputs();
       disconnectedAlerts[i] =
           new Alert(
               "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
-      validators[i] = new VisionPoseValidator();
 
       if (io[i] instanceof VisionIOPhotonVision photonVisionIo) {
         photonVisionIo.setHeadingProvider(new DrivetrainHeadingProvider());
       }
-    }
-
-    // Pre-allocate: each camera produces at most ~2 poses per cycle
-    acceptedPoseBuffer = new Pose3d[io.length * 2];
-    acceptedPoseByCameraBuffer = new Pose3d[io.length][];
-    acceptedPoseByCameraCount = new int[io.length];
-    lastAcceptedPoseByCamera = new Pose2d[io.length];
-    lastAcceptedTimestampByCamera = new double[io.length];
-    lastAcceptedObservationByCamera = new PoseObservation[io.length];
-    for (int i = 0; i < io.length; i++) {
-      acceptedPoseByCameraBuffer[i] = new Pose3d[2];
-      lastAcceptedTimestampByCamera[i] = -1.0;
     }
   }
 
@@ -104,231 +95,147 @@ public class VisionSubsystem extends SubsystemBase {
         Matrix<N3, N1> visionMeasurementStdDevs);
   }
 
+  /** Immutable snapshot of the latest accepted observation, consumed by the dashboard overlay. */
   public static record AcceptedObservationSnapshot(Pose2d pose, int[] tagIDs, double timestamp) {}
+
+  /** Sets whether the robot is actively aiming/aligning (tightens vision translation trust). */
+  public void setAiming(boolean aiming) {
+    this.aiming = aiming;
+  }
 
   @Override
   public void periodic() {
     DogLog.time("Perf/Vision");
-    acceptedPoseCount = 0;
-    Arrays.fill(acceptedPoseByCameraCount, 0);
-    bestReseedCandidate = null;
 
-    // Process all cameras every cycle — RoboRIO v2 (866 MHz, 512 MB) has
-    // sufficient headroom. Each camera costs ~0.5ms (PnP runs on coprocessor).
+    List<Pose3d> acceptedPoses = new ArrayList<>();
+    List<Pose3d> rejectedPoses = new ArrayList<>();
+
     for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
       io[cameraIndex].updateInputs(inputs[cameraIndex]);
       disconnectedAlerts[cameraIndex].set(!inputs[cameraIndex].isConnected());
 
       String camKey = "Vision/" + inputs[cameraIndex].getCameraName();
-      VisionPoseValidator validator = validators[cameraIndex];
-      for (var observation : inputs[cameraIndex].getPoseObservations()) {
-        Pose2d visionPose = observation.pose().toPose2d();
 
-        // Pre-check against odometry BEFORE running the validator so that erratic
-        // poses never contaminate the validator's inter-frame jump baseline.
-        if (odometryInitialized) {
-          double discrepancy =
-              swerve.getState().Pose.getTranslation().getDistance(visionPose.getTranslation());
-          if (discrepancy > MAX_POSE_DISCREPANCY_METERS) {
-            continue;
-          }
-        }
-
-        PoseValidationResult result = validator.validatePose(observation);
-        if (result instanceof RejectedPose rejected) {
-          if (!odometryInitialized) stablePoseCounter = 5;
-          DogLog.log(camKey + "/RejectedPose/Reason", rejected.reason().name());
-          DogLog.log(camKey + "/RejectedPose/Details", rejected.details());
+      for (PoseObservation observation : inputs[cameraIndex].getPoseObservations()) {
+        Optional<String> rejection = rejectionReason(observation);
+        if (rejection.isPresent()) {
+          rejectedPoses.add(observation.pose());
+          DogLog.log(camKey + "/RejectedReason", rejection.get());
           continue;
         }
 
-        if (!passesCrossCameraConsistency(cameraIndex, visionPose, observation.timestamp())) {
-          if (!odometryInitialized) stablePoseCounter = 5;
-          continue;
-        }
-
-        if (!passesCoplanarHistoricalYawConsistency(
-            cameraIndex, visionPose, validator, observation)) {
-          if (!odometryInitialized) stablePoseCounter = 5;
-          continue;
-        }
-
-        if (!passesCoplanarYawConsistency(cameraIndex, visionPose, validator, observation)) {
-          if (!odometryInitialized) stablePoseCounter = 5;
-          continue;
-        }
-
-        // Write per-camera accepted poses for observability.
-        if (acceptedPoseByCameraCount[cameraIndex]
-            >= acceptedPoseByCameraBuffer[cameraIndex].length) {
-          acceptedPoseByCameraBuffer[cameraIndex] =
-              Arrays.copyOf(
-                  acceptedPoseByCameraBuffer[cameraIndex],
-                  acceptedPoseByCameraBuffer[cameraIndex].length * 2);
-        }
-        acceptedPoseByCameraBuffer[cameraIndex][acceptedPoseByCameraCount[cameraIndex]++] =
-            observation.pose();
-
-        // Write into pre-allocated buffer — grow only if needed (rare)
-        if (acceptedPoseCount >= acceptedPoseBuffer.length) {
-          acceptedPoseBuffer = Arrays.copyOf(acceptedPoseBuffer, acceptedPoseBuffer.length * 2);
-        }
-        acceptedPoseBuffer[acceptedPoseCount++] = observation.pose();
-
-        lastAcceptedPoseByCamera[cameraIndex] = visionPose;
-        lastAcceptedTimestampByCamera[cameraIndex] = observation.timestamp();
-        lastAcceptedObservationByCamera[cameraIndex] = observation;
-
-        // Odometry initialization: require N stable poses before first reset
-        if (!odometryInitialized) {
-          stablePoseCounter--;
-          if (stablePoseCounter <= 0) {
-            swerve.resetPose(visionPose);
-            markOdometryInitialized();
-          }
-        }
+        acceptedPoses.add(observation.pose());
+        Pose2d pose2d = observation.pose().toPose2d();
 
         consumer.accept(
-            visionPose,
+            pose2d,
             Utils.fpgaToCurrentTime(observation.timestamp()),
-            calculateStdDevs(observation, validator, cameraIndex));
+            standardDeviations(observation, cameraIndex));
 
-        // Track best multi-tag pose as a drift-reseed candidate
-        if (observation.tagCount() >= POSE_RESEED_MIN_TAG_COUNT) {
-          if (bestReseedCandidate == null
-              || observation.ambiguity() < bestReseedCandidate.ambiguity()) {
-            bestReseedCandidate = observation;
-          }
+        if (observation.timestamp() > lastAcceptedTimestamp) {
+          lastAcceptedPose = pose2d;
+          lastAcceptedTagIDs = Arrays.copyOf(observation.tagIDs(), observation.tagIDs().length);
+          lastAcceptedTimestamp = observation.timestamp();
         }
       }
     }
 
-    for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
-      String camKey = "Vision/" + inputs[cameraIndex].getCameraName();
-      DogLog.log(camKey + "/AcceptedPoseCount", acceptedPoseByCameraCount[cameraIndex]);
-      if (acceptedPoseByCameraCount[cameraIndex] > 0) {
-        DogLog.log(
-            camKey + "/AcceptedPoses",
-            Arrays.copyOf(
-                acceptedPoseByCameraBuffer[cameraIndex], acceptedPoseByCameraCount[cameraIndex]));
-      } else {
-        DogLog.log(camKey + "/AcceptedPoses", new Pose3d[0]);
-      }
-    }
-
-    // Single summary log per cycle.
-    DogLog.log("Vision/AcceptedPoseCount", acceptedPoseCount);
-    if (acceptedPoseCount > 0) {
-      DogLog.log("Vision/AcceptedPoses", Arrays.copyOf(acceptedPoseBuffer, acceptedPoseCount));
-    } else {
-      DogLog.log("Vision/AcceptedPoses", new Pose3d[0]);
-    }
+    logPoseArray("Vision/AcceptedPoses", acceptedPoses);
+    logPoseArray("Vision/RejectedPoses", rejectedPoses);
+    DogLog.log("Vision/Aiming", aiming);
     DogLog.timeEnd("Perf/Vision");
   }
 
-  private boolean passesCrossCameraConsistency(
-      int cameraIndex, Pose2d candidatePose, double candidateTimestamp) {
-    String camKey = "Vision/" + inputs[cameraIndex].getCameraName();
-    for (int otherIndex = 0; otherIndex < io.length; otherIndex++) {
-      if (otherIndex == cameraIndex) continue;
-      if (lastAcceptedPoseByCamera[otherIndex] == null) continue;
-
-      double age = Math.abs(candidateTimestamp - lastAcceptedTimestampByCamera[otherIndex]);
-      if (age > CROSS_CAMERA_MAX_AGE_SECONDS) continue;
-
-      double discrepancy =
-          candidatePose
-              .getTranslation()
-              .getDistance(lastAcceptedPoseByCamera[otherIndex].getTranslation());
-      if (discrepancy > MAX_CROSS_CAMERA_DISCREPANCY_METERS) {
-        DogLog.log(camKey + "/RejectedPose/Reason", "CROSS_CAMERA_DISCREPANCY");
-        DogLog.log(
-            camKey + "/RejectedPose/Details",
-            "Against "
-                + inputs[otherIndex].getCameraName()
-                + ", discrepancy: "
-                + discrepancy
-                + ", age: "
-                + age);
-        return false;
-      }
+  /**
+   * Returns a human-readable rejection reason, or empty if the observation should be accepted.
+   *
+   * <p>Reject when: no tags, unrealistic Z, outside the field, a single tag with high ambiguity, or
+   * the average tag distance exceeds {@link
+   * frc.robot.util.constants.VisionConstants#MAX_AVG_TAG_DISTANCE_METERS}.
+   */
+  private Optional<String> rejectionReason(PoseObservation observation) {
+    if (observation.tagCount() == 0) {
+      return Optional.of("NO_TAGS");
     }
-    return true;
+
+    Pose3d pose = observation.pose();
+    if (Math.abs(pose.getZ()) > MAX_Z_ERROR) {
+      return Optional.of("Z=" + pose.getZ());
+    }
+
+    Pose2d pose2d = pose.toPose2d();
+    if (pose2d.getX() < 0.0
+        || pose2d.getX() > APTAG_FIELD_LAYOUT.getFieldLength()
+        || pose2d.getY() < 0.0
+        || pose2d.getY() > APTAG_FIELD_LAYOUT.getFieldWidth()) {
+      return Optional.of("OUT_OF_BOUNDS");
+    }
+
+    if (observation.tagCount() == 1 && observation.ambiguity() > MAX_AMBIGUITY) {
+      return Optional.of("AMBIGUITY=" + observation.ambiguity());
+    }
+
+    if (observation.averageTagDistance() > MAX_AVG_TAG_DISTANCE_METERS) {
+      return Optional.of("DISTANCE=" + observation.averageTagDistance());
+    }
+
+    return Optional.empty();
   }
 
-  private boolean passesCoplanarYawConsistency(
-      int cameraIndex,
-      Pose2d candidatePose,
-      VisionPoseValidator validator,
-      PoseObservation observation) {
-    if (!validator.isEffectivelySingleTag(observation)) {
-      return true;
+  /**
+   * Distance-scaled translation std-dev with heading ignored. Translation trust tightens while
+   * aiming. Mirrors the AdvantageKit model with 1678's heading-ignore strategy.
+   */
+  private Matrix<N3, N1> standardDeviations(PoseObservation observation, int cameraIndex) {
+    double tagCount = Math.max(observation.tagCount(), 1);
+    double distance = observation.averageTagDistance();
+    double factor = (distance * distance) / tagCount;
+
+    double cameraFactor =
+        CAMERA_STDDEV_FACTORS[Math.min(cameraIndex, CAMERA_STDDEV_FACTORS.length - 1)];
+    double aimFactor = aiming ? AIM_LINEAR_STDDEV_MULTIPLIER : 1.0;
+
+    double linearStdDev = LINEAR_STDDEV_BASELINE * factor * cameraFactor * aimFactor;
+
+    return VecBuilder.fill(linearStdDev, linearStdDev, HEADING_STDDEV_IGNORE);
+  }
+
+  /** Logs a pose list as a struct array for AdvantageScope. */
+  @SuppressWarnings("null") // DogLog null-annotation interop on Pose3d[] is benign.
+  private static void logPoseArray(String key, List<Pose3d> poses) {
+    DogLog.log(key, poses.toArray(new Pose3d[0]));
+  }
+
+  /** Returns a consistent snapshot of the latest accepted observation, if recent. */
+  public Optional<AcceptedObservationSnapshot> getLatestAcceptedObservationSnapshot() {
+    if (lastAcceptedPose == null
+        || (Timer.getFPGATimestamp() - lastAcceptedTimestamp) > SNAPSHOT_MAX_AGE_SECONDS) {
+      return Optional.empty();
     }
+    return Optional.of(
+        new AcceptedObservationSnapshot(
+            lastAcceptedPose,
+            Arrays.copyOf(lastAcceptedTagIDs, lastAcceptedTagIDs.length),
+            lastAcceptedTimestamp));
+  }
 
-    if (swerve.samplePoseAt(observation.timestamp()).isPresent()) {
-      return true;
-    }
-
-    String camKey = "Vision/" + inputs[cameraIndex].getCameraName();
-    double yawErrorRad =
-        Math.abs(
-            MathUtil.angleModulus(
-                candidatePose.getRotation().getRadians()
-                    - swerve.getState().Pose.getRotation().getRadians()));
-    double maxYawErrorRad = Math.toRadians(COPLANAR_MAX_YAW_DISCREPANCY_DEG);
-
-    if (yawErrorRad > maxYawErrorRad) {
-      DogLog.log(camKey + "/RejectedPose/Reason", "COPLANAR_YAW_DISCREPANCY");
-      DogLog.log(
-          camKey + "/RejectedPose/Details",
-          "yaw error deg: "
-              + Math.toDegrees(yawErrorRad)
-              + " > max: "
-              + COPLANAR_MAX_YAW_DISCREPANCY_DEG);
+  /**
+   * Operator-triggered recovery: snaps the drivetrain pose to the most recent accepted vision pose.
+   * This is the ONLY path that resets the pose, and it is never automatic.
+   *
+   * @return true if a recent accepted pose was available
+   */
+  public boolean forceReseedFromVision() {
+    Optional<AcceptedObservationSnapshot> snapshot = getLatestAcceptedObservationSnapshot();
+    if (snapshot.isEmpty()) {
       return false;
     }
-
+    swerve.resetPose(snapshot.get().pose());
+    DogLog.log("Vision/ForceReseed", snapshot.get().pose());
     return true;
   }
 
-  private boolean passesCoplanarHistoricalYawConsistency(
-      int cameraIndex,
-      Pose2d candidatePose,
-      VisionPoseValidator validator,
-      PoseObservation observation) {
-    if (!validator.isEffectivelySingleTag(observation)) {
-      return true;
-    }
-
-    Optional<Pose2d> historicalPoseOpt = swerve.samplePoseAt(observation.timestamp());
-    if (historicalPoseOpt.isEmpty()) {
-      return true;
-    }
-
-    String camKey = "Vision/" + inputs[cameraIndex].getCameraName();
-    Pose2d historicalPose = historicalPoseOpt.get();
-
-    double yawErrorRad =
-        Math.abs(
-            MathUtil.angleModulus(
-                candidatePose.getRotation().getRadians()
-                    - historicalPose.getRotation().getRadians()));
-    double maxYawErrorRad = Math.toRadians(COPLANAR_HISTORICAL_MAX_YAW_DISCREPANCY_DEG);
-
-    if (yawErrorRad > maxYawErrorRad) {
-      DogLog.log(camKey + "/RejectedPose/Reason", "COPLANAR_HISTORICAL_YAW_DISCREPANCY");
-      DogLog.log(
-          camKey + "/RejectedPose/Details",
-          "historical yaw error deg: "
-              + Math.toDegrees(yawErrorRad)
-              + " > max: "
-              + COPLANAR_HISTORICAL_MAX_YAW_DISCREPANCY_DEG);
-      return false;
-    }
-
-    return true;
-  }
-
+  /** Feeds the drivetrain heading to PhotonVision for single-tag constrained solving. */
   private class DrivetrainHeadingProvider implements VisionIOPhotonVision.VisionHeadingProvider {
     @Override
     public Optional<Rotation2d> getHeadingAtTimestamp(double fpgaTimestampSeconds) {
@@ -344,149 +251,5 @@ public class VisionSubsystem extends SubsystemBase {
     public double getAngularRateRadPerSec() {
       return swerve.getState().Speeds.omegaRadiansPerSecond;
     }
-  }
-
-  private Matrix<N3, N1> calculateStdDevs(
-      PoseObservation obs, VisionPoseValidator validator, int cameraIndex) {
-    double dist = obs.averageTagDistance();
-    int tagCount = Math.max(obs.tagCount(), 1);
-    // Quadratic distance scaling: trust drops sharply with range; multiple tags
-    // reduce uncertainty
-    double distanceFactor = (dist * dist) / tagCount;
-    double linearStdDev = LINEAR_STDDEV_BASELINE * (1.0 + distanceFactor) * (1.0 + obs.ambiguity());
-    // Distrust rotation for single-tag or coplanar multi-tag observations — both
-    // have 180° rotational ambiguity (flip-vulnerable). Only true multi-tag
-    // observations (tags on different planes) provide a reliable rotational
-    // constraint.
-    double angularStdDev =
-        validator.isEffectivelySingleTag(obs)
-            ? Double.MAX_VALUE
-            : ANGULAR_STDDEV_BASELINE * (1.0 + distanceFactor);
-
-    int factorIndex = Math.min(cameraIndex, CAMERA_STDDEV_FACTORS.length - 1);
-    double cameraFactor = CAMERA_STDDEV_FACTORS[factorIndex];
-    linearStdDev *= cameraFactor;
-    if (angularStdDev != Double.MAX_VALUE) {
-      angularStdDev *= cameraFactor;
-    }
-
-    if (obs.type() == PoseObservationType.MEGATAG_2) {
-      linearStdDev *= LINEAR_STDDEV_MEGATAG2_FACTOR;
-      if (angularStdDev != Double.MAX_VALUE) {
-        angularStdDev *= ANGULAR_STDDEV_MEGATAG2_ANGLE_FACTOR;
-      }
-    }
-
-    return VecBuilder.fill(linearStdDev, linearStdDev, angularStdDev);
-  }
-
-  /**
-   * If odometry has drifted more than {@code POSE_RESEED_THRESHOLD_METERS} from the best
-   * high-confidence vision fix this cycle, hard-resets the pose estimator. Call from {@code
-   * Superstructure.periodic()}.
-   *
-   * @return {@code true} if a reseed was performed
-   */
-  public boolean tryReseedFromVision(Pose2d currentPose) {
-    if (bestReseedCandidate == null) return false;
-
-    Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
-    double drift = currentPose.getTranslation().getDistance(visionPose.getTranslation());
-
-    if (drift > POSE_RESEED_THRESHOLD_METERS) {
-      swerve.resetPose(visionPose);
-      markOdometryInitialized();
-      DogLog.log("Vision/PoseReseed/Triggered", true);
-      DogLog.log("Vision/PoseReseed/DriftMeters", drift);
-      DogLog.log("Vision/PoseReseed/NewPose", visionPose);
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Unconditionally reseeds from the best high-confidence vision fix this cycle. For
-   * operator-triggered recovery when odometry has gone badly wrong.
-   *
-   * @return {@code true} if a qualifying pose was available
-   */
-  public boolean forceReseedFromVision() {
-    if (bestReseedCandidate == null) return false;
-
-    Pose2d visionPose = bestReseedCandidate.pose().toPose2d();
-    swerve.resetPose(visionPose);
-    markOdometryInitialized();
-    DogLog.log("Vision/PoseReseed/ForcedByOperator", true);
-    DogLog.log("Vision/PoseReseed/NewPose", visionPose);
-    return true;
-  }
-
-  /** Returns the most recent accepted vision pose across all cameras, if available. */
-  public Optional<Pose2d> getLatestAcceptedPose2d() {
-    return getLatestAcceptedObservation().map(obs -> obs.pose().toPose2d());
-  }
-
-  /** Returns the tag IDs used by the most recent accepted vision observation, if available. */
-  public Optional<int[]> getLatestAcceptedTagIDs() {
-    return getLatestAcceptedObservation()
-        .map(obs -> Arrays.copyOf(obs.tagIDs(), obs.tagIDs().length));
-  }
-
-  /** Returns a consistent snapshot of the latest accepted vision observation, if available. */
-  public Optional<AcceptedObservationSnapshot> getLatestAcceptedObservationSnapshot() {
-    return getLatestAcceptedObservation()
-        .map(
-            obs ->
-                new AcceptedObservationSnapshot(
-                    obs.pose().toPose2d(),
-                    Arrays.copyOf(obs.tagIDs(), obs.tagIDs().length),
-                    obs.timestamp()));
-  }
-
-  private Optional<PoseObservation> getLatestAcceptedObservation() {
-    double now = Timer.getFPGATimestamp();
-    PoseObservation latestObservation = null;
-    double latestTimestamp = -1.0;
-
-    for (int i = 0; i < lastAcceptedObservationByCamera.length; i++) {
-      PoseObservation observation = lastAcceptedObservationByCamera[i];
-      if (observation == null) {
-        continue;
-      }
-
-      double timestamp = lastAcceptedTimestampByCamera[i];
-      if (timestamp < 0.0) {
-        continue;
-      }
-      if ((now - timestamp) > SNAPSHOT_MAX_AGE_SECONDS) {
-        continue;
-      }
-
-      if (timestamp > latestTimestamp) {
-        latestTimestamp = timestamp;
-        latestObservation = observation;
-      }
-    }
-
-    return Optional.ofNullable(latestObservation);
-  }
-
-  private void markOdometryInitialized() {
-    odometryInitialized = true;
-    stablePoseCounter = 0;
-    DogLog.log("Vision/OdometryInitialized", true);
-  }
-
-  /**
-   * Resets the odometry-initialized flag so that vision will re-seed the pose estimator from
-   * scratch on the next accepted observation. Call this at the start of autonomous so vision
-   * re-confirms the robot's starting pose from tags rather than carrying over a potentially stale
-   * teleop pose.
-   */
-  public void resetOdometryInitialized() {
-    odometryInitialized = false;
-    stablePoseCounter = 5;
-    DogLog.log("Vision/OdometryInitialized", false);
   }
 }

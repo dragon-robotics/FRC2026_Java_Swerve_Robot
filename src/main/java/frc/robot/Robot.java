@@ -112,7 +112,7 @@ public class Robot extends TimedRobot {
   public void autonomousInit() {
     HubShiftUtil.initialize();
     // Re-seed odometry from tags at auto start.
-    m_robotContainer.visionSubsystem.resetOdometryInitialized();
+    // m_robotContainer.visionSubsystem.resetOdometryInitialized();
 
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
@@ -136,7 +136,7 @@ public class Robot extends TimedRobot {
     HubShiftUtil.initialize();
 
     // Re-seed odometry from tags at teleop start.
-    m_robotContainer.visionSubsystem.resetOdometryInitialized();
+    // m_robotContainer.visionSubsystem.resetOdometryInitialized();
     if (m_autonomousCommand != null) {
       CommandScheduler.getInstance().cancel(m_autonomousCommand);
     }
