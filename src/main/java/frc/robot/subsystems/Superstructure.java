@@ -786,6 +786,11 @@ public class Superstructure extends SubsystemBase {
       updateAlignmentStatus(currentPose, aimTarget);
     }
 
+    // Tighten vision translation trust while aiming/aligning to score.
+    if (vision != null) {
+      vision.setAiming(state == SuperState.SHOOT_WITH_AIM || state == SuperState.SHOOT_NO_AIM);
+    }
+
     // // ── Vision reseed — no-op if no qualifying fix available ──────────────
     // if (vision != null) {
     // vision.tryReseedFromVision(currentPose);
