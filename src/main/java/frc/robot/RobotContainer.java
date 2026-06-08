@@ -398,7 +398,6 @@ public class RobotContainer {
                 new WaitCommand(1.5)
                     .andThen(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER)));
 
-
     driveCommand = superstructureSubsystem.setStateCmd(SuperState.DRIVE);
 
     NamedCommands.registerCommand("Intake", intakeCommand);
