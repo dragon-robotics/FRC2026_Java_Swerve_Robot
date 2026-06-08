@@ -10,6 +10,7 @@ import java.util.List;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Threads;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -50,9 +51,13 @@ public class Robot extends TimedRobot {
     SignalRegistry.getInstance().refreshAll();
     DogLog.timeEnd("Perf/SignalRefresh");
 
+    Threads.setCurrentThreadPriority(true, 99);
+
     DogLog.time("Perf/Scheduler");
     CommandScheduler.getInstance().run();
     DogLog.timeEnd("Perf/Scheduler");
+
+    Threads.setCurrentThreadPriority(false, 10);
 
     m_robotContainer.updateFieldDashboard();
 
