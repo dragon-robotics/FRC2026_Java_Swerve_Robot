@@ -125,12 +125,67 @@ def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
 def venvPython = isWindows ? file('.venv/Scripts/python.exe') : file('.venv/bin/python3')
 def pythonExecutable = System.getenv('PYTHON') ?: (venvPython.exists() ? venvPython.absolutePath : (isWindows ? 'python' : 'python3'))
 def mirrorScriptPath = 'scripts/mirror_pathplanner_autos.py'
+def pathplannerAutosDir = file('src/main/deploy/pathplanner/autos')
+def pathplannerPathsDir = file('src/main/deploy/pathplanner/paths')
+def pathplannerNavgrid = file('src/main/deploy/pathplanner/navgrid.json')
+
+def leftAutos = fileTree(pathplannerAutosDir) {
+    include '*.auto'
+    include '*LTrench*.auto'
+    include '*LT*.auto'
+    include '*S1*.auto'
+    include '*left*.auto'
+    include '*Left*.auto'
+    exclude '*Right*.auto'
+    exclude '*right*.auto'
+    exclude '*RTrench*.auto'
+    exclude '*RT*.auto'
+    exclude '*S7*.auto'
+}
+
+def leftPaths = fileTree(pathplannerPathsDir) {
+    include '*.path'
+    include '*LTrench*.path'
+    include '*LT*.path'
+    include '*S1*.path'
+    include '*left*.path'
+    include '*Left*.path'
+    exclude '*Right*.path'
+    exclude '*right*.path'
+    exclude '*RTrench*.path'
+    exclude '*RT*.path'
+    exclude '*S7*.path'
+}
+
+def rightAutos = fileTree(pathplannerAutosDir) {
+    include '*.auto'
+    include '*Right*.auto'
+    include '*right*.auto'
+    include '*RTrench*.auto'
+    include '*RT*.auto'
+    include '*S7*.auto'
+}
+
+def rightPaths = fileTree(pathplannerPathsDir) {
+    include '*.path'
+    include '*Right*.path'
+    include '*right*.path'
+    include '*RTrench*.path'
+    include '*RT*.path'
+    include '*S7*.path'
+}
 
 tasks.register('mirrorAutos', Exec) {
     group = 'automation'
-    description = 'Generate right-side PathPlanner autos and paths from the canonical left-side assets.'
+    description = 'Generate and update right-side PathPlanner autos and paths from canonical left-side assets.'
     workingDir = projectDir
     commandLine pythonExecutable, mirrorScriptPath
+
+    // Re-run when canonical left assets change; produced right assets are outputs.
+    inputs.files(leftAutos, leftPaths)
+    inputs.file(pathplannerNavgrid)
+    inputs.file(file(mirrorScriptPath))
+    outputs.files(rightAutos, rightPaths)
 }
 
 tasks.register('checkMirroredAutos', Exec) {
@@ -138,6 +193,10 @@ tasks.register('checkMirroredAutos', Exec) {
     description = 'Validate that generated right-side PathPlanner autos and paths match the canonical left-side assets.'
     workingDir = projectDir
     commandLine pythonExecutable, mirrorScriptPath, '--check'
+}
+
+tasks.named('build') {
+    dependsOn tasks.named('mirrorAutos')
 }
 
 spotless {
