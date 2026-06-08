@@ -35,6 +35,7 @@ import com.pathplanner.lib.commands.FollowPathCommand;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -106,6 +107,8 @@ public class RobotContainer {
   private final SendableChooser<Command> autoChooser;
 
   private final Field2d field = new Field2d();
+  private static final Pose2d HIDDEN_VISION_POSE = new Pose2d(-10.0, -10.0, new Rotation2d());
+  // Most FRC views expose fewer than 8 tags at once; cap keeps NT topic count stable.
   private static final int MAX_VISION_TAG_LINE_OBJECTS = 8;
   private static final double VISION_TAG_LINE_HOLD_SECONDS = 0.2;
   private final List<Pose2d[]> lastVisionTagLineSegments = new ArrayList<>();
@@ -659,12 +662,11 @@ public class RobotContainer {
 
     Optional<VisionSubsystem.AcceptedObservationSnapshot> acceptedSnapshotOpt =
         visionSubsystem.getLatestAcceptedObservationSnapshot();
-    field
-        .getObject("VisionAcceptedPose")
-        .setPose(
-            acceptedSnapshotOpt
-                .map(VisionSubsystem.AcceptedObservationSnapshot::pose)
-                .orElse(swervePose));
+    if (acceptedSnapshotOpt.isPresent()) {
+      field.getObject("VisionAcceptedPose").setPose(acceptedSnapshotOpt.get().pose());
+    } else {
+      field.getObject("VisionAcceptedPose").setPose(HIDDEN_VISION_POSE);
+    }
 
     if (acceptedSnapshotOpt.isPresent()) {
       VisionSubsystem.AcceptedObservationSnapshot snapshot = acceptedSnapshotOpt.get();
