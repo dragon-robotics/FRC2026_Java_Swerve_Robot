@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.730566562452297,
-        "y": 5.381972002886392
+        "x": 2.730564513889963,
+        "y": 5.381971103409124
       },
       "isLocked": false,
       "linkedName": null
@@ -112,12 +112,12 @@
     },
     {
       "anchor": {
-        "x": 2.8377526881707023,
-        "y": 5.263838709677106
+        "x": 2.594,
+        "y": 5.693
       },
       "prevControl": {
-        "x": 3.2500030827907587,
-        "y": 5.288878899392638
+        "x": 2.9053133545194165,
+        "y": 5.829689411798675
       },
       "nextControl": null,
       "isLocked": false,
@@ -220,7 +220,12 @@
       "name": "ShootNoAim",
       "waypointRelativePos": 0,
       "endWaypointRelativePos": 0.7978679786797811,
-      "command": null
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "ShootNoAim"
+        }
+      }
     },
     {
       "name": "Intake",
