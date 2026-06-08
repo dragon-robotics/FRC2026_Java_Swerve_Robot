@@ -480,7 +480,6 @@ public class Superstructure extends SubsystemBase {
 
   public void setDesiredSuperState(SuperState state) {
     this.state = state;
-    DogLog.log("Superstructure/State", state.name());
   }
 
   /**
@@ -749,10 +748,10 @@ public class Superstructure extends SubsystemBase {
     // ── Distance + alignment (needed by SHOOT command group) ──────────────
     Translation2d aimTarget = getCurrentAimTarget();
     if (aimTarget != null) {
-      double distanceToHub = currentPose.getTranslation().getDistance(aimTarget);
-      DogLog.log("Superstructure/Distance to Hub (feet)", Units.metersToFeet(distanceToHub));
+      double distanceToTarget = currentPose.getTranslation().getDistance(aimTarget);
+      DogLog.log("Superstructure/Distance to Target (feet)", Units.metersToFeet(distanceToTarget));
       if (state != SuperState.MANUAL_SHOOT) {
-        shooter.setSetpointForDistance(distanceToHub);
+        shooter.setSetpointForDistance(distanceToTarget);
         if (isNeutralShootOrPurgeZone()) {
           shooter.setSetpoint(shooter.getTargetRPM(), NEUTRAL_ZONE_HOOD_LOCK);
         }
