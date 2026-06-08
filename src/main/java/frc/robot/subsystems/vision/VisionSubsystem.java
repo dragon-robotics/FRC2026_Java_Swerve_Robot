@@ -18,6 +18,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.vision.VisionIO.PoseObservation;
@@ -30,6 +31,8 @@ import java.util.Arrays;
 import java.util.Optional;
 
 public class VisionSubsystem extends SubsystemBase {
+
+  private static final double SNAPSHOT_MAX_AGE_SECONDS = 0.5;
 
   private final CommandSwerveDrivetrain swerve;
   private final VisionConsumer consumer;
@@ -442,6 +445,7 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   private Optional<PoseObservation> getLatestAcceptedObservation() {
+    double now = Timer.getFPGATimestamp();
     PoseObservation latestObservation = null;
     double latestTimestamp = -1.0;
 
@@ -452,6 +456,13 @@ public class VisionSubsystem extends SubsystemBase {
       }
 
       double timestamp = lastAcceptedTimestampByCamera[i];
+      if (timestamp < 0.0) {
+        continue;
+      }
+      if ((now - timestamp) > SNAPSHOT_MAX_AGE_SECONDS) {
+        continue;
+      }
+
       if (timestamp > latestTimestamp) {
         latestTimestamp = timestamp;
         latestObservation = observation;
