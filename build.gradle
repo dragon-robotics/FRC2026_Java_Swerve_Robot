@@ -116,6 +116,22 @@ deployArtifact.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
 wpi.java.configureTestTasks(test)
 
+// Standalone vision/odometry stability regression tests. NOT wired into build/check —
+// run explicitly with: ./gradlew visionStabilityTest
+tasks.register('visionStabilityTest', Test) {
+    group = 'verification'
+    description = 'Runs the vision/odometry stability regression tests (frc.robot.subsystems.vision.*).'
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching 'frc.robot.subsystems.vision.*'
+    }
+    testLogging {
+        showStandardStreams = true
+        events 'passed', 'skipped', 'failed'
+    }
+}
+wpi.java.configureTestTasks(tasks.named('visionStabilityTest').get())
+
 // Configure string concat to always inline compile
 tasks.withType(JavaCompile) {
     options.compilerArgs.add '-XDstringConcat=inline'

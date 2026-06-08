@@ -86,6 +86,11 @@ public final class VisionConstants {
   /** Translation std-dev multiplier applied while actively aiming/aligning (lower = more trust). */
   public static final double AIM_LINEAR_STDDEV_MULTIPLIER = 0.6;
 
+  /**
+   * Single-tag observations have 180-deg PnP flip ambiguity; distrust their translation heavily.
+   */
+  public static final double SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER = 5.0;
+
   // Constrained SolvePnP hybrid fallback (PhotonVision IO).
   public static final boolean ENABLE_CONSTRAINED_FALLBACK = true;
 
