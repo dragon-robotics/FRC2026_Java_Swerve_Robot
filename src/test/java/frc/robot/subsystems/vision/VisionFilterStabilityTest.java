@@ -4,15 +4,20 @@
 
 package frc.robot.subsystems.vision;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import frc.robot.subsystems.vision.VisionIO.PoseObservation;
+import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
+import frc.robot.util.constants.VisionConstants;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,11 +73,13 @@ class VisionFilterStabilityTest {
     for (int cycle = 0; cycle < CYCLES; cycle++) {
       double t = cycle * DT;
 
-      // Stationary robot: wheels don't move, gyro fixed. Only vision perturbs the estimate.
+      // Stationary robot: wheels don't move, gyro fixed. Only vision perturbs the
+      // estimate.
       estimator.updateWithTime(t, gyro, modules);
 
       List<PoseObservation> stream = new ArrayList<>();
-      // Two good multi-tag observations every cycle (the dominant, trustworthy signal).
+      // Two good multi-tag observations every cycle (the dominant, trustworthy
+      // signal).
       stream.add(
           VisionScenarios.goodMultiTag(
               noisy(rng, GROUND_TRUTH.getX()), noisy(rng, GROUND_TRUTH.getY()), 0.0, t));
@@ -81,7 +88,8 @@ class VisionFilterStabilityTest {
               noisy(rng, GROUND_TRUTH.getX()), noisy(rng, GROUND_TRUTH.getY()), 0.0, t));
 
       String injected = "good";
-      // Periodically inject a realistic flip-vulnerable single-tag pose ~4 m off-truth.
+      // Periodically inject a realistic flip-vulnerable single-tag pose ~4 m
+      // off-truth.
       if (cycle % 25 == 0) {
         stream.add(
             VisionScenarios.flippedSingleTag(
@@ -173,6 +181,48 @@ class VisionFilterStabilityTest {
     assertTrue(
         VisionSubsystem.rejectionReason(VisionScenarios.goodMultiTag(4.0, 4.0, 0.0, 0.0)).isEmpty(),
         "Good multi-tag pose should be accepted");
+  }
+
+  /**
+   * Pins the single-tag translation distrust multiplier. A single tag gets {@code
+   * SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER} (5.0) applied to its translation std-dev, while multi-tag
+   * observations do not. This is the fix that stops a flipped single-tag pose from teleporting the
+   * fused estimate, so it is asserted explicitly.
+   */
+  @Test
+  void singleTagTranslationStdDevAppliesTheFiveTimesMultiplier() {
+    double distance = 2.0;
+    Pose3d pose = new Pose3d(4.0, 4.0, 0.0, new Rotation3d());
+    PoseObservation singleTag =
+        new PoseObservation(
+            0.0, pose, 0.1, 1, distance, PoseObservationType.PHOTONVISION, new int[] {1});
+    PoseObservation twoTag =
+        new PoseObservation(
+            0.0, pose, 0.1, 2, distance, PoseObservationType.PHOTONVISION, new int[] {1, 2});
+
+    double singleStdDev = VisionSubsystem.standardDeviations(singleTag, 0, false).get(0, 0);
+    double twoStdDev = VisionSubsystem.standardDeviations(twoTag, 0, false).get(0, 0);
+
+    // For a single tag: stdDev = LINEAR_STDDEV_BASELINE * dist^2 * 1(cam) * 1(aim) * multiplier.
+    double singleTagBaseline = VisionConstants.LINEAR_STDDEV_BASELINE * distance * distance;
+    double observedMultiplier = singleStdDev / singleTagBaseline;
+    System.out.printf(
+        "[StdDev] singleTag(%.0fm)=%.4f m, twoTag(%.0fm)=%.4f m, effective single-tag multiplier=%.2f%n",
+        distance, singleStdDev, distance, twoStdDev, observedMultiplier);
+
+    assertEquals(
+        VisionConstants.SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER,
+        observedMultiplier,
+        1e-9,
+        "Single-tag translation std-dev must apply the configured 5x distrust multiplier");
+
+    // Multi-tag must NOT receive the single-tag multiplier: stdDev = baseline * dist^2 / tagCount.
+    double expectedTwoTag = VisionConstants.LINEAR_STDDEV_BASELINE * distance * distance / 2.0;
+    assertEquals(
+        expectedTwoTag,
+        twoStdDev,
+        1e-9,
+        "Multi-tag std-dev must not apply the single-tag distrust multiplier");
   }
 
   private static SwerveDriveKinematics dummyKinematics() {
