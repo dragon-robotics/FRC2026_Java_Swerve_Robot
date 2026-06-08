@@ -12,6 +12,7 @@ import static frc.robot.util.constants.VisionConstants.LINEAR_STDDEV_BASELINE;
 import static frc.robot.util.constants.VisionConstants.MAX_AMBIGUITY;
 import static frc.robot.util.constants.VisionConstants.MAX_AVG_TAG_DISTANCE_METERS;
 import static frc.robot.util.constants.VisionConstants.MAX_Z_ERROR;
+import static frc.robot.util.constants.VisionConstants.SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER;
 
 import com.ctre.phoenix6.Utils;
 import dev.doglog.DogLog;
@@ -116,7 +117,13 @@ public class VisionSubsystem extends SubsystemBase {
 
       String camKey = "Vision/" + inputs[cameraIndex].getCameraName();
 
-      for (PoseObservation observation : inputs[cameraIndex].getPoseObservations()) {
+      PoseObservation[] observations = inputs[cameraIndex].getPoseObservations();
+
+      // Raw pre-filter observation logging so real match logs can be replayed through the
+      // filter offline (see VisionFilterStabilityTest / scripts/analyze_vision_stability.py).
+      logRawObservations(camKey, observations);
+
+      for (PoseObservation observation : observations) {
         Optional<String> rejection = rejectionReason(observation);
         if (rejection.isPresent()) {
           rejectedPoses.add(observation.pose());
@@ -152,8 +159,11 @@ public class VisionSubsystem extends SubsystemBase {
    * <p>Reject when: no tags, unrealistic Z, outside the field, a single tag with high ambiguity, or
    * the average tag distance exceeds {@link
    * frc.robot.util.constants.VisionConstants#MAX_AVG_TAG_DISTANCE_METERS}.
+   *
+   * <p>Static and package-private so tests can exercise the real gate logic without a HAL/sim
+   * drivetrain.
    */
-  private Optional<String> rejectionReason(PoseObservation observation) {
+  static Optional<String> rejectionReason(PoseObservation observation) {
     if (observation.tagCount() == 0) {
       return Optional.of("NO_TAGS");
     }
@@ -187,6 +197,15 @@ public class VisionSubsystem extends SubsystemBase {
    * aiming. Mirrors the AdvantageKit model with 1678's heading-ignore strategy.
    */
   private Matrix<N3, N1> standardDeviations(PoseObservation observation, int cameraIndex) {
+    return standardDeviations(observation, cameraIndex, aiming);
+  }
+
+  /**
+   * Pure standard-deviation model with an explicit aiming flag. Package-private so tests can
+   * exercise the exact production std-dev math without depending on subsystem state.
+   */
+  static Matrix<N3, N1> standardDeviations(
+      PoseObservation observation, int cameraIndex, boolean aiming) {
     double tagCount = Math.max(observation.tagCount(), 1);
     double distance = observation.averageTagDistance();
     double factor = (distance * distance) / tagCount;
@@ -194,8 +213,11 @@ public class VisionSubsystem extends SubsystemBase {
     double cameraFactor =
         CAMERA_STDDEV_FACTORS[Math.min(cameraIndex, CAMERA_STDDEV_FACTORS.length - 1)];
     double aimFactor = aiming ? AIM_LINEAR_STDDEV_MULTIPLIER : 1.0;
+    double singleTagFactor =
+        observation.tagCount() == 1 ? SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER : 1.0;
 
-    double linearStdDev = LINEAR_STDDEV_BASELINE * factor * cameraFactor * aimFactor;
+    double linearStdDev =
+        LINEAR_STDDEV_BASELINE * factor * cameraFactor * aimFactor * singleTagFactor;
 
     return VecBuilder.fill(linearStdDev, linearStdDev, HEADING_STDDEV_IGNORE);
   }
@@ -204,6 +226,32 @@ public class VisionSubsystem extends SubsystemBase {
   @SuppressWarnings("null") // DogLog null-annotation interop on Pose3d[] is benign.
   private static void logPoseArray(String key, List<Pose3d> poses) {
     DogLog.log(key, poses.toArray(new Pose3d[0]));
+  }
+
+  /**
+   * Logs the raw, pre-filter observations for a camera as index-aligned scalar arrays. This
+   * captures everything the rejection and std-dev logic consume, so a real match log can be
+   * replayed through the filter offline to diagnose acceptance and pose-jump behavior.
+   */
+  @SuppressWarnings("null") // DogLog null-annotation interop on Pose3d[] is benign.
+  private static void logRawObservations(String camKey, PoseObservation[] observations) {
+    Pose3d[] poses = new Pose3d[observations.length];
+    double[] timestamps = new double[observations.length];
+    double[] ambiguities = new double[observations.length];
+    double[] tagCounts = new double[observations.length];
+    double[] avgDistances = new double[observations.length];
+    for (int i = 0; i < observations.length; i++) {
+      poses[i] = observations[i].pose();
+      timestamps[i] = observations[i].timestamp();
+      ambiguities[i] = observations[i].ambiguity();
+      tagCounts[i] = observations[i].tagCount();
+      avgDistances[i] = observations[i].averageTagDistance();
+    }
+    DogLog.log(camKey + "/RawObs/Poses", poses);
+    DogLog.log(camKey + "/RawObs/Timestamp", timestamps);
+    DogLog.log(camKey + "/RawObs/Ambiguity", ambiguities);
+    DogLog.log(camKey + "/RawObs/TagCount", tagCounts);
+    DogLog.log(camKey + "/RawObs/AvgDistance", avgDistances);
   }
 
   /** Returns a consistent snapshot of the latest accepted observation, if recent. */
