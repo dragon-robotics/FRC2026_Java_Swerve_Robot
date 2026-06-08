@@ -34,7 +34,10 @@ import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import dev.doglog.DogLog;
 import dev.doglog.DogLogOptions;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -61,9 +64,12 @@ import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.util.HubShiftUtil;
+import frc.robot.util.constants.FieldConstants;
 import frc.robot.util.constants.OperatorConstants;
 import frc.robot.util.constants.SwerveConstants;
 import frc.robot.util.constants.VisionConstants;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -100,6 +106,10 @@ public class RobotContainer {
   private final SendableChooser<Command> autoChooser;
 
   private final Field2d field = new Field2d();
+  private static final int MAX_VISION_TAG_LINE_OBJECTS = 8;
+  private static final double VISION_TAG_LINE_HOLD_SECONDS = 0.2;
+  private final List<Pose2d[]> lastVisionTagLineSegments = new ArrayList<>();
+  private double lastVisionTagUpdateTimestamp = -1.0;
 
   public RobotContainer() {
 
@@ -640,5 +650,59 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     /* Run the path selected from the auto chooser */
     return autoChooser.getSelected();
+  }
+
+  /** Updates the SmartDashboard Field2d topic with drivetrain and accepted vision poses. */
+  public void updateFieldDashboard() {
+    Pose2d swervePose = swerveSubsystem.getState().Pose;
+    field.setRobotPose(swervePose);
+
+    Optional<VisionSubsystem.AcceptedObservationSnapshot> acceptedSnapshotOpt =
+        visionSubsystem.getLatestAcceptedObservationSnapshot();
+    field
+        .getObject("VisionAcceptedPose")
+        .setPose(
+            acceptedSnapshotOpt
+                .map(VisionSubsystem.AcceptedObservationSnapshot::pose)
+                .orElse(swervePose));
+
+    if (acceptedSnapshotOpt.isPresent()) {
+      VisionSubsystem.AcceptedObservationSnapshot snapshot = acceptedSnapshotOpt.get();
+      List<Pose2d[]> newSegments = new ArrayList<>();
+      for (int tagId : snapshot.tagIDs()) {
+        FieldConstants.APTAG_FIELD_LAYOUT
+            .getTagPose(tagId)
+            .ifPresent(
+                tagPose -> newSegments.add(new Pose2d[] {snapshot.pose(), tagPose.toPose2d()}));
+      }
+      if (!newSegments.isEmpty()) {
+        lastVisionTagLineSegments.clear();
+        lastVisionTagLineSegments.addAll(newSegments);
+        lastVisionTagUpdateTimestamp = Timer.getFPGATimestamp();
+      }
+    }
+
+    boolean shouldRenderHeldSegments =
+        !lastVisionTagLineSegments.isEmpty()
+            && (Timer.getFPGATimestamp() - lastVisionTagUpdateTimestamp)
+                <= VISION_TAG_LINE_HOLD_SECONDS;
+
+    for (int i = 0; i < MAX_VISION_TAG_LINE_OBJECTS; i++) {
+      var tagLineObject = field.getObject("VisionTagLine_" + i + "Trajectory");
+      if (shouldRenderHeldSegments && i < lastVisionTagLineSegments.size()) {
+        Pose2d[] segment = lastVisionTagLineSegments.get(i);
+        tagLineObject.setTrajectory(createLineTrajectory(segment[0], segment[1]));
+      } else {
+        tagLineObject.setTrajectory(new Trajectory());
+      }
+    }
+  }
+
+  private static Trajectory createLineTrajectory(Pose2d startPose, Pose2d endPose) {
+    return new Trajectory(
+        List.of(
+            new Trajectory.State(0.0, 0.0, 0.0, startPose, 0.0),
+            // Use a longer synthetic duration so Field2d sampling yields multiple points.
+            new Trajectory.State(1.0, 0.0, 0.0, endPose, 0.0)));
   }
 }

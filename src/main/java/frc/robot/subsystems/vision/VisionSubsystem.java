@@ -57,6 +57,7 @@ public class VisionSubsystem extends SubsystemBase {
   // Most recent accepted pose per camera for cross-camera consistency checks.
   private Pose2d[] lastAcceptedPoseByCamera;
   private double[] lastAcceptedTimestampByCamera;
+  private PoseObservation[] lastAcceptedObservationByCamera;
 
   public VisionSubsystem(CommandSwerveDrivetrain swerve, VisionConsumer consumer, VisionIO... io) {
     this.swerve = swerve;
@@ -85,6 +86,7 @@ public class VisionSubsystem extends SubsystemBase {
     acceptedPoseByCameraCount = new int[io.length];
     lastAcceptedPoseByCamera = new Pose2d[io.length];
     lastAcceptedTimestampByCamera = new double[io.length];
+    lastAcceptedObservationByCamera = new PoseObservation[io.length];
     for (int i = 0; i < io.length; i++) {
       acceptedPoseByCameraBuffer[i] = new Pose3d[2];
       lastAcceptedTimestampByCamera[i] = -1.0;
@@ -98,6 +100,8 @@ public class VisionSubsystem extends SubsystemBase {
         double timestampSeconds,
         Matrix<N3, N1> visionMeasurementStdDevs);
   }
+
+  public static record AcceptedObservationSnapshot(Pose2d pose, int[] tagIDs, double timestamp) {}
 
   @Override
   public void periodic() {
@@ -170,6 +174,7 @@ public class VisionSubsystem extends SubsystemBase {
 
         lastAcceptedPoseByCamera[cameraIndex] = visionPose;
         lastAcceptedTimestampByCamera[cameraIndex] = observation.timestamp();
+        lastAcceptedObservationByCamera[cameraIndex] = observation;
 
         // Odometry initialization: require N stable poses before first reset
         if (!odometryInitialized) {
@@ -412,6 +417,48 @@ public class VisionSubsystem extends SubsystemBase {
     DogLog.log("Vision/PoseReseed/ForcedByOperator", true);
     DogLog.log("Vision/PoseReseed/NewPose", visionPose);
     return true;
+  }
+
+  /** Returns the most recent accepted vision pose across all cameras, if available. */
+  public Optional<Pose2d> getLatestAcceptedPose2d() {
+    return getLatestAcceptedObservation().map(obs -> obs.pose().toPose2d());
+  }
+
+  /** Returns the tag IDs used by the most recent accepted vision observation, if available. */
+  public Optional<int[]> getLatestAcceptedTagIDs() {
+    return getLatestAcceptedObservation()
+        .map(obs -> Arrays.copyOf(obs.tagIDs(), obs.tagIDs().length));
+  }
+
+  /** Returns a consistent snapshot of the latest accepted vision observation, if available. */
+  public Optional<AcceptedObservationSnapshot> getLatestAcceptedObservationSnapshot() {
+    return getLatestAcceptedObservation()
+        .map(
+            obs ->
+                new AcceptedObservationSnapshot(
+                    obs.pose().toPose2d(),
+                    Arrays.copyOf(obs.tagIDs(), obs.tagIDs().length),
+                    obs.timestamp()));
+  }
+
+  private Optional<PoseObservation> getLatestAcceptedObservation() {
+    PoseObservation latestObservation = null;
+    double latestTimestamp = -1.0;
+
+    for (int i = 0; i < lastAcceptedObservationByCamera.length; i++) {
+      PoseObservation observation = lastAcceptedObservationByCamera[i];
+      if (observation == null) {
+        continue;
+      }
+
+      double timestamp = lastAcceptedTimestampByCamera[i];
+      if (timestamp > latestTimestamp) {
+        latestTimestamp = timestamp;
+        latestObservation = observation;
+      }
+    }
+
+    return Optional.ofNullable(latestObservation);
   }
 
   private void markOdometryInitialized() {

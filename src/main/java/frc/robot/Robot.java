@@ -54,6 +54,8 @@ public class Robot extends TimedRobot {
     CommandScheduler.getInstance().run();
     DogLog.timeEnd("Perf/Scheduler");
 
+    m_robotContainer.updateFieldDashboard();
+
     DogLog.timeEnd("Perf/Total");
 
     // ── Loop overrun detection ──────────────────────────────────────────────
