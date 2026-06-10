@@ -21,8 +21,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,7 +40,7 @@ class VisionDynamicStrategyBakeoffTest {
   private static final double DT = 0.02;
   private static final int WARMUP_CYCLES = 50;
   private static final int MEASURE_CYCLES = 250;
-  private static final double SPIN_RATE_RAD_PER_SEC = Units.rotationsToRadians(0.75);
+  private static final double DEFAULT_SPIN_RATE_RAD_PER_SEC = Units.rotationsToRadians(0.75);
   private static final double SHUTTLE_SPEED_METERS_PER_SEC = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.8;
   private static final double SHUTTLE_MIN_Y = 2.5;
   private static final double SHUTTLE_MAX_Y = 5.5;
@@ -43,6 +48,7 @@ class VisionDynamicStrategyBakeoffTest {
   private static final double CATASTROPHIC_EXCESS_JUMP_M = 0.40;
   private static final int MAX_CATASTROPHIC_OUTLIERS = 0;
   private static final double MIN_VISION_COVERAGE = 0.30;
+  private static final List<Double> CONSTRAINED_SPIN_RATE_SWEEP_RAD_PER_SEC = List.of(0.25, 0.5, 0.75, 1.0);
 
   private static final SwerveRequest.ApplyRobotSpeeds APPLY_ROBOT_SPEEDS = new SwerveRequest.ApplyRobotSpeeds();
 
@@ -63,10 +69,16 @@ class VisionDynamicStrategyBakeoffTest {
   private static boolean halReady = false;
   private static RobotContainer container;
 
-  private record DynamicScenario(String name, Pose2d startPose, boolean shuttle) {
+  private record DynamicScenario(String name, Pose2d startPose, boolean shuttle, double angularRateRadPerSec) {
   }
 
   private record StrategyConfig(String name, String order, boolean hybridMode) {
+  }
+
+  private record SpinSweepResult(
+      String scenarioName,
+      double angularRateRadPerSec,
+      VisionStrategyComparisonSupport.StrategySummary summary) {
   }
 
   @FunctionalInterface
@@ -213,16 +225,61 @@ class VisionDynamicStrategyBakeoffTest {
     assertTrue(results.stream().allMatch(result -> result.strategyNames().contains("HYBRID")));
   }
 
+  @Test
+  void constrainedSpinRateSweepReportsDriftForLeftAndRightScenarios() throws IOException {
+    var results = runConstrainedSpinRateSweep();
+
+    assertEquals(8, results.size());
+    assertTrue(results.stream().anyMatch(result -> result.scenarioName().equals("left_spin_0.25_rad_per_sec")));
+    assertTrue(results.stream().anyMatch(result -> result.scenarioName().equals("right_spin_1.00_rad_per_sec")));
+    assertTrue(results.stream().allMatch(result -> result.summary().strategyName().equals("CONSTRAINED_SOLVEPNP")));
+  }
+
+  @Test
+  void spinRateSweepComparesAllSingleStrategiesForLeftAndRightScenarios() throws IOException {
+    var results = runSingleStrategySpinRateSweep();
+
+    assertEquals(24, results.size());
+    assertTrue(results.stream().anyMatch(result -> result.scenarioName().equals("left_spin_0.25_rad_per_sec")));
+    assertTrue(results.stream().anyMatch(result -> result.scenarioName().equals("right_spin_1.00_rad_per_sec")));
+    assertTrue(results.stream().anyMatch(result -> result.summary().strategyName().equals("MULTI_TAG_PNP_ON_COPROCESSOR")));
+    assertTrue(results.stream().anyMatch(result -> result.summary().strategyName().equals("CONSTRAINED_SOLVEPNP")));
+    assertTrue(results.stream().anyMatch(result -> result.summary().strategyName().equals("PNP_DISTANCE_TRIG_SOLVE")));
+  }
+
+  @Test
+  void hybridOrderDropsConstrainedAtHighAngularRate() {
+    var order = VisionIOPhotonVision.hybridStrategyOrderForTest(1, 0.0, 0.75);
+
+    assertFalse(List.of(order).contains(org.photonvision.PhotonPoseEstimator.PoseStrategy.CONSTRAINED_SOLVEPNP));
+  }
+
   private static DynamicScenario leftSpinScenario() {
-    return new DynamicScenario("left_spin", new Pose2d(2.5, 5.5, Rotation2d.kZero), false);
+    return new DynamicScenario("left_spin", new Pose2d(2.5, 5.5, Rotation2d.kZero), false, DEFAULT_SPIN_RATE_RAD_PER_SEC);
   }
 
   private static DynamicScenario rightSpinScenario() {
-    return new DynamicScenario("right_spin", new Pose2d(2.5, 2.5, Rotation2d.kZero), false);
+    return new DynamicScenario("right_spin", new Pose2d(2.5, 2.5, Rotation2d.kZero), false, DEFAULT_SPIN_RATE_RAD_PER_SEC);
   }
 
   private static DynamicScenario shuttleSpinScenario() {
-    return new DynamicScenario("shuttle_spin", new Pose2d(2.5, 5.5, Rotation2d.kZero), true);
+    return new DynamicScenario("shuttle_spin", new Pose2d(2.5, 5.5, Rotation2d.kZero), true, DEFAULT_SPIN_RATE_RAD_PER_SEC);
+  }
+
+  private static DynamicScenario leftSpinScenario(double angularRateRadPerSec) {
+    return new DynamicScenario(
+        String.format("left_spin_%.2f_rad_per_sec", angularRateRadPerSec),
+        new Pose2d(2.5, 5.5, Rotation2d.kZero),
+        false,
+        angularRateRadPerSec);
+  }
+
+  private static DynamicScenario rightSpinScenario(double angularRateRadPerSec) {
+    return new DynamicScenario(
+        String.format("right_spin_%.2f_rad_per_sec", angularRateRadPerSec),
+        new Pose2d(2.5, 2.5, Rotation2d.kZero),
+        false,
+        angularRateRadPerSec);
   }
 
   private BakeoffResult runBakeoff(DynamicScenario scenario) throws IOException {
@@ -249,6 +306,77 @@ class VisionDynamicStrategyBakeoffTest {
     var rules = VisionStrategyComparisonSupport.deriveOfflineHybridRules(scenarioResults);
     rules.forEach(rule -> System.out.println("[VisionHybridRule] " + rule));
     return new VisionStrategyComparisonSupport.FullBakeoffResult(scenarioResults, rules);
+  }
+
+  private List<SpinSweepResult> runConstrainedSpinRateSweep() throws IOException {
+    return runSpinRateSweep(List.of(new StrategyConfig(
+        "CONSTRAINED_SOLVEPNP",
+        "CONSTRAINED_SOLVEPNP,LOWEST_AMBIGUITY",
+        false)));
+  }
+
+  private List<SpinSweepResult> runSingleStrategySpinRateSweep() throws IOException {
+    return runSpinRateSweep(STRATEGIES);
+  }
+
+  private List<SpinSweepResult> runSpinRateSweep(List<StrategyConfig> strategies) throws IOException {
+    Assumptions.assumeTrue(halReady, "HAL/simulation unavailable in this environment");
+    Assumptions.assumeTrue(container != null, "RobotContainer failed to initialize");
+
+    List<SpinSweepResult> results = new ArrayList<>();
+    for (double angularRateRadPerSec : CONSTRAINED_SPIN_RATE_SWEEP_RAD_PER_SEC) {
+      for (DynamicScenario scenario : List.of(
+          leftSpinScenario(angularRateRadPerSec),
+          rightSpinScenario(angularRateRadPerSec))) {
+        for (StrategyConfig strategy : strategies) {
+          var summary = runScenarioForStrategy(scenario, strategy);
+          System.out.println(
+              VisionStrategyComparisonSupport.formatSummaryLine(
+                  "[VisionSpinSweep]",
+                  scenario.name(),
+                  summary));
+          results.add(new SpinSweepResult(scenario.name(), angularRateRadPerSec, summary));
+        }
+      }
+    }
+    emitSpinSweepSummary(results);
+    return results;
+  }
+
+  private void emitSpinSweepSummary(List<SpinSweepResult> results) {
+    Map<String, List<SpinSweepResult>> byScenario = new LinkedHashMap<>();
+    for (SpinSweepResult result : results) {
+      byScenario.computeIfAbsent(result.scenarioName(), ignored -> new ArrayList<>()).add(result);
+    }
+
+    for (Map.Entry<String, List<SpinSweepResult>> entry : byScenario.entrySet()) {
+      List<VisionStrategyComparisonSupport.StrategySummary> summaries = entry.getValue().stream()
+          .map(SpinSweepResult::summary)
+          .toList();
+      List<VisionStrategyComparisonSupport.RankedStrategy> ranked = VisionStrategyComparisonSupport.rankStrategies(
+          summaries,
+          MAX_EXCESS_JUMP_M,
+          MAX_CATASTROPHIC_OUTLIERS,
+          MIN_VISION_COVERAGE);
+      if (ranked.isEmpty()) {
+        continue;
+      }
+
+      double angularRateRadPerSec = entry.getValue().get(0).angularRateRadPerSec();
+      VisionStrategyComparisonSupport.RankedStrategy winner = ranked.get(0);
+      String runnerUp = ranked.size() > 1 ? ranked.get(1).strategyName() : "NONE";
+
+      System.out.printf(
+          Locale.US,
+          "[VisionSpinSweepSummary]|%s|rate=%.2f|winner=%s|runnerUp=%s|winnerCoverage=%.3f|winnerMeanVisDev=%.4f|winnerMaxExcessJump=%.4f%n",
+          entry.getKey(),
+          angularRateRadPerSec,
+          winner.strategyName(),
+          runnerUp,
+          winner.summary().visionCoverageRatio(),
+          winner.summary().meanVisionDeviationMeters(),
+          winner.summary().maxOdomJumpMeters());
+    }
   }
 
   private BakeoffResult runBakeoffWithHybrid(DynamicScenario scenario) throws IOException {
@@ -284,7 +412,7 @@ class VisionDynamicStrategyBakeoffTest {
           List<String> csv = new ArrayList<>();
           csv.add(
               "cycle,phase,truthX,truthY,truthYawDeg,odomX,odomY,odomYawDeg,visionX,visionY,visionYawDeg,"
-                  + "odomJump,expectedJump,excessJump,visionDeviation,hasVision,strategy");
+                + "odomJump,expectedJump,excessJump,visionDeviation,hasVision,visionTagIds,strategy");
 
           GroundTruthState truthState = new GroundTruthState(scenario.startPose(), true);
           Pose2d previousOdom = scenario.startPose();
@@ -293,6 +421,7 @@ class VisionDynamicStrategyBakeoffTest {
           int visionAcceptedCycles = 0;
           double maxVisionDeviation = 0.0;
           double sumVisionDeviation = 0.0;
+            Set<String> acceptedTagSignatures = new LinkedHashSet<>();
 
           int totalCycles = WARMUP_CYCLES + MEASURE_CYCLES;
           for (int cycle = 0; cycle < totalCycles; cycle++) {
@@ -316,6 +445,7 @@ class VisionDynamicStrategyBakeoffTest {
             double odomJump = odom.getTranslation().getDistance(previousOdom.getTranslation());
             double excessJump = Math.max(0.0, odomJump - motionStep.expectedJumpMeters());
             boolean measuring = cycle >= WARMUP_CYCLES;
+            String visionTagIds = vis.map(v -> formatTagIds(v.tagIDs())).orElse("-");
 
             double visionDeviation = Double.NaN;
             if (vis.isPresent()) {
@@ -324,6 +454,7 @@ class VisionDynamicStrategyBakeoffTest {
                 visionAcceptedCycles++;
                 sumVisionDeviation += visionDeviation;
                 maxVisionDeviation = Math.max(maxVisionDeviation, visionDeviation);
+                acceptedTagSignatures.add(visionTagIds);
               }
             }
 
@@ -336,7 +467,7 @@ class VisionDynamicStrategyBakeoffTest {
 
             csv.add(
                 String.format(
-                    "%d,%s,%.4f,%.4f,%.2f,%.4f,%.4f,%.2f,%.4f,%.4f,%.2f,%.4f,%.4f,%.4f,%.4f,%b,%s",
+                  "%d,%s,%.4f,%.4f,%.2f,%.4f,%.4f,%.2f,%.4f,%.4f,%.2f,%.4f,%.4f,%.4f,%.4f,%b,%s,%s",
                     cycle,
                     measuring ? "measure" : "warmup",
                     truthState.pose().getX(),
@@ -353,6 +484,7 @@ class VisionDynamicStrategyBakeoffTest {
                     excessJump,
                     visionDeviation,
                     vis.isPresent(),
+                    visionTagIds,
                     strategy.name()));
 
             previousOdom = odom;
@@ -376,19 +508,25 @@ class VisionDynamicStrategyBakeoffTest {
           System.out.println(
               VisionStrategyComparisonSupport.formatSummaryLine(
                   "[VisionDynamic]", scenario.name(), summary));
+            System.out.printf(
+              "[VisionDynamicTags]|%s|%s acceptedTags=%s%n",
+              scenario.name(),
+              strategy.name(),
+              acceptedTagSignatures.isEmpty() ? "-" : String.join(";", acceptedTagSignatures));
           return summary;
         });
   }
 
   private MotionStep advanceGroundTruth(DynamicScenario scenario, GroundTruthState current) {
-    Rotation2d nextHeading = current.pose().getRotation().plus(Rotation2d.fromRadians(SPIN_RATE_RAD_PER_SEC * DT));
+    Rotation2d nextHeading = current.pose().getRotation()
+        .plus(Rotation2d.fromRadians(scenario.angularRateRadPerSec() * DT));
     if (!scenario.shuttle()) {
       return new MotionStep(
           new GroundTruthState(
               new Pose2d(current.pose().getTranslation(), nextHeading), current.movingTowardLow()),
           0.0,
           0.0,
-          SPIN_RATE_RAD_PER_SEC,
+          scenario.angularRateRadPerSec(),
           0.0);
     }
 
@@ -408,7 +546,7 @@ class VisionDynamicStrategyBakeoffTest {
         new GroundTruthState(nextPose, nextMovingTowardLow),
         0.0,
         direction * SHUTTLE_SPEED_METERS_PER_SEC,
-        SPIN_RATE_RAD_PER_SEC,
+      scenario.angularRateRadPerSec(),
         expectedJump);
   }
 
@@ -443,5 +581,20 @@ class VisionDynamicStrategyBakeoffTest {
     Path dir = Path.of("build", "vision-stability");
     Files.createDirectories(dir);
     Files.write(dir.resolve(name), lines);
+  }
+
+  private static String formatTagIds(int[] tagIds) {
+    if (tagIds == null || tagIds.length == 0) {
+      return "-";
+    }
+
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < tagIds.length; i++) {
+      if (i > 0) {
+        builder.append('|');
+      }
+      builder.append(tagIds[i]);
+    }
+    return builder.toString();
   }
 }

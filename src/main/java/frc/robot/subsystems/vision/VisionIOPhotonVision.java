@@ -6,7 +6,9 @@ import static frc.robot.util.constants.VisionConstants.CONSTRAINED_MAX_ANGULAR_R
 import static frc.robot.util.constants.VisionConstants.ENABLE_CONSTRAINED_FALLBACK;
 import static frc.robot.util.constants.VisionConstants.MAX_TAG_DISTANCE;
 import static frc.robot.util.constants.VisionConstants.PHOTON_POSE_STRATEGY_ORDER;
+import static frc.robot.util.constants.VisionConstants.TRIG_MAX_ANGULAR_RATE_RAD_PER_SEC;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -143,9 +145,11 @@ public class VisionIOPhotonVision implements VisionIO {
           break;
       }
       if (estimate.isPresent()) {
+        DogLog.log("Vision/ActivePoseStrategy", strategy.name());
         return estimate;
       }
     }
+    DogLog.log("Vision/ActivePoseStrategy", "NONE");
     return Optional.empty();
   }
 
@@ -162,7 +166,38 @@ public class VisionIOPhotonVision implements VisionIO {
     double linearSpeedMetersPerSecond = headingProvider == null
         ? 0.0
         : headingProvider.getLinearSpeedMetersPerSecond();
+    double angularRateRadPerSec = headingProvider == null
+        ? 0.0
+        : Math.abs(headingProvider.getAngularRateRadPerSec());
     int visibleTargetCount = result.getTargets().size();
+
+    DogLog.log("Vision/TargetCount", visibleTargetCount);
+
+    return hybridStrategyOrderForTest(
+        visibleTargetCount,
+        linearSpeedMetersPerSecond,
+        angularRateRadPerSec);
+  }
+
+  static PoseStrategy[] hybridStrategyOrderForTest(
+      int visibleTargetCount,
+      double linearSpeedMetersPerSecond,
+      double angularRateRadPerSec) {
+    if (angularRateRadPerSec > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
+      if (visibleTargetCount >= 2) {
+        return new PoseStrategy[] {
+            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+            PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+            PoseStrategy.LOWEST_AMBIGUITY
+        };
+      }
+
+      return new PoseStrategy[] {
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.LOWEST_AMBIGUITY
+      };
+    }
 
     if (visibleTargetCount >= 2) {
       return new PoseStrategy[] {
@@ -195,7 +230,7 @@ public class VisionIOPhotonVision implements VisionIO {
       return Optional.empty();
     }
 
-    if (Math.abs(headingProvider.getAngularRateRadPerSec()) > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
+    if (Math.abs(headingProvider.getAngularRateRadPerSec()) > TRIG_MAX_ANGULAR_RATE_RAD_PER_SEC) {
       return Optional.empty();
     }
 

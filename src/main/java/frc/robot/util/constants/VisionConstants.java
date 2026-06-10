@@ -110,7 +110,13 @@ public final class VisionConstants {
    * latency mismatch can
    * induce drift.
    */
-  public static final double CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC = 4.5;
+    public static final double CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC = 0.5;
+
+    /**
+     * Trig solve remains usable deeper into rotation than constrained solve, so it
+     * gets a separate cutoff.
+     */
+    public static final double TRIG_MAX_ANGULAR_RATE_RAD_PER_SEC = 1.0;
 
   /**
    * Weight on heading error in constrained solve. Higher values trust heading
