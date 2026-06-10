@@ -5,6 +5,7 @@ import static frc.robot.util.constants.VisionConstants.CONSTRAINED_HEADING_SCALE
 import static frc.robot.util.constants.VisionConstants.CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC;
 import static frc.robot.util.constants.VisionConstants.ENABLE_CONSTRAINED_FALLBACK;
 import static frc.robot.util.constants.VisionConstants.MAX_TAG_DISTANCE;
+import static frc.robot.util.constants.VisionConstants.PHOTON_POSE_STRATEGY_ORDER;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -20,6 +21,7 @@ import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -29,10 +31,12 @@ public class VisionIOPhotonVision implements VisionIO {
   protected final PhotonPoseEstimator poseEstimator;
   private VisionHeadingProvider headingProvider;
 
-  private static final TargetObservation NO_TARGET =
-      new TargetObservation(new Rotation2d(), new Rotation2d());
+  private static final TargetObservation NO_TARGET = new TargetObservation(new Rotation2d(), new Rotation2d());
 
   private static final int MAX_RESULTS_PER_UPDATE = 2;
+  private static final String STRATEGY_MODE_PROPERTY = "vision.photon.strategyMode";
+  private static final String HYBRID_STRATEGY_MODE = "HYBRID";
+  private static final double HYBRID_TRANSLATION_SPEED_THRESHOLD_METERS_PER_SECOND = 0.5;
 
   public interface VisionHeadingProvider {
     Optional<Rotation2d> getHeadingAtTimestamp(double fpgaTimestampSeconds);
@@ -40,6 +44,8 @@ public class VisionIOPhotonVision implements VisionIO {
     Optional<Pose3d> getSeedPoseAtTimestamp(double fpgaTimestampSeconds);
 
     double getAngularRateRadPerSec();
+
+    double getLinearSpeedMetersPerSecond();
   }
 
   // Pre-allocated reusable collections keep per-loop GC pressure low on the
@@ -110,18 +116,128 @@ public class VisionIOPhotonVision implements VisionIO {
       return;
     }
 
-    Optional<EstimatedRobotPose> visionEst = poseEstimator.estimateCoprocMultiTagPose(result);
-
-    if (visionEst.isEmpty()) {
-      visionEst = estimateConstrainedFallbackPose(result);
-    }
-
-    if (visionEst.isEmpty()) {
-      visionEst = poseEstimator.estimateLowestAmbiguityPose(result);
-    }
+    Optional<EstimatedRobotPose> visionEst = estimateWithConfiguredStrategies(result);
 
     visionEst.ifPresent(
         estimatedPose -> addPoseObservation(estimatedPose, estimatedPose.targetsUsed));
+  }
+
+  private Optional<EstimatedRobotPose> estimateWithConfiguredStrategies(PhotonPipelineResult result) {
+    for (PoseStrategy strategy : resolveStrategyOrder(result)) {
+      Optional<EstimatedRobotPose> estimate;
+      switch (strategy) {
+        case MULTI_TAG_PNP_ON_COPROCESSOR:
+          estimate = poseEstimator.estimateCoprocMultiTagPose(result);
+          break;
+        case CONSTRAINED_SOLVEPNP:
+          estimate = estimateConstrainedFallbackPose(result);
+          break;
+        case PNP_DISTANCE_TRIG_SOLVE:
+          estimate = estimatePnpDistanceTrigSolvePose(result);
+          break;
+        case LOWEST_AMBIGUITY:
+          estimate = poseEstimator.estimateLowestAmbiguityPose(result);
+          break;
+        default:
+          estimate = Optional.empty();
+          break;
+      }
+      if (estimate.isPresent()) {
+        return estimate;
+      }
+    }
+    return Optional.empty();
+  }
+
+  private PoseStrategy[] resolveStrategyOrder(PhotonPipelineResult result) {
+    if (HYBRID_STRATEGY_MODE.equalsIgnoreCase(System.getProperty(STRATEGY_MODE_PROPERTY, ""))) {
+      return resolveHybridStrategyOrder(result);
+    }
+
+    return parseStrategyOrder(
+        System.getProperty("vision.photon.strategyOrder", PHOTON_POSE_STRATEGY_ORDER));
+  }
+
+  private PoseStrategy[] resolveHybridStrategyOrder(PhotonPipelineResult result) {
+    double linearSpeedMetersPerSecond = headingProvider == null
+        ? 0.0
+        : headingProvider.getLinearSpeedMetersPerSecond();
+    int visibleTargetCount = result.getTargets().size();
+
+    if (visibleTargetCount >= 2) {
+      return new PoseStrategy[] {
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.CONSTRAINED_SOLVEPNP,
+          PoseStrategy.LOWEST_AMBIGUITY
+      };
+    }
+
+    if (linearSpeedMetersPerSecond > HYBRID_TRANSLATION_SPEED_THRESHOLD_METERS_PER_SECOND) {
+      return new PoseStrategy[] {
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.CONSTRAINED_SOLVEPNP,
+          PoseStrategy.LOWEST_AMBIGUITY
+      };
+    }
+
+    return new PoseStrategy[] {
+        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+        PoseStrategy.CONSTRAINED_SOLVEPNP,
+        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        PoseStrategy.LOWEST_AMBIGUITY
+    };
+  }
+
+  private Optional<EstimatedRobotPose> estimatePnpDistanceTrigSolvePose(PhotonPipelineResult result) {
+    if (headingProvider == null) {
+      return Optional.empty();
+    }
+
+    if (Math.abs(headingProvider.getAngularRateRadPerSec()) > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
+      return Optional.empty();
+    }
+
+    Optional<Rotation2d> headingSample = headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
+    if (headingSample.isEmpty()) {
+      return Optional.empty();
+    }
+
+    poseEstimator.addHeadingData(result.getTimestampSeconds(), headingSample.get());
+    return poseEstimator.estimatePnpDistanceTrigSolvePose(result);
+  }
+
+  private static PoseStrategy[] parseStrategyOrder(String rawOrder) {
+    List<PoseStrategy> parsed = new ArrayList<>();
+    for (String token : rawOrder.split(",")) {
+      String candidate = token.trim();
+      if (candidate.isEmpty()) {
+        continue;
+      }
+      try {
+        PoseStrategy strategy = PoseStrategy.valueOf(candidate);
+        if (strategy == PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
+            || strategy == PoseStrategy.CONSTRAINED_SOLVEPNP
+            || strategy == PoseStrategy.PNP_DISTANCE_TRIG_SOLVE
+            || strategy == PoseStrategy.LOWEST_AMBIGUITY) {
+          parsed.add(strategy);
+        }
+      } catch (IllegalArgumentException ignored) {
+        // Ignore unknown strategy names from the property string.
+      }
+    }
+
+    if (parsed.isEmpty()) {
+      return new PoseStrategy[] {
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.CONSTRAINED_SOLVEPNP,
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.LOWEST_AMBIGUITY
+      };
+    }
+
+    return parsed.toArray(new PoseStrategy[0]);
   }
 
   private Optional<EstimatedRobotPose> estimateConstrainedFallbackPose(
@@ -130,13 +246,11 @@ public class VisionIOPhotonVision implements VisionIO {
       return Optional.empty();
     }
 
-    if (Math.abs(headingProvider.getAngularRateRadPerSec())
-        > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
+    if (Math.abs(headingProvider.getAngularRateRadPerSec()) > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
       return Optional.empty();
     }
 
-    Optional<Rotation2d> headingSample =
-        headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
+    Optional<Rotation2d> headingSample = headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
     if (headingSample.isEmpty()) {
       return Optional.empty();
     }
