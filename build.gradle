@@ -91,6 +91,14 @@ dependencies {
 test {
     useJUnitPlatform()
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+    def strategyOrder = System.getProperty('vision.photon.strategyOrder')
+    if (strategyOrder != null) {
+        systemProperty 'vision.photon.strategyOrder', strategyOrder
+    }
+    def applyCoplanarPenalty = System.getProperty('vision.applyCoplanarPenalty')
+    if (applyCoplanarPenalty != null) {
+        systemProperty 'vision.applyCoplanarPenalty', applyCoplanarPenalty
+    }
 }
 
 // Simulation configuration (e.g. environment variables).
@@ -122,8 +130,19 @@ tasks.register('visionStabilityTest', Test) {
     group = 'verification'
     description = 'Runs the vision/odometry stability regression tests (frc.robot.subsystems.vision.*).'
     useJUnitPlatform()
+    // PathPlanner AutoBuilder is process-global state; fork each class to avoid
+    // cross-class contamination in integration-style sim tests.
+    forkEvery = 1
     filter {
         includeTestsMatching 'frc.robot.subsystems.vision.*'
+    }
+    def strategyOrder = System.getProperty('vision.photon.strategyOrder')
+    if (strategyOrder != null) {
+        systemProperty 'vision.photon.strategyOrder', strategyOrder
+    }
+    def applyCoplanarPenalty = System.getProperty('vision.applyCoplanarPenalty')
+    if (applyCoplanarPenalty != null) {
+        systemProperty 'vision.applyCoplanarPenalty', applyCoplanarPenalty
     }
     testLogging {
         showStandardStreams = true
