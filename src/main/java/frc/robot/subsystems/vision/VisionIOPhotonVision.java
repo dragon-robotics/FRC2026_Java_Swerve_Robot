@@ -33,8 +33,7 @@ public class VisionIOPhotonVision implements VisionIO {
   protected final PhotonPoseEstimator poseEstimator;
   private VisionHeadingProvider headingProvider;
 
-  private static final TargetObservation NO_TARGET =
-      new TargetObservation(new Rotation2d(), new Rotation2d());
+  private static final TargetObservation NO_TARGET = new TargetObservation(new Rotation2d(), new Rotation2d());
 
   private static final int MAX_RESULTS_PER_UPDATE = 2;
   private static final String STRATEGY_MODE_PROPERTY = "vision.photon.strategyMode";
@@ -56,6 +55,7 @@ public class VisionIOPhotonVision implements VisionIO {
   private final List<PoseObservation> poseObservations = new ArrayList<>(4);
   private int[] tagIdBuffer = new int[16];
   private int tagIdCount = 0;
+  private boolean preferMultitagForDisabledInit = true;
 
   private static final PoseObservation[] EMPTY_POSE_OBSERVATIONS = new PoseObservation[0];
   private static final int[] EMPTY_TAG_IDS = new int[0];
@@ -73,6 +73,10 @@ public class VisionIOPhotonVision implements VisionIO {
 
   public void setHeadingProvider(VisionHeadingProvider headingProvider) {
     this.headingProvider = headingProvider;
+  }
+
+  public void markInitialVisionPoseSeeded() {
+    preferMultitagForDisabledInit = false;
   }
 
   @Override
@@ -148,6 +152,10 @@ public class VisionIOPhotonVision implements VisionIO {
       }
       if (estimate.isPresent()) {
         DogLog.log("Vision/ActivePoseStrategy", strategy.name());
+        DogLog.log("Vision/" + camera.getName() + "/ActivePoseStrategy", strategy.name());
+        int[] observedTagIds = toObservedTagIds(estimate.get().targetsUsed);
+        DogLog.log("Vision/" + camera.getName() + "/ActivePoseTagIDs", observedTagIds);
+        estimate = estimate.map(pose -> withStrategyType(pose, strategy));
         return estimate;
       }
     }
@@ -155,7 +163,48 @@ public class VisionIOPhotonVision implements VisionIO {
     return Optional.empty();
   }
 
+  private static int[] toObservedTagIds(List<PhotonTrackedTarget> targets) {
+    int[] observedTagIds = new int[targets.size()];
+    int observedTagCount = 0;
+    for (PhotonTrackedTarget target : targets) {
+      int tagId = target.getFiducialId();
+      if (tagId <= 0) {
+        continue;
+      }
+      observedTagIds[observedTagCount++] = tagId;
+    }
+    return observedTagCount == observedTagIds.length
+        ? observedTagIds
+        : Arrays.copyOf(observedTagIds, observedTagCount);
+  }
+
+  private static EstimatedRobotPose withStrategyType(
+      EstimatedRobotPose estimate, PoseStrategy strategy) {
+    VisionIO.PoseObservationType observationType = strategy == PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
+        ? VisionIO.PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR
+        : VisionIO.PoseObservationType.PHOTONVISION;
+
+    return new EstimatedRobotPose(
+        estimate.estimatedPose,
+        estimate.timestampSeconds,
+        estimate.targetsUsed,
+        observationType == VisionIO.PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR
+            ? PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
+            : estimate.strategy);
+  }
+
   private PoseStrategy[] resolveStrategyOrder(PhotonPipelineResult result) {
+    if (preferMultitagForDisabledInit) {
+      // Startup localization must prioritize coprocessor multi-tag to avoid
+      // gyro-seeded bias.
+      return new PoseStrategy[] {
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.CONSTRAINED_SOLVEPNP,
+          PoseStrategy.LOWEST_AMBIGUITY
+      };
+    }
+
     if (HYBRID_STRATEGY_MODE.equalsIgnoreCase(System.getProperty(STRATEGY_MODE_PROPERTY, ""))) {
       return resolveHybridStrategyOrder(result);
     }
@@ -165,10 +214,8 @@ public class VisionIOPhotonVision implements VisionIO {
   }
 
   private PoseStrategy[] resolveHybridStrategyOrder(PhotonPipelineResult result) {
-    double linearSpeedMetersPerSecond =
-        headingProvider == null ? 0.0 : headingProvider.getLinearSpeedMetersPerSecond();
-    double angularRateRadPerSec =
-        headingProvider == null ? 0.0 : Math.abs(headingProvider.getAngularRateRadPerSec());
+    double linearSpeedMetersPerSecond = headingProvider == null ? 0.0 : headingProvider.getLinearSpeedMetersPerSecond();
+    double angularRateRadPerSec = headingProvider == null ? 0.0 : Math.abs(headingProvider.getAngularRateRadPerSec());
     int visibleTargetCount = result.getTargets().size();
 
     DogLog.log("Vision/TargetCount", visibleTargetCount);
@@ -182,42 +229,42 @@ public class VisionIOPhotonVision implements VisionIO {
     if (angularRateRadPerSec > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
       if (visibleTargetCount >= 2) {
         return new PoseStrategy[] {
-          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-          PoseStrategy.LOWEST_AMBIGUITY
+            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+            PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+            PoseStrategy.LOWEST_AMBIGUITY
         };
       }
 
       return new PoseStrategy[] {
-        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        PoseStrategy.LOWEST_AMBIGUITY
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.LOWEST_AMBIGUITY
       };
     }
 
     if (visibleTargetCount >= 2) {
       return new PoseStrategy[] {
-        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-        PoseStrategy.CONSTRAINED_SOLVEPNP,
-        PoseStrategy.LOWEST_AMBIGUITY
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.CONSTRAINED_SOLVEPNP,
+          PoseStrategy.LOWEST_AMBIGUITY
       };
     }
 
     if (linearSpeedMetersPerSecond > HYBRID_TRANSLATION_SPEED_THRESHOLD_METERS_PER_SECOND) {
       return new PoseStrategy[] {
-        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        PoseStrategy.CONSTRAINED_SOLVEPNP,
-        PoseStrategy.LOWEST_AMBIGUITY
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.CONSTRAINED_SOLVEPNP,
+          PoseStrategy.LOWEST_AMBIGUITY
       };
     }
 
     return new PoseStrategy[] {
-      PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-      PoseStrategy.CONSTRAINED_SOLVEPNP,
-      PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-      PoseStrategy.LOWEST_AMBIGUITY
+        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+        PoseStrategy.CONSTRAINED_SOLVEPNP,
+        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        PoseStrategy.LOWEST_AMBIGUITY
     };
   }
 
@@ -231,8 +278,7 @@ public class VisionIOPhotonVision implements VisionIO {
       return Optional.empty();
     }
 
-    Optional<Rotation2d> headingSample =
-        headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
+    Optional<Rotation2d> headingSample = headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
     if (headingSample.isEmpty()) {
       return Optional.empty();
     }
@@ -263,10 +309,10 @@ public class VisionIOPhotonVision implements VisionIO {
 
     if (parsed.isEmpty()) {
       return new PoseStrategy[] {
-        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        PoseStrategy.CONSTRAINED_SOLVEPNP,
-        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-        PoseStrategy.LOWEST_AMBIGUITY
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.CONSTRAINED_SOLVEPNP,
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.LOWEST_AMBIGUITY
       };
     }
 
@@ -279,13 +325,11 @@ public class VisionIOPhotonVision implements VisionIO {
       return Optional.empty();
     }
 
-    if (Math.abs(headingProvider.getAngularRateRadPerSec())
-        > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
+    if (Math.abs(headingProvider.getAngularRateRadPerSec()) > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
       return Optional.empty();
     }
 
-    Optional<Rotation2d> headingSample =
-        headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
+    Optional<Rotation2d> headingSample = headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
     if (headingSample.isEmpty()) {
       return Optional.empty();
     }
@@ -360,6 +404,10 @@ public class VisionIOPhotonVision implements VisionIO {
       observedTagIds = Arrays.copyOf(observedTagIds, observedTagCount);
     }
 
+    VisionIO.PoseObservationType observationType = estimatedPose.strategy == PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
+        ? VisionIO.PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR
+        : VisionIO.PoseObservationType.PHOTONVISION;
+
     poseObservations.add(
         new PoseObservation(
             estimatedPose.timestampSeconds,
@@ -367,7 +415,7 @@ public class VisionIOPhotonVision implements VisionIO {
             totalAmbiguity / observedTagCount,
             observedTagCount,
             distanceSampleCount == 0 ? 0.0 : totalDistance / distanceSampleCount,
-            PoseObservationType.PHOTONVISION,
+            observationType,
             observedTagIds));
   }
 
