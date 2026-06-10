@@ -6,8 +6,7 @@ import java.util.Locale;
 
 final class VisionStrategyComparisonSupport {
 
-  private VisionStrategyComparisonSupport() {
-  }
+  private VisionStrategyComparisonSupport() {}
 
   record StrategySummary(
       String strategyName,
@@ -40,8 +39,7 @@ final class VisionStrategyComparisonSupport {
     }
   }
 
-  record FullBakeoffResult(List<ScenarioResult> scenarioResults, List<String> offlineHybridRules) {
-  }
+  record FullBakeoffResult(List<ScenarioResult> scenarioResults, List<String> offlineHybridRules) {}
 
   static List<RankedStrategy> rankStrategies(
       List<StrategySummary> summaries,
@@ -50,11 +48,11 @@ final class VisionStrategyComparisonSupport {
       double minCoverageRatio) {
     return summaries.stream()
         .map(
-            summary -> new RankedStrategy(
-                summary, summary.passesHardGates(maxJumpMeters, maxOutliers, minCoverageRatio)))
+            summary ->
+                new RankedStrategy(
+                    summary, summary.passesHardGates(maxJumpMeters, maxOutliers, minCoverageRatio)))
         .sorted(
-            Comparator
-                .comparing(RankedStrategy::passesHardGates)
+            Comparator.comparing(RankedStrategy::passesHardGates)
                 .reversed()
                 .thenComparing(strategy -> strategy.summary.meanVisionDeviationMeters())
                 .thenComparing(strategy -> strategy.summary.maxVisionDeviationMeters())
@@ -64,15 +62,19 @@ final class VisionStrategyComparisonSupport {
   }
 
   static List<String> deriveOfflineHybridRules(List<ScenarioResult> results) {
-    boolean constrainedWinsAny = results.stream()
-        .anyMatch(result -> result.bestStrategy().equals("CONSTRAINED_SOLVEPNP"));
-    boolean multitagWinsAny = results.stream()
-        .anyMatch(result -> result.bestStrategy().equals("MULTI_TAG_PNP_ON_COPROCESSOR"));
-    boolean trigWinsAny = results.stream().anyMatch(result -> result.bestStrategy().equals("PNP_DISTANCE_TRIG_SOLVE"));
+    boolean constrainedWinsAny =
+        results.stream().anyMatch(result -> result.bestStrategy().equals("CONSTRAINED_SOLVEPNP"));
+    boolean multitagWinsAny =
+        results.stream()
+            .anyMatch(result -> result.bestStrategy().equals("MULTI_TAG_PNP_ON_COPROCESSOR"));
+    boolean trigWinsAny =
+        results.stream()
+            .anyMatch(result -> result.bestStrategy().equals("PNP_DISTANCE_TRIG_SOLVE"));
 
     var rules = new java.util.ArrayList<String>();
     if (constrainedWinsAny) {
-      rules.add("if angularRateRadPerSec is high or excess pose jump risk increases, prefer CONSTRAINED_SOLVEPNP");
+      rules.add(
+          "if angularRateRadPerSec is high or excess pose jump risk increases, prefer CONSTRAINED_SOLVEPNP");
     }
     if (multitagWinsAny) {
       rules.add(
@@ -83,7 +85,8 @@ final class VisionStrategyComparisonSupport {
           "if heading-conditioned solvers are unavailable and trig remains within hard gates, prefer PNP_DISTANCE_TRIG_SOLVE");
     }
     if (rules.isEmpty()) {
-      rules.add("no stable hybrid recommendation could be derived from the current bakeoff results");
+      rules.add(
+          "no stable hybrid recommendation could be derived from the current bakeoff results");
     }
     return rules;
   }

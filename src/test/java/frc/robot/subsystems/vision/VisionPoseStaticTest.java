@@ -28,40 +28,25 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * Full-sim vision pose estimation test: places the robot stationary at a fixed
- * field position
- * (X=4.407 m, Y=7.279 m, yaw=90°) and records the vision-accepted poses over
- * the duration of a
- * 5-second auto phase, asserting that vision fires and that odometry does not
- * drift for a
+ * Full-sim vision pose estimation test: places the robot stationary at a fixed field position
+ * (X=4.407 m, Y=7.279 m, yaw=90°) and records the vision-accepted poses over the duration of a
+ * 5-second auto phase, asserting that vision fires and that odometry does not drift for a
  * stationary robot.
  *
- * <p>
- * <b>Purpose:</b> measure the accuracy and consistency of pose estimation from
- * this specific
- * field location. The CSV output written to {@code build/vision-stability/} can
- * be loaded into
+ * <p><b>Purpose:</b> measure the accuracy and consistency of pose estimation from this specific
+ * field location. The CSV output written to {@code build/vision-stability/} can be loaded into
  * AdvantageScope or a spreadsheet for offline analysis.
  *
- * <p>
- * <b>Important caveat:</b> in simulation the PhotonVision sim generates
- * AprilTag detections FROM
- * the drivetrain's own simulated pose, so accepted vision poses are
- * self-referential by
- * construction and will closely track the odometry pose. The test's value is
- * confirming that cameras
- * can detect tags from this location and that the vision pipeline accepts and
- * fuses the measurements
- * without unexpected rejection.
+ * <p><b>Important caveat:</b> in simulation the PhotonVision sim generates AprilTag detections FROM
+ * the drivetrain's own simulated pose, so accepted vision poses are self-referential by
+ * construction and will closely track the odometry pose. The test's value is confirming that
+ * cameras can detect tags from this location and that the vision pipeline accepts and fuses the
+ * measurements without unexpected rejection.
  *
- * <p>
- * Tagged {@code sim} and guarded with JUnit assumptions: if the headless
- * simulation cannot
- * initialize in this environment (native libraries, HAL), the test is skipped
- * rather than failed.
+ * <p>Tagged {@code sim} and guarded with JUnit assumptions: if the headless simulation cannot
+ * initialize in this environment (native libraries, HAL), the test is skipped rather than failed.
  *
- * <p>
- * Run with: {@code ./gradlew visionStabilityTest}
+ * <p>Run with: {@code ./gradlew visionStabilityTest}
  */
 @Tag("sim")
 class VisionPoseStaticTest {
@@ -144,8 +129,8 @@ class VisionPoseStaticTest {
         cyclesRun++;
 
         Pose2d odom = container.swerveSubsystem.getState().Pose;
-        Optional<VisionSubsystem.AcceptedObservationSnapshot> vision = container.visionSubsystem
-            .getLatestAcceptedObservationSnapshot();
+        Optional<VisionSubsystem.AcceptedObservationSnapshot> vision =
+            container.visionSubsystem.getLatestAcceptedObservationSnapshot();
 
         double jump = odom.getTranslation().getDistance(prev.getTranslation());
         if (cycle >= WARMUP_CYCLES) {
@@ -211,12 +196,13 @@ class VisionPoseStaticTest {
             + " (likely no visible AprilTags from this location/orientation in headless sim)");
     assertTrue(
         observedMaxJump <= MAX_SINGLE_CYCLE_JUMP_M,
-        () -> "Max single-cycle odometry jump "
-            + observedMaxJump
-            + " m exceeded "
-            + MAX_SINGLE_CYCLE_JUMP_M
-            + " m for a stationary robot."
-            + " See build/vision-stability/vision-pose-static-test.csv");
+        () ->
+            "Max single-cycle odometry jump "
+                + observedMaxJump
+                + " m exceeded "
+                + MAX_SINGLE_CYCLE_JUMP_M
+                + " m for a stationary robot."
+                + " See build/vision-stability/vision-pose-static-test.csv");
   }
 
   private static void writeCsv(String name, List<String> lines) throws IOException {
