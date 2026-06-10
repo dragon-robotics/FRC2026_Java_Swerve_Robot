@@ -1,7 +1,18 @@
 # Vision Strategy Bakeoff and Offline Hybrid Derivation — Design
 
 Date: 2026-06-09
-Status: Draft approved conversationally; awaiting written spec review
+Status: Approved
+
+## Review Record
+
+- Self-review completed on 2026-06-09.
+- Scope, goals, non-goals, and hard-gate ranking policy are internally consistent.
+- Dynamic scenario definitions match implementation constraints:
+  - left/right spin at 0.75 rotations/sec,
+  - shuttle motion between y=5.5 and y=2.5,
+  - shuttle speed at 0.8 * kSpeedAt12Volts.
+- Metrics and output artifacts are sufficient for offline hybrid-rule derivation.
+- Approval received in chat on 2026-06-09 before implementation proceeded.
 
 ## Context
 
