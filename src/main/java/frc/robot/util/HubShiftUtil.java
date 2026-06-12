@@ -121,7 +121,7 @@ public class HubShiftUtil {
           && fieldTeleopTime <= 135
           && DriverStation.isFMSAttached()) {
         shiftTimerOffset += currentTime - fieldTeleopTime;
-        currentTime = timerValue + shiftTimerOffset;
+        currentTime = timerValue - shiftTimerOffset;
       }
       int currentShiftIndex = -1;
       for (int i = 0; i < shiftStartTimes.length; i++) {
