@@ -438,22 +438,29 @@ public class VisionSubsystem extends SubsystemBase {
   static Matrix<N3, N1> standardDeviations(
       PoseObservation observation, int cameraIndex, boolean aiming) {
     double tagCount = Math.max(observation.tagCount(), 1);
-    double distance = observation.averageTagDistance();
+    double rawDistance = observation.averageTagDistance();
+    // Guard against missing/invalid distance samples from the IO layer.
+    double distance = rawDistance > 0.0 ? rawDistance : MAX_AVG_TAG_DISTANCE_METERS;
     double factor = (distance * distance) / tagCount;
 
-    double cameraFactor = CAMERA_STDDEV_FACTORS[Math.min(cameraIndex, CAMERA_STDDEV_FACTORS.length - 1)];
+    double cameraFactor =
+        CAMERA_STDDEV_FACTORS[Math.min(cameraIndex, CAMERA_STDDEV_FACTORS.length - 1)];
     double aimFactor = aiming ? AIM_LINEAR_STDDEV_MULTIPLIER : 1.0;
     // Coplanar multi-tag observations have the same 180° flip ambiguity as
     // single-tag PnP.
     // Apply the single-tag std-dev penalty to prevent a wrong mirror solution from
     // being
     // trusted with full multi-tag confidence.
-    boolean coplanarPenaltyApplies = APPLY_COPLANAR_PENALTY && areTagsCoplanar(observation.tagIDs());
-    double singleTagFactor = (observation.tagCount() == 1 || coplanarPenaltyApplies)
-        ? SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER
-        : 1.0;
+    boolean coplanarPenaltyApplies =
+        APPLY_COPLANAR_PENALTY && areTagsCoplanar(observation.tagIDs());
+    double singleTagFactor =
+        (observation.tagCount() == 1 || coplanarPenaltyApplies)
+            ? SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER
+            : 1.0;
 
-    double linearStdDev = LINEAR_STDDEV_BASELINE * factor * cameraFactor * aimFactor * singleTagFactor;
+    double linearStdDev =
+        LINEAR_STDDEV_BASELINE * factor * cameraFactor * aimFactor * singleTagFactor;
+    linearStdDev = Math.max(linearStdDev, 1e-6);
 
     return VecBuilder.fill(linearStdDev, linearStdDev, HEADING_STDDEV_IGNORE);
   }
