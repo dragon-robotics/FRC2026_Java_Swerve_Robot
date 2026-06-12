@@ -11,9 +11,9 @@ import static frc.robot.util.constants.VisionConstants.CAMERA_STDDEV_FACTORS;
 import static frc.robot.util.constants.VisionConstants.COPLANAR_ANGLE_THRESHOLD_DEG;
 import static frc.robot.util.constants.VisionConstants.HEADING_STDDEV_IGNORE;
 import static frc.robot.util.constants.VisionConstants.LINEAR_STDDEV_BASELINE;
+import static frc.robot.util.constants.VisionConstants.MAX_ABS_TILT_DEGREES_FOR_VISION;
 import static frc.robot.util.constants.VisionConstants.MAX_AMBIGUITY;
 import static frc.robot.util.constants.VisionConstants.MAX_AVG_TAG_DISTANCE_METERS;
-import static frc.robot.util.constants.VisionConstants.MAX_ABS_TILT_DEGREES_FOR_VISION;
 import static frc.robot.util.constants.VisionConstants.MAX_POSE_DELTA_METERS;
 import static frc.robot.util.constants.VisionConstants.MAX_Z_ERROR;
 import static frc.robot.util.constants.VisionConstants.SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER;
@@ -104,6 +104,9 @@ public class VisionSubsystem extends SubsystemBase {
   private final VisionIO[] io;
   private final VisionIOInputs[] inputs;
   private final Alert[] disconnectedAlerts;
+  private final List<Pose3d> acceptedPoses = new ArrayList<>(16);
+  private final List<Pose3d> rejectedPoses = new ArrayList<>(16);
+  private final RawObservationLogBuffers[] rawObservationLogBuffers;
 
   /**
    * True while the robot is actively aiming/aligning to score — tightens
@@ -134,9 +137,11 @@ public class VisionSubsystem extends SubsystemBase {
 
     inputs = new VisionIOInputs[io.length];
     disconnectedAlerts = new Alert[io.length];
+    rawObservationLogBuffers = new RawObservationLogBuffers[io.length];
 
     for (int i = 0; i < io.length; i++) {
       inputs[i] = new VisionIOInputs();
+      rawObservationLogBuffers[i] = new RawObservationLogBuffers();
       disconnectedAlerts[i] = new Alert(
           "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
 
@@ -173,8 +178,8 @@ public class VisionSubsystem extends SubsystemBase {
   public void periodic() {
     DogLog.time("Perf/Vision");
 
-    List<Pose3d> acceptedPoses = new ArrayList<>();
-    List<Pose3d> rejectedPoses = new ArrayList<>();
+    acceptedPoses.clear();
+    rejectedPoses.clear();
 
     for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
       io[cameraIndex].updateInputs(inputs[cameraIndex]);
@@ -184,8 +189,10 @@ public class VisionSubsystem extends SubsystemBase {
 
       PoseObservation[] observations = inputs[cameraIndex].getPoseObservations();
 
-      // Raw pre-filter observation logging so real match logs can be replayed through the filter
+      // Raw pre-filter observation logging so real match logs can be replayed through
+      // the filter
       // offline (see VisionFilterStabilityTest).
+      logRawObservations(camKey, observations, rawObservationLogBuffers[cameraIndex]);
 
       for (PoseObservation observation : observations) {
         Optional<String> rejection = rejectionReason(observation);
@@ -253,8 +260,8 @@ public class VisionSubsystem extends SubsystemBase {
 
   /**
    * While disabled, initialize (or refresh) odometry from the latest accepted
-   * vision pose.
-   * This helps pre-match localization without requiring manual reseed.
+   * vision pose. This
+   * helps pre-match localization without requiring manual reseed.
    */
   private void maybeAutoReseedWhileDisabled() {
     boolean disabled = DriverStation.isDisabled();
@@ -272,9 +279,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     int tagCount = snapshot.get().tagIDs().length;
     if (tagCount < DISABLED_AUTO_RESEED_MIN_TAG_COUNT) {
-      DogLog.log(
-          "Vision/DisabledAutoReseed/RejectedReason",
-          "NEEDS_MULTITAG tagCount=" + tagCount);
+      DogLog.log("Vision/DisabledAutoReseed/RejectedReason", "NEEDS_MULTITAG tagCount=" + tagCount);
       wasDisabledLastLoop = true;
       return;
     }
@@ -313,7 +318,8 @@ public class VisionSubsystem extends SubsystemBase {
     }
   }
 
-  private void trackMultitagInitialization(PoseObservation observation, Pose2d pose2d, String cameraName) {
+  private void trackMultitagInitialization(
+      PoseObservation observation, Pose2d pose2d, String cameraName) {
     if (visionInitializationComplete) {
       return;
     }
@@ -333,7 +339,10 @@ public class VisionSubsystem extends SubsystemBase {
       translationDelta = pose2d.getTranslation().getDistance(lastStableMultitagPose.getTranslation());
       headingDeltaDeg = Math.abs(pose2d.getRotation().minus(lastStableMultitagPose.getRotation()).getDegrees());
       isStable = isStableMultitagStep(
-          observation.timestamp(), lastStableMultitagTimestamp, translationDelta, headingDeltaDeg);
+          observation.timestamp(),
+          lastStableMultitagTimestamp,
+          translationDelta,
+          headingDeltaDeg);
     }
 
     stableMultitagPoseCount = isStable ? (stableMultitagPoseCount + 1) : 1;
@@ -440,23 +449,19 @@ public class VisionSubsystem extends SubsystemBase {
     double distance = rawDistance > 0.0 ? rawDistance : MAX_AVG_TAG_DISTANCE_METERS;
     double factor = (distance * distance) / tagCount;
 
-    double cameraFactor =
-        CAMERA_STDDEV_FACTORS[Math.min(cameraIndex, CAMERA_STDDEV_FACTORS.length - 1)];
+    double cameraFactor = CAMERA_STDDEV_FACTORS[Math.min(cameraIndex, CAMERA_STDDEV_FACTORS.length - 1)];
     double aimFactor = aiming ? AIM_LINEAR_STDDEV_MULTIPLIER : 1.0;
     // Coplanar multi-tag observations have the same 180° flip ambiguity as
     // single-tag PnP.
     // Apply the single-tag std-dev penalty to prevent a wrong mirror solution from
     // being
     // trusted with full multi-tag confidence.
-    boolean coplanarPenaltyApplies =
-        APPLY_COPLANAR_PENALTY && areTagsCoplanar(observation.tagIDs());
-    double singleTagFactor =
-        (observation.tagCount() == 1 || coplanarPenaltyApplies)
-            ? SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER
-            : 1.0;
+    boolean coplanarPenaltyApplies = APPLY_COPLANAR_PENALTY && areTagsCoplanar(observation.tagIDs());
+    double singleTagFactor = (observation.tagCount() == 1 || coplanarPenaltyApplies)
+        ? SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER
+        : 1.0;
 
-    double linearStdDev =
-        LINEAR_STDDEV_BASELINE * factor * cameraFactor * aimFactor * singleTagFactor;
+    double linearStdDev = LINEAR_STDDEV_BASELINE * factor * cameraFactor * aimFactor * singleTagFactor;
     linearStdDev = Math.max(linearStdDev, 1e-6);
 
     return VecBuilder.fill(linearStdDev, linearStdDev, HEADING_STDDEV_IGNORE);
@@ -524,12 +529,17 @@ public class VisionSubsystem extends SubsystemBase {
    * behavior.
    */
   @SuppressWarnings("null") // DogLog null-annotation interop on Pose3d[] is benign.
-  private static void logRawObservations(String camKey, PoseObservation[] observations) {
-    Pose3d[] poses = new Pose3d[observations.length];
-    double[] timestamps = new double[observations.length];
-    double[] ambiguities = new double[observations.length];
-    double[] tagCounts = new double[observations.length];
-    double[] avgDistances = new double[observations.length];
+  private static void logRawObservations(
+      String camKey, PoseObservation[] observations, RawObservationLogBuffers buffers) {
+    int count = observations.length;
+    buffers.ensureCapacity(count);
+
+    Pose3d[] poses = buffers.poses;
+    double[] timestamps = buffers.timestamps;
+    double[] ambiguities = buffers.ambiguities;
+    double[] tagCounts = buffers.tagCounts;
+    double[] avgDistances = buffers.avgDistances;
+
     for (int i = 0; i < observations.length; i++) {
       poses[i] = observations[i].pose();
       timestamps[i] = observations[i].timestamp();
@@ -537,11 +547,33 @@ public class VisionSubsystem extends SubsystemBase {
       tagCounts[i] = observations[i].tagCount();
       avgDistances[i] = observations[i].averageTagDistance();
     }
+    DogLog.log(camKey + "/RawObs/Count", count);
     DogLog.log(camKey + "/RawObs/Poses", poses);
     DogLog.log(camKey + "/RawObs/Timestamp", timestamps);
     DogLog.log(camKey + "/RawObs/Ambiguity", ambiguities);
     DogLog.log(camKey + "/RawObs/TagCount", tagCounts);
     DogLog.log(camKey + "/RawObs/AvgDistance", avgDistances);
+  }
+
+  private static class RawObservationLogBuffers {
+    private Pose3d[] poses = new Pose3d[0];
+    private double[] timestamps = new double[0];
+    private double[] ambiguities = new double[0];
+    private double[] tagCounts = new double[0];
+    private double[] avgDistances = new double[0];
+
+    private void ensureCapacity(int count) {
+      if (poses.length >= count) {
+        return;
+      }
+
+      int newCapacity = Math.max(count, poses.length * 2 + 1);
+      poses = Arrays.copyOf(poses, newCapacity);
+      timestamps = Arrays.copyOf(timestamps, newCapacity);
+      ambiguities = Arrays.copyOf(ambiguities, newCapacity);
+      tagCounts = Arrays.copyOf(tagCounts, newCapacity);
+      avgDistances = Arrays.copyOf(avgDistances, newCapacity);
+    }
   }
 
   /**
@@ -562,7 +594,8 @@ public class VisionSubsystem extends SubsystemBase {
   /**
    * Operator-triggered recovery: snaps the drivetrain pose to the most recent
    * accepted vision pose.
-   * Note: the subsystem may also auto-reseed while disabled for pre-match localization.
+   * Note: the subsystem may also auto-reseed while disabled for pre-match
+   * localization.
    *
    * @return true if a recent accepted pose was available
    */
