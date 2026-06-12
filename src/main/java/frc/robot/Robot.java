@@ -4,6 +4,10 @@
 
 package frc.robot;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.List;
+
 import dev.doglog.DogLog;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -12,9 +16,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.io.SignalRegistry;
 import frc.robot.util.HubShiftUtil;
-import java.lang.management.GarbageCollectorMXBean;
-import java.lang.management.ManagementFactory;
-import java.util.List;
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
@@ -22,8 +23,7 @@ public class Robot extends TimedRobot {
   private final RobotContainer m_robotContainer;
 
   // ── GC tracking ───────────────────────────────────────────────────────────
-  private final List<GarbageCollectorMXBean> gcBeans =
-      ManagementFactory.getGarbageCollectorMXBeans();
+  private final List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
 
   private long lastGcCount = 0;
   private long lastGcTimeMs = 0;
@@ -76,8 +76,10 @@ public class Robot extends TimedRobot {
     for (GarbageCollectorMXBean bean : gcBeans) {
       long c = bean.getCollectionCount();
       long t = bean.getCollectionTime();
-      if (c >= 0) totalGcCount += c;
-      if (t >= 0) totalGcTimeMs += t;
+      if (c >= 0)
+        totalGcCount += c;
+      if (t >= 0)
+        totalGcTimeMs += t;
     }
     DogLog.log("Perf/GCDeltaCount", (int) (totalGcCount - lastGcCount));
     DogLog.log("Perf/GCDeltaTimeMs", (double) (totalGcTimeMs - lastGcTimeMs));
@@ -90,37 +92,44 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+  }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+  }
 
   @Override
-  public void disabledExit() {}
+  public void disabledExit() {
+  }
 
   @Override
   public void autonomousInit() {
+    HubShiftUtil.initialize();
     // Re-seed odometry from tags at auto start.
-    // m_robotContainer.visionSubsystem.resetOdometryInitialized();
+    m_robotContainer.visionSubsystem.resetOdometryInitialized();
 
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     if (m_autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(m_autonomousCommand);
     }
-
-    // Start the hub shift timer — tracks which alliance's hub is active
-    HubShiftUtil.initialize();
   }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+  }
 
   @Override
-  public void autonomousExit() {}
+  public void autonomousExit() {
+  }
 
   @Override
   public void teleopInit() {
+
+    // Start the hub shift timer — tracks which alliance's hub is active
+    HubShiftUtil.initialize();
+
     // Re-seed odometry from tags at teleop start.
     m_robotContainer.visionSubsystem.resetOdometryInitialized();
     if (m_autonomousCommand != null) {
@@ -129,10 +138,12 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+  }
 
   @Override
-  public void teleopExit() {}
+  public void teleopExit() {
+  }
 
   @Override
   public void testInit() {
@@ -140,11 +151,14 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+  }
 
   @Override
-  public void testExit() {}
+  public void testExit() {
+  }
 
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+  }
 }
