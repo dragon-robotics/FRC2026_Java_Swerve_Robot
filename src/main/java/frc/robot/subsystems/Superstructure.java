@@ -193,12 +193,6 @@ public class Superstructure extends SubsystemBase {
     alliance = newAlliance;
   }
 
-  private Translation2d getHubTargetForAlliance() {
-    return alliance == DriverStation.Alliance.Red
-        ? FieldConstants.Hub.RED_CENTER_POSE
-        : FieldConstants.Hub.BLUE_CENTER_POSE;
-  }
-
   static Translation2d resolveAimTargetForZone(
       boolean allianceConfirmed, FieldZones zone, DriverStation.Alliance alliance) {
     if (!allianceConfirmed || zone == null) {
@@ -209,9 +203,12 @@ public class Superstructure extends SubsystemBase {
 
     boolean isRed = alliance == DriverStation.Alliance.Red;
     return switch (zone) {
-      // For Red, LEFT/RIGHT zone labels are mirrored relative to field coordinates, so the aim
-      // points must be swapped: a robot in the NEUTRAL_LEFT zone on the red side is physically
-      // on the opposite Y side from its Blue counterpart, and must target the mirrored hub face.
+      // For Red, LEFT/RIGHT zone labels are mirrored relative to field coordinates,
+      // so the aim
+      // points must be swapped: a robot in the NEUTRAL_LEFT zone on the red side is
+      // physically
+      // on the opposite Y side from its Blue counterpart, and must target the
+      // mirrored hub face.
       case NEUTRAL_LEFT_SHOOT -> isRed
           ? FieldConstants.AimPoints.RED_RIGHT_SHOOT_POINT
           : FieldConstants.AimPoints.BLUE_LEFT_SHOOT_POINT;
