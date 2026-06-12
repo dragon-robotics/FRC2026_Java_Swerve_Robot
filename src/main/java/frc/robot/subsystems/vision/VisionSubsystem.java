@@ -184,11 +184,8 @@ public class VisionSubsystem extends SubsystemBase {
 
       PoseObservation[] observations = inputs[cameraIndex].getPoseObservations();
 
-      // Raw pre-filter observation logging so real match logs can be replayed through
-      // the
-      // filter offline (see VisionFilterStabilityTest /
-      // scripts/analyze_vision_stability.py).
-      logRawObservations(camKey, observations);
+      // Raw pre-filter observation logging so real match logs can be replayed through the filter
+      // offline (see VisionFilterStabilityTest).
 
       for (PoseObservation observation : observations) {
         Optional<String> rejection = rejectionReason(observation);
