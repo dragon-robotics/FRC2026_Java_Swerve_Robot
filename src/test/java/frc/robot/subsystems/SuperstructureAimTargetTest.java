@@ -29,21 +29,21 @@ class SuperstructureAimTargetTest {
   }
 
   @Test
-  void redAllianceNeutralZonesUseFlippedLeftRightAimPoints() {
-    assertEquals(
-        FieldConstants.AimPoints.RED_RIGHT_SHOOT_POINT,
-        Superstructure.resolveAimTargetForZone(
-            true, FieldZones.NEUTRAL_LEFT_SHOOT, DriverStation.Alliance.Red));
+  void redAllianceNeutralZonesUseDirectLeftRightAimPoints() {
     assertEquals(
         FieldConstants.AimPoints.RED_LEFT_SHOOT_POINT,
         Superstructure.resolveAimTargetForZone(
+            true, FieldZones.NEUTRAL_LEFT_SHOOT, DriverStation.Alliance.Red));
+    assertEquals(
+        FieldConstants.AimPoints.RED_RIGHT_SHOOT_POINT,
+        Superstructure.resolveAimTargetForZone(
             true, FieldZones.NEUTRAL_RIGHT_SHOOT, DriverStation.Alliance.Red));
     assertEquals(
-        FieldConstants.AimPoints.RED_RIGHT_PURGE_POINT,
+        FieldConstants.AimPoints.RED_LEFT_PURGE_POINT,
         Superstructure.resolveAimTargetForZone(
             true, FieldZones.NEUTRAL_LEFT_PURGE, DriverStation.Alliance.Red));
     assertEquals(
-        FieldConstants.AimPoints.RED_LEFT_PURGE_POINT,
+        FieldConstants.AimPoints.RED_RIGHT_PURGE_POINT,
         Superstructure.resolveAimTargetForZone(
             true, FieldZones.NEUTRAL_RIGHT_PURGE, DriverStation.Alliance.Red));
   }
