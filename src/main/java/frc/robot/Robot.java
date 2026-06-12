@@ -52,13 +52,13 @@ public class Robot extends TimedRobot {
     DogLog.timeEnd("Perf/SignalRefresh");
 
     Threads.setCurrentThreadPriority(true, 99);
-
-    DogLog.time("Perf/Scheduler");
-    CommandScheduler.getInstance().run();
-    DogLog.timeEnd("Perf/Scheduler");
-
-    Threads.setCurrentThreadPriority(false, 10);
-
+    try {
+      DogLog.time("Perf/Scheduler");
+      CommandScheduler.getInstance().run();
+      DogLog.timeEnd("Perf/Scheduler");
+    } finally {
+      Threads.setCurrentThreadPriority(false, 10);
+    }
     m_robotContainer.updateFieldDashboard();
 
     DogLog.timeEnd("Perf/Total");
