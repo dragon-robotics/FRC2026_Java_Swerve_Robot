@@ -34,8 +34,8 @@ public class HubShiftUtil {
   private static Timer shiftTimer = new Timer();
   private static final ShiftEnum[] shiftsEnums = ShiftEnum.values();
 
-  private static final double[] shiftStartTimes = { 0.0, 10.0, 35.0, 60.0, 85.0, 110.0 };
-  private static final double[] shiftEndTimes = { 10.0, 35.0, 60.0, 85.0, 110.0, 140.0 };
+  private static final double[] shiftStartTimes = {0.0, 10.0, 35.0, 60.0, 85.0, 110.0};
+  private static final double[] shiftEndTimes = {10.0, 35.0, 60.0, 85.0, 110.0, 140.0};
 
   private static final double minFuelCountDelay = 1.0;
   private static final double maxFuelCountDelay = 2.0;
