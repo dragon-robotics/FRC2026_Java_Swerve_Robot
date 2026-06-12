@@ -345,4 +345,20 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
     return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
   }
+
+  /** Returns absolute chassis pitch angle in degrees from the Pigeon2 IMU. */
+  public double getPitchDegrees() {
+    return getPigeon2().getPitch().getValueAsDouble();
+  }
+
+  /** Returns absolute chassis roll angle in degrees from the Pigeon2 IMU. */
+  public double getRollDegrees() {
+    return getPigeon2().getRoll().getValueAsDouble();
+  }
+
+  /** True when pitch and roll are both within the provided absolute tilt limit. */
+  public boolean isPitchRollStableForVision(double maxAbsTiltDegrees) {
+    return Math.abs(getPitchDegrees()) <= maxAbsTiltDegrees
+        && Math.abs(getRollDegrees()) <= maxAbsTiltDegrees;
+  }
 }

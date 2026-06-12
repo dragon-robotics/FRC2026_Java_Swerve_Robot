@@ -13,6 +13,7 @@ import static frc.robot.util.constants.VisionConstants.HEADING_STDDEV_IGNORE;
 import static frc.robot.util.constants.VisionConstants.LINEAR_STDDEV_BASELINE;
 import static frc.robot.util.constants.VisionConstants.MAX_AMBIGUITY;
 import static frc.robot.util.constants.VisionConstants.MAX_AVG_TAG_DISTANCE_METERS;
+import static frc.robot.util.constants.VisionConstants.MAX_ABS_TILT_DEGREES_FOR_VISION;
 import static frc.robot.util.constants.VisionConstants.MAX_POSE_DELTA_METERS;
 import static frc.robot.util.constants.VisionConstants.MAX_Z_ERROR;
 import static frc.robot.util.constants.VisionConstants.SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER;
@@ -80,6 +81,24 @@ public class VisionSubsystem extends SubsystemBase {
    */
   private static final int DISABLED_AUTO_RESEED_MIN_TAG_COUNT = 2;
 
+  /**
+   * Stable MultiTagPnP observations required before vision init is considered
+   * complete.
+   */
+  private static final int MULTITAG_INIT_STABLE_POSES_REQUIRED = 5;
+
+  /**
+   * Maximum translation delta between consecutive MultiTagPnP observations to
+   * stay stable.
+   */
+  private static final double MULTITAG_INIT_MAX_TRANSLATION_DELTA_METERS = 0.20;
+
+  /**
+   * Maximum heading delta between consecutive MultiTagPnP observations to stay
+   * stable.
+   */
+  private static final double MULTITAG_INIT_MAX_HEADING_DELTA_DEGREES = 10.0;
+
   private final CommandSwerveDrivetrain swerve;
   private final VisionConsumer consumer;
   private final VisionIO[] io;
@@ -100,6 +119,10 @@ public class VisionSubsystem extends SubsystemBase {
 
   private int[] lastAcceptedTagIDs = new int[0];
   private double lastAcceptedTimestamp = -1.0;
+  private Pose2d lastStableMultitagPose = null;
+  private double lastStableMultitagTimestamp = Double.NEGATIVE_INFINITY;
+  private int stableMultitagPoseCount = 0;
+  private boolean visionInitializationComplete = false;
   private boolean wasDisabledLastLoop = false;
   private boolean hasAutoReseededThisDisabledCycle = false;
   private double lastDisabledAutoReseedTime = Double.NEGATIVE_INFINITY;
@@ -175,6 +198,14 @@ public class VisionSubsystem extends SubsystemBase {
           continue;
         }
 
+        if (!swerve.isPitchRollStableForVision(MAX_ABS_TILT_DEGREES_FOR_VISION)) {
+          rejectedPoses.add(observation.pose());
+          DogLog.log(camKey + "/RejectedReason", "TILT_UNSTABLE");
+          DogLog.log(camKey + "/PitchDeg", swerve.getPitchDegrees());
+          DogLog.log(camKey + "/RollDeg", swerve.getRollDegrees());
+          continue;
+        }
+
         Pose2d pose2d = observation.pose().toPose2d();
         Pose2d referencePose = swerve.samplePoseAt(observation.timestamp()).orElse(swerve.getState().Pose);
         double innovationMeters = pose2d.getTranslation().getDistance(referencePose.getTranslation());
@@ -195,6 +226,8 @@ public class VisionSubsystem extends SubsystemBase {
             Utils.fpgaToCurrentTime(observation.timestamp()),
             standardDeviations(observation, cameraIndex));
 
+        trackMultitagInitialization(observation, pose2d, inputs[cameraIndex].getCameraName());
+
         boolean disabledForSnapshot = DriverStation.isDisabled();
         boolean allowSnapshotUpdate = !disabledForSnapshot
             || observation.type() == PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR;
@@ -213,6 +246,8 @@ public class VisionSubsystem extends SubsystemBase {
     logPoseArray("Vision/AcceptedPoses", acceptedPoses);
     logPoseArray("Vision/RejectedPoses", rejectedPoses);
     DogLog.log("Vision/Aiming", aiming);
+    DogLog.log("Vision/Initialization/StableMultitagPoseCount", stableMultitagPoseCount);
+    DogLog.log("Vision/Initialization/Complete", visionInitializationComplete);
 
     maybeAutoReseedWhileDisabled();
 
@@ -260,7 +295,7 @@ public class VisionSubsystem extends SubsystemBase {
       swerve.resetPose(visionPose);
       hasAutoReseededThisDisabledCycle = true;
       lastDisabledAutoReseedTime = now;
-      markDisabledVisionInitializationComplete();
+      markVisionInitializationComplete();
       DogLog.log("Vision/DisabledAutoReseed/Pose", visionPose);
       DogLog.log("Vision/DisabledAutoReseed/DeltaMeters", poseDeltaMeters);
       DogLog.log("Vision/DisabledAutoReseed/Timestamp", snapshot.get().timestamp());
@@ -269,12 +304,76 @@ public class VisionSubsystem extends SubsystemBase {
     wasDisabledLastLoop = true;
   }
 
-  private void markDisabledVisionInitializationComplete() {
+  private void markVisionInitializationComplete() {
+    if (visionInitializationComplete) {
+      return;
+    }
+    visionInitializationComplete = true;
     for (VisionIO visionIo : io) {
       if (visionIo instanceof VisionIOPhotonVision photonVisionIo) {
-        photonVisionIo.markInitialVisionPoseSeeded();
+        photonVisionIo.markVisionInitializationComplete();
       }
     }
+  }
+
+  private void trackMultitagInitialization(PoseObservation observation, Pose2d pose2d, String cameraName) {
+    if (visionInitializationComplete) {
+      return;
+    }
+
+    boolean isMultitagCoprocessor = isMultitagInitCandidate(observation);
+    if (!isMultitagCoprocessor) {
+      stableMultitagPoseCount = 0;
+      lastStableMultitagPose = null;
+      lastStableMultitagTimestamp = Double.NEGATIVE_INFINITY;
+      return;
+    }
+
+    double translationDelta = 0.0;
+    double headingDeltaDeg = 0.0;
+    boolean isStable = true;
+    if (lastStableMultitagPose != null) {
+      translationDelta = pose2d.getTranslation().getDistance(lastStableMultitagPose.getTranslation());
+      headingDeltaDeg = Math.abs(pose2d.getRotation().minus(lastStableMultitagPose.getRotation()).getDegrees());
+      isStable = isStableMultitagStep(
+          observation.timestamp(), lastStableMultitagTimestamp, translationDelta, headingDeltaDeg);
+    }
+
+    stableMultitagPoseCount = isStable ? (stableMultitagPoseCount + 1) : 1;
+    lastStableMultitagPose = pose2d;
+    lastStableMultitagTimestamp = observation.timestamp();
+
+    DogLog.log("Vision/Initialization/Camera", cameraName);
+    DogLog.log("Vision/Initialization/TranslationDeltaMeters", translationDelta);
+    DogLog.log("Vision/Initialization/HeadingDeltaDegrees", headingDeltaDeg);
+
+    if (stableMultitagPoseCount >= MULTITAG_INIT_STABLE_POSES_REQUIRED) {
+      markVisionInitializationComplete();
+      DogLog.log("Vision/Initialization/StableMultitagPoseTimestamp", observation.timestamp());
+    }
+  }
+
+  static boolean isMultitagInitCandidate(PoseObservation observation) {
+    return observation.type() == PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR
+        && observation.tagCount() >= DISABLED_AUTO_RESEED_MIN_TAG_COUNT;
+  }
+
+  static boolean isStableMultitagStep(
+      double timestamp,
+      double previousTimestamp,
+      double translationDeltaMeters,
+      double headingDeltaDegrees) {
+    return timestamp > previousTimestamp
+        && translationDeltaMeters <= MULTITAG_INIT_MAX_TRANSLATION_DELTA_METERS
+        && headingDeltaDegrees <= MULTITAG_INIT_MAX_HEADING_DELTA_DEGREES;
+  }
+
+  static int nextStableMultitagPoseCount(int currentCount, boolean isStableStep) {
+    return isStableStep ? (currentCount + 1) : 1;
+  }
+
+  static int requiredStableMultitagPosesForInitialization() {
+    return MULTITAG_INIT_STABLE_POSES_REQUIRED;
   }
 
   /**

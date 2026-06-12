@@ -55,7 +55,7 @@ public class VisionIOPhotonVision implements VisionIO {
   private final List<PoseObservation> poseObservations = new ArrayList<>(4);
   private int[] tagIdBuffer = new int[16];
   private int tagIdCount = 0;
-  private boolean preferMultitagForDisabledInit = true;
+  private boolean preferMultitagUntilInitialized = true;
 
   private static final PoseObservation[] EMPTY_POSE_OBSERVATIONS = new PoseObservation[0];
   private static final int[] EMPTY_TAG_IDS = new int[0];
@@ -75,8 +75,8 @@ public class VisionIOPhotonVision implements VisionIO {
     this.headingProvider = headingProvider;
   }
 
-  public void markInitialVisionPoseSeeded() {
-    preferMultitagForDisabledInit = false;
+  public void markVisionInitializationComplete() {
+    preferMultitagUntilInitialized = false;
   }
 
   @Override
@@ -194,9 +194,9 @@ public class VisionIOPhotonVision implements VisionIO {
   }
 
   private PoseStrategy[] resolveStrategyOrder(PhotonPipelineResult result) {
-    if (preferMultitagForDisabledInit) {
-      // Startup localization must prioritize coprocessor multi-tag to avoid
-      // gyro-seeded bias.
+    if (preferMultitagUntilInitialized) {
+      // Startup localization must prioritize coprocessor multi-tag until vision
+      // has produced a stable initialization sequence.
       return new PoseStrategy[] {
           PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
           PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
