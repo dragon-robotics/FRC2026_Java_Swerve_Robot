@@ -48,8 +48,8 @@ public class HubShiftUtil {
 
   public static final double autoEndTime = 20.0;
   public static final double teleopDuration = 140.0;
-  private static final boolean[] activeSchedule = { true, true, false, true, false, true };
-  private static final boolean[] inactiveSchedule = { true, false, true, false, true, true };
+  private static final boolean[] activeSchedule = {true, true, false, true, false, true};
+  private static final boolean[] inactiveSchedule = {true, false, true, false, true, true};
   private static final double timeResetThreshold = 3.0;
   private static double shiftTimerOffset = 0.0;
   @Setter
