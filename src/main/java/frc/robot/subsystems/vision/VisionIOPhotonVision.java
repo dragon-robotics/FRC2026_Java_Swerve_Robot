@@ -4,6 +4,7 @@ import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
 import static frc.robot.util.constants.VisionConstants.CONSTRAINED_HEADING_SCALE_FACTOR;
 import static frc.robot.util.constants.VisionConstants.CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC;
 import static frc.robot.util.constants.VisionConstants.ENABLE_CONSTRAINED_FALLBACK;
+import static frc.robot.util.constants.VisionConstants.MAX_AVG_TAG_DISTANCE_METERS;
 import static frc.robot.util.constants.VisionConstants.MAX_TAG_DISTANCE;
 import static frc.robot.util.constants.VisionConstants.PHOTON_POSE_STRATEGY_ORDER;
 import static frc.robot.util.constants.VisionConstants.TRIG_MAX_ANGULAR_RATE_RAD_PER_SEC;
@@ -374,8 +375,10 @@ public class VisionIOPhotonVision implements VisionIO {
       EstimatedRobotPose estimatedPose, List<PhotonTrackedTarget> targets) {
     int[] observedTagIds = new int[targets.size()];
     int observedTagCount = 0;
-    int distanceSampleCount = 0;
-    double totalDistance = 0.0;
+    int distanceSampleCountAll = 0;
+    int distanceSampleCountInRange = 0;
+    double totalDistanceAll = 0.0;
+    double totalDistanceInRange = 0.0;
     double totalAmbiguity = 0.0;
 
     for (PhotonTrackedTarget target : targets) {
@@ -389,8 +392,17 @@ public class VisionIOPhotonVision implements VisionIO {
 
       Transform3d cameraToTarget = target.getBestCameraToTarget();
       if (cameraToTarget != null) {
-        totalDistance += cameraToTarget.getTranslation().getNorm();
-        distanceSampleCount++;
+        double distanceMeters = cameraToTarget.getTranslation().getNorm();
+        totalDistanceAll += distanceMeters;
+        distanceSampleCountAll++;
+
+        // Exclude far-tag outliers from the average distance used by acceptance
+        // gating. If all tags are far, we intentionally fall back to the full
+        // average so the observation is still rejected by distance.
+        if (distanceMeters <= MAX_AVG_TAG_DISTANCE_METERS) {
+          totalDistanceInRange += distanceMeters;
+          distanceSampleCountInRange++;
+        }
       }
 
       totalAmbiguity += Math.max(0.0, target.getPoseAmbiguity());
@@ -408,13 +420,20 @@ public class VisionIOPhotonVision implements VisionIO {
         ? VisionIO.PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR
         : VisionIO.PoseObservationType.PHOTONVISION;
 
+    double averageTagDistanceMeters;
+    if (distanceSampleCountInRange > 0) {
+      averageTagDistanceMeters = totalDistanceInRange / distanceSampleCountInRange;
+    } else {
+      averageTagDistanceMeters = distanceSampleCountAll == 0 ? 0.0 : totalDistanceAll / distanceSampleCountAll;
+    }
+
     poseObservations.add(
         new PoseObservation(
             estimatedPose.timestampSeconds,
             estimatedPose.estimatedPose,
             totalAmbiguity / observedTagCount,
             observedTagCount,
-            distanceSampleCount == 0 ? 0.0 : totalDistance / distanceSampleCount,
+            averageTagDistanceMeters,
             observationType,
             observedTagIds));
   }
