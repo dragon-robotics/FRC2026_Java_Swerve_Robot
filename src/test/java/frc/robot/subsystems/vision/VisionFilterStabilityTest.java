@@ -183,8 +183,8 @@ class VisionFilterStabilityTest {
         "Good multi-tag pose should be accepted");
   }
 
-    @Test
-    void multitagInitializationRequiresFiveStableCoprocessorObservations() {
+  @Test
+  void multitagInitializationRequiresFiveStableCoprocessorObservations() {
     int stableCount = 0;
     double timestamp = 1.0;
 
@@ -192,28 +192,28 @@ class VisionFilterStabilityTest {
     for (int i = 0; i < 4; i++) {
       PoseObservation obs = multitagCoprocessorObs(4.0 + (0.01 * i), 4.0, 0.0, timestamp);
       assertTrue(
-        VisionSubsystem.isMultitagInitCandidate(obs),
-        "MultiTag coprocessor observation should count toward initialization");
+          VisionSubsystem.isMultitagInitCandidate(obs),
+          "MultiTag coprocessor observation should count toward initialization");
       stableCount = VisionSubsystem.nextStableMultitagPoseCount(stableCount, true);
       timestamp += 0.02;
     }
 
     assertTrue(
-      stableCount < VisionSubsystem.requiredStableMultitagPosesForInitialization(),
-      "Initialization should not complete before 5 stable MultiTagPnP observations");
+        stableCount < VisionSubsystem.requiredStableMultitagPosesForInitialization(),
+        "Initialization should not complete before 5 stable MultiTagPnP observations");
 
     PoseObservation fifth = multitagCoprocessorObs(4.04, 4.0, 0.0, timestamp);
     assertTrue(VisionSubsystem.isMultitagInitCandidate(fifth));
     stableCount = VisionSubsystem.nextStableMultitagPoseCount(stableCount, true);
 
     assertEquals(
-      VisionSubsystem.requiredStableMultitagPosesForInitialization(),
-      stableCount,
-      "Exactly 5 stable MultiTagPnP observations should complete initialization");
-    }
+        VisionSubsystem.requiredStableMultitagPosesForInitialization(),
+        stableCount,
+        "Exactly 5 stable MultiTagPnP observations should complete initialization");
+  }
 
-    @Test
-    void multitagInitializationStreakResetsAfterUnstableStep() {
+  @Test
+  void multitagInitializationStreakResetsAfterUnstableStep() {
     double t0 = 2.0;
     PoseObservation baseline = multitagCoprocessorObs(4.0, 4.0, 0.0, t0);
     PoseObservation stableNext = multitagCoprocessorObs(4.05, 4.0, Math.toRadians(2.0), t0 + 0.02);
@@ -223,45 +223,52 @@ class VisionFilterStabilityTest {
     stableCount = VisionSubsystem.nextStableMultitagPoseCount(stableCount, true); // baseline
 
     double stableTranslationDelta =
-      stableNext.pose().toPose2d().getTranslation().getDistance(baseline.pose().toPose2d().getTranslation());
-    double stableHeadingDeltaDeg =
-      Math.abs(
         stableNext
-          .pose()
-          .toPose2d()
-          .getRotation()
-          .minus(baseline.pose().toPose2d().getRotation())
-          .getDegrees());
+            .pose()
+            .toPose2d()
+            .getTranslation()
+            .getDistance(baseline.pose().toPose2d().getTranslation());
+    double stableHeadingDeltaDeg =
+        Math.abs(
+            stableNext
+                .pose()
+                .toPose2d()
+                .getRotation()
+                .minus(baseline.pose().toPose2d().getRotation())
+                .getDegrees());
     boolean stableStep =
-      VisionSubsystem.isStableMultitagStep(
-        stableNext.timestamp(), baseline.timestamp(), stableTranslationDelta, stableHeadingDeltaDeg);
+        VisionSubsystem.isStableMultitagStep(
+            stableNext.timestamp(),
+            baseline.timestamp(),
+            stableTranslationDelta,
+            stableHeadingDeltaDeg);
     stableCount = VisionSubsystem.nextStableMultitagPoseCount(stableCount, stableStep);
     assertEquals(2, stableCount, "Stable step should increment streak");
 
     double unstableTranslationDelta =
-      unstableNext
-        .pose()
-        .toPose2d()
-        .getTranslation()
-        .getDistance(stableNext.pose().toPose2d().getTranslation());
-    double unstableHeadingDeltaDeg =
-      Math.abs(
         unstableNext
-          .pose()
-          .toPose2d()
-          .getRotation()
-          .minus(stableNext.pose().toPose2d().getRotation())
-          .getDegrees());
+            .pose()
+            .toPose2d()
+            .getTranslation()
+            .getDistance(stableNext.pose().toPose2d().getTranslation());
+    double unstableHeadingDeltaDeg =
+        Math.abs(
+            unstableNext
+                .pose()
+                .toPose2d()
+                .getRotation()
+                .minus(stableNext.pose().toPose2d().getRotation())
+                .getDegrees());
     boolean unstableStep =
-      VisionSubsystem.isStableMultitagStep(
-        unstableNext.timestamp(),
-        stableNext.timestamp(),
-        unstableTranslationDelta,
-        unstableHeadingDeltaDeg);
+        VisionSubsystem.isStableMultitagStep(
+            unstableNext.timestamp(),
+            stableNext.timestamp(),
+            unstableTranslationDelta,
+            unstableHeadingDeltaDeg);
     stableCount = VisionSubsystem.nextStableMultitagPoseCount(stableCount, unstableStep);
 
     assertEquals(1, stableCount, "Unstable step should reset streak to 1 from the new baseline");
-    }
+  }
 
   /**
    * Pins the translation distrust multiplier behavior:

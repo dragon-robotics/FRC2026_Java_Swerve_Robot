@@ -60,19 +60,20 @@ class HubShiftUtilTest {
     DriverStationSim.notifyNewData();
     ShiftInfo autoInfo = HubShiftUtil.getOfficialShiftInfo();
     assertEquals(ShiftEnum.AUTO, autoInfo.currentShift());
-    System.out.printf("Official %s remaining=%.2f%n", autoInfo.currentShift(), autoInfo.remainingTime());
+    System.out.printf(
+        "Official %s remaining=%.2f%n", autoInfo.currentShift(), autoInfo.remainingTime());
 
     // Teleop segments sampled at phase starts to verify target remaining times:
     // TRANSITION=10, SHIFT1-4=25, ENDGAME=30
     DriverStationSim.setAutonomous(false);
 
     ShiftCheckpoint[] checkpoints = {
-        new ShiftCheckpoint(5.0, 140.0, ShiftEnum.TRANSITION, 35.0),
-        new ShiftCheckpoint(10.0, 130.0, ShiftEnum.SHIFT1, 25.0),
-        new ShiftCheckpoint(35.0, 105.0, ShiftEnum.SHIFT2, 25.0),
-        new ShiftCheckpoint(60.0, 80.0, ShiftEnum.SHIFT3, 25.0),
-        new ShiftCheckpoint(85.0, 55.0, ShiftEnum.SHIFT4, 25.0),
-        new ShiftCheckpoint(110.0, 30.0, ShiftEnum.ENDGAME, 30.0)
+      new ShiftCheckpoint(5.0, 140.0, ShiftEnum.TRANSITION, 35.0),
+      new ShiftCheckpoint(10.0, 130.0, ShiftEnum.SHIFT1, 25.0),
+      new ShiftCheckpoint(35.0, 105.0, ShiftEnum.SHIFT2, 25.0),
+      new ShiftCheckpoint(60.0, 80.0, ShiftEnum.SHIFT3, 25.0),
+      new ShiftCheckpoint(85.0, 55.0, ShiftEnum.SHIFT4, 25.0),
+      new ShiftCheckpoint(110.0, 30.0, ShiftEnum.ENDGAME, 30.0)
     };
 
     List<String> mismatches = new ArrayList<>();
@@ -95,15 +96,15 @@ class HubShiftUtilTest {
       }
     }
 
-    assertTrue(mismatches.isEmpty(), "Expected no remaining-time mismatches, but found: " + mismatches);
+    assertTrue(
+        mismatches.isEmpty(), "Expected no remaining-time mismatches, but found: " + mismatches);
   }
 
   private record ShiftCheckpoint(
       double timerSeconds,
       double matchTimeSeconds,
       ShiftEnum expectedShift,
-      double expectedRemainingSeconds) {
-  }
+      double expectedRemainingSeconds) {}
 
   private static Timer getTimer() throws Exception {
     Field timerField = HubShiftUtil.class.getDeclaredField("shiftTimer");

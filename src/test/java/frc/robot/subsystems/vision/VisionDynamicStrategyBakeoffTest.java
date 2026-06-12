@@ -41,26 +41,30 @@ class VisionDynamicStrategyBakeoffTest {
   private static final int WARMUP_CYCLES = 50;
   private static final int MEASURE_CYCLES = 250;
   private static final double DEFAULT_SPIN_RATE_RAD_PER_SEC = Units.rotationsToRadians(0.75);
-  private static final double SHUTTLE_SPEED_METERS_PER_SEC = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.8;
+  private static final double SHUTTLE_SPEED_METERS_PER_SEC =
+      TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.8;
   private static final double SHUTTLE_MIN_Y = 2.5;
   private static final double SHUTTLE_MAX_Y = 5.5;
   private static final double MAX_EXCESS_JUMP_M = 0.25;
   private static final double CATASTROPHIC_EXCESS_JUMP_M = 0.40;
   private static final int MAX_CATASTROPHIC_OUTLIERS = 0;
   private static final double MIN_VISION_COVERAGE = 0.30;
-  private static final List<Double> CONSTRAINED_SPIN_RATE_SWEEP_RAD_PER_SEC = List.of(0.25, 0.5, 0.75, 1.0);
+  private static final List<Double> CONSTRAINED_SPIN_RATE_SWEEP_RAD_PER_SEC =
+      List.of(0.25, 0.5, 0.75, 1.0);
 
-  private static final SwerveRequest.ApplyRobotSpeeds APPLY_ROBOT_SPEEDS = new SwerveRequest.ApplyRobotSpeeds();
+  private static final SwerveRequest.ApplyRobotSpeeds APPLY_ROBOT_SPEEDS =
+      new SwerveRequest.ApplyRobotSpeeds();
 
-  private static final List<StrategyConfig> STRATEGIES = List.of(
-      new StrategyConfig(
-          "MULTI_TAG_PNP_ON_COPROCESSOR",
-          "MULTI_TAG_PNP_ON_COPROCESSOR,LOWEST_AMBIGUITY",
-          false),
-      new StrategyConfig(
-          "CONSTRAINED_SOLVEPNP", "CONSTRAINED_SOLVEPNP,LOWEST_AMBIGUITY", false),
-      new StrategyConfig(
-          "PNP_DISTANCE_TRIG_SOLVE", "PNP_DISTANCE_TRIG_SOLVE,LOWEST_AMBIGUITY", false));
+  private static final List<StrategyConfig> STRATEGIES =
+      List.of(
+          new StrategyConfig(
+              "MULTI_TAG_PNP_ON_COPROCESSOR",
+              "MULTI_TAG_PNP_ON_COPROCESSOR,LOWEST_AMBIGUITY",
+              false),
+          new StrategyConfig(
+              "CONSTRAINED_SOLVEPNP", "CONSTRAINED_SOLVEPNP,LOWEST_AMBIGUITY", false),
+          new StrategyConfig(
+              "PNP_DISTANCE_TRIG_SOLVE", "PNP_DISTANCE_TRIG_SOLVE,LOWEST_AMBIGUITY", false));
 
   private static final StrategyConfig HYBRID_STRATEGY = new StrategyConfig("HYBRID", "", true);
 
@@ -68,33 +72,28 @@ class VisionDynamicStrategyBakeoffTest {
   private static RobotContainer container;
 
   private record DynamicScenario(
-      String name, Pose2d startPose, boolean shuttle, double angularRateRadPerSec) {
-  }
+      String name, Pose2d startPose, boolean shuttle, double angularRateRadPerSec) {}
 
-  private record StrategyConfig(String name, String order, boolean hybridMode) {
-  }
+  private record StrategyConfig(String name, String order, boolean hybridMode) {}
 
   private record SpinSweepResult(
       String scenarioName,
       double angularRateRadPerSec,
-      VisionStrategyComparisonSupport.StrategySummary summary) {
-  }
+      VisionStrategyComparisonSupport.StrategySummary summary) {}
 
   @FunctionalInterface
   private interface ThrowingSupplier<T> {
     T get() throws IOException;
   }
 
-  private record GroundTruthState(Pose2d pose, boolean movingTowardLow) {
-  }
+  private record GroundTruthState(Pose2d pose, boolean movingTowardLow) {}
 
   private record MotionStep(
       GroundTruthState nextTruth,
       double fieldVx,
       double fieldVy,
       double omegaRadiansPerSecond,
-      double expectedJumpMeters) {
-  }
+      double expectedJumpMeters) {}
 
   private record BakeoffResult(
       DynamicScenario scenario,
@@ -139,12 +138,15 @@ class VisionDynamicStrategyBakeoffTest {
 
   @Test
   void bakeoffSupportCanRankStrategiesHardGatesFirst() {
-    var constrained = new VisionStrategyComparisonSupport.StrategySummary(
-        "CONSTRAINED_SOLVEPNP", 0.08, 0, 0.92, 0.60, 0.22);
-    var trig = new VisionStrategyComparisonSupport.StrategySummary(
-        "PNP_DISTANCE_TRIG_SOLVE", 0.20, 1, 0.95, 0.55, 0.18);
+    var constrained =
+        new VisionStrategyComparisonSupport.StrategySummary(
+            "CONSTRAINED_SOLVEPNP", 0.08, 0, 0.92, 0.60, 0.22);
+    var trig =
+        new VisionStrategyComparisonSupport.StrategySummary(
+            "PNP_DISTANCE_TRIG_SOLVE", 0.20, 1, 0.95, 0.55, 0.18);
 
-    var ranked = VisionStrategyComparisonSupport.rankStrategies(List.of(constrained, trig), 0.15, 0, 0.50);
+    var ranked =
+        VisionStrategyComparisonSupport.rankStrategies(List.of(constrained, trig), 0.15, 0, 0.50);
 
     assertEquals(2, ranked.size());
     assertEquals("CONSTRAINED_SOLVEPNP", ranked.get(0).strategyName());
@@ -187,10 +189,11 @@ class VisionDynamicStrategyBakeoffTest {
     assertTrue(
         fullResult.offlineHybridRules().stream()
             .anyMatch(
-                rule -> rule.contains("MULTI_TAG_PNP_ON_COPROCESSOR")
-                    || rule.contains("CONSTRAINED_SOLVEPNP")
-                    || rule.contains("PNP_DISTANCE_TRIG_SOLVE")
-                    || rule.contains("no stable hybrid recommendation")));
+                rule ->
+                    rule.contains("MULTI_TAG_PNP_ON_COPROCESSOR")
+                        || rule.contains("CONSTRAINED_SOLVEPNP")
+                        || rule.contains("PNP_DISTANCE_TRIG_SOLVE")
+                        || rule.contains("no stable hybrid recommendation")));
   }
 
   @Test
@@ -203,10 +206,11 @@ class VisionDynamicStrategyBakeoffTest {
 
   @Test
   void fullHybridBakeoffComparesHybridAgainstAllSingleStrategies() throws IOException {
-    var results = List.of(
-        runBakeoffWithHybrid(leftSpinScenario()),
-        runBakeoffWithHybrid(rightSpinScenario()),
-        runBakeoffWithHybrid(shuttleSpinScenario()));
+    var results =
+        List.of(
+            runBakeoffWithHybrid(leftSpinScenario()),
+            runBakeoffWithHybrid(rightSpinScenario()),
+            runBakeoffWithHybrid(shuttleSpinScenario()));
 
     assertEquals(3, results.size());
     assertTrue(results.stream().allMatch(result -> result.strategySummaries().size() == 4));
@@ -312,10 +316,11 @@ class VisionDynamicStrategyBakeoffTest {
   }
 
   private VisionStrategyComparisonSupport.FullBakeoffResult runFullBakeoff() throws IOException {
-    var scenarioResults = List.of(
-        toScenarioResult(runBakeoff(leftSpinScenario())),
-        toScenarioResult(runBakeoff(rightSpinScenario())),
-        toScenarioResult(runBakeoff(shuttleSpinScenario())));
+    var scenarioResults =
+        List.of(
+            toScenarioResult(runBakeoff(leftSpinScenario())),
+            toScenarioResult(runBakeoff(rightSpinScenario())),
+            toScenarioResult(runBakeoff(shuttleSpinScenario())));
     var rules = VisionStrategyComparisonSupport.deriveOfflineHybridRules(scenarioResults);
     rules.forEach(rule -> System.out.println("[VisionHybridRule] " + rule));
     return new VisionStrategyComparisonSupport.FullBakeoffResult(scenarioResults, rules);
@@ -339,8 +344,9 @@ class VisionDynamicStrategyBakeoffTest {
 
     List<SpinSweepResult> results = new ArrayList<>();
     for (double angularRateRadPerSec : CONSTRAINED_SPIN_RATE_SWEEP_RAD_PER_SEC) {
-      for (DynamicScenario scenario : List.of(
-          leftSpinScenario(angularRateRadPerSec), rightSpinScenario(angularRateRadPerSec))) {
+      for (DynamicScenario scenario :
+          List.of(
+              leftSpinScenario(angularRateRadPerSec), rightSpinScenario(angularRateRadPerSec))) {
         for (StrategyConfig strategy : strategies) {
           var summary = runScenarioForStrategy(scenario, strategy);
           System.out.println(
@@ -361,10 +367,11 @@ class VisionDynamicStrategyBakeoffTest {
     }
 
     for (Map.Entry<String, List<SpinSweepResult>> entry : byScenario.entrySet()) {
-      List<VisionStrategyComparisonSupport.StrategySummary> summaries = entry.getValue().stream()
-          .map(SpinSweepResult::summary).toList();
-      List<VisionStrategyComparisonSupport.RankedStrategy> ranked = VisionStrategyComparisonSupport.rankStrategies(
-          summaries, MAX_EXCESS_JUMP_M, MAX_CATASTROPHIC_OUTLIERS, MIN_VISION_COVERAGE);
+      List<VisionStrategyComparisonSupport.StrategySummary> summaries =
+          entry.getValue().stream().map(SpinSweepResult::summary).toList();
+      List<VisionStrategyComparisonSupport.RankedStrategy> ranked =
+          VisionStrategyComparisonSupport.rankStrategies(
+              summaries, MAX_EXCESS_JUMP_M, MAX_CATASTROPHIC_OUTLIERS, MIN_VISION_COVERAGE);
       if (ranked.isEmpty()) {
         continue;
       }
@@ -435,11 +442,12 @@ class VisionDynamicStrategyBakeoffTest {
             CommandScheduler.getInstance().run();
 
             MotionStep motionStep = advanceGroundTruth(scenario, truthState);
-            ChassisSpeeds robotRelativeSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(
-                motionStep.fieldVx(),
-                motionStep.fieldVy(),
-                motionStep.omegaRadiansPerSecond(),
-                truthState.pose().getRotation());
+            ChassisSpeeds robotRelativeSpeeds =
+                ChassisSpeeds.fromFieldRelativeSpeeds(
+                    motionStep.fieldVx(),
+                    motionStep.fieldVy(),
+                    motionStep.omegaRadiansPerSecond(),
+                    truthState.pose().getRotation());
             container.swerveSubsystem.setControl(
                 APPLY_ROBOT_SPEEDS.withSpeeds(robotRelativeSpeeds));
 
@@ -447,8 +455,8 @@ class VisionDynamicStrategyBakeoffTest {
 
             truthState = motionStep.nextTruth();
             Pose2d odom = container.swerveSubsystem.getState().Pose;
-            Optional<VisionSubsystem.AcceptedObservationSnapshot> vis = container.visionSubsystem
-                .getLatestAcceptedObservationSnapshot();
+            Optional<VisionSubsystem.AcceptedObservationSnapshot> vis =
+                container.visionSubsystem.getLatestAcceptedObservationSnapshot();
 
             double odomJump = odom.getTranslation().getDistance(previousOdom.getTranslation());
             double excessJump = Math.max(0.0, odomJump - motionStep.expectedJumpMeters());
@@ -457,7 +465,8 @@ class VisionDynamicStrategyBakeoffTest {
 
             double visionDeviation = Double.NaN;
             if (vis.isPresent()) {
-              visionDeviation = vis.get().pose().getTranslation().getDistance(truthState.pose().getTranslation());
+              visionDeviation =
+                  vis.get().pose().getTranslation().getDistance(truthState.pose().getTranslation());
               if (measuring) {
                 visionAcceptedCycles++;
                 sumVisionDeviation += visionDeviation;
@@ -502,16 +511,18 @@ class VisionDynamicStrategyBakeoffTest {
               "dynamic-" + scenario.name() + "-" + strategy.name().toLowerCase() + ".csv", csv);
 
           double visionCoverageRatio = visionAcceptedCycles / (double) MEASURE_CYCLES;
-          double meanVisionDeviation = visionAcceptedCycles == 0
-              ? Double.POSITIVE_INFINITY
-              : sumVisionDeviation / visionAcceptedCycles;
-          var summary = new VisionStrategyComparisonSupport.StrategySummary(
-              strategy.name(),
-              maxExcessJump,
-              catastrophicOutliers,
-              visionCoverageRatio,
-              maxVisionDeviation,
-              meanVisionDeviation);
+          double meanVisionDeviation =
+              visionAcceptedCycles == 0
+                  ? Double.POSITIVE_INFINITY
+                  : sumVisionDeviation / visionAcceptedCycles;
+          var summary =
+              new VisionStrategyComparisonSupport.StrategySummary(
+                  strategy.name(),
+                  maxExcessJump,
+                  catastrophicOutliers,
+                  visionCoverageRatio,
+                  maxVisionDeviation,
+                  meanVisionDeviation);
           System.out.println(
               VisionStrategyComparisonSupport.formatSummaryLine(
                   "[VisionDynamic]", scenario.name(), summary));
@@ -525,10 +536,11 @@ class VisionDynamicStrategyBakeoffTest {
   }
 
   private MotionStep advanceGroundTruth(DynamicScenario scenario, GroundTruthState current) {
-    Rotation2d nextHeading = current
-        .pose()
-        .getRotation()
-        .plus(Rotation2d.fromRadians(scenario.angularRateRadPerSec() * DT));
+    Rotation2d nextHeading =
+        current
+            .pose()
+            .getRotation()
+            .plus(Rotation2d.fromRadians(scenario.angularRateRadPerSec() * DT));
     if (!scenario.shuttle()) {
       return new MotionStep(
           new GroundTruthState(

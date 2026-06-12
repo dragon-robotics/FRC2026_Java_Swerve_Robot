@@ -71,9 +71,9 @@ public final class VisionConstants {
   /** Reject observations whose average tag distance exceeds this (meters). 1678 strategy. */
   public static final double MAX_AVG_TAG_DISTANCE_METERS = 5.5;
 
-    /** Reject vision updates while chassis pitch/roll exceeds this absolute tilt (degrees). */
-    public static final double MAX_ABS_TILT_DEGREES_FOR_VISION =
-            Double.parseDouble(System.getProperty("vision.maxAbsTiltDeg", "8.0"));
+  /** Reject vision updates while chassis pitch/roll exceeds this absolute tilt (degrees). */
+  public static final double MAX_ABS_TILT_DEGREES_FOR_VISION =
+      Double.parseDouble(System.getProperty("vision.maxAbsTiltDeg", "8.0"));
 
   /**
    * Innovation gate on translation: reject vision poses farther than this from the predicted
