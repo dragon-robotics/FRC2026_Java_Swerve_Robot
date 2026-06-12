@@ -209,17 +209,20 @@ public class Superstructure extends SubsystemBase {
 
     boolean isRed = alliance == DriverStation.Alliance.Red;
     return switch (zone) {
+      // For Red, LEFT/RIGHT zone labels are mirrored relative to field coordinates, so the aim
+      // points must be swapped: a robot in the NEUTRAL_LEFT zone on the red side is physically
+      // on the opposite Y side from its Blue counterpart, and must target the mirrored hub face.
       case NEUTRAL_LEFT_SHOOT -> isRed
-          ? FieldConstants.AimPoints.RED_LEFT_SHOOT_POINT
+          ? FieldConstants.AimPoints.RED_RIGHT_SHOOT_POINT
           : FieldConstants.AimPoints.BLUE_LEFT_SHOOT_POINT;
       case NEUTRAL_RIGHT_SHOOT -> isRed
-          ? FieldConstants.AimPoints.RED_RIGHT_SHOOT_POINT
+          ? FieldConstants.AimPoints.RED_LEFT_SHOOT_POINT
           : FieldConstants.AimPoints.BLUE_RIGHT_SHOOT_POINT;
       case NEUTRAL_LEFT_PURGE -> isRed
-          ? FieldConstants.AimPoints.RED_LEFT_PURGE_POINT
+          ? FieldConstants.AimPoints.RED_RIGHT_PURGE_POINT
           : FieldConstants.AimPoints.BLUE_LEFT_PURGE_POINT;
       case NEUTRAL_RIGHT_PURGE -> isRed
-          ? FieldConstants.AimPoints.RED_RIGHT_PURGE_POINT
+          ? FieldConstants.AimPoints.RED_LEFT_PURGE_POINT
           : FieldConstants.AimPoints.BLUE_RIGHT_PURGE_POINT;
       default ->
         isRed ? FieldConstants.Hub.RED_CENTER_POSE : FieldConstants.Hub.BLUE_CENTER_POSE;
