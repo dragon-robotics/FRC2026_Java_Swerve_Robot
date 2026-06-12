@@ -3,14 +3,14 @@
   "grid_size": 128,
   "tabs": [
     {
-      "name": "Teleoperated",
+      "name": "Teleoperated - Blue",
       "grid_layout": {
         "layouts": [
           {
             "title": "ShootMode",
-            "x": 640.0,
-            "y": 128.0,
-            "width": 512.0,
+            "x": 1536.0,
+            "y": 0.0,
+            "width": 256.0,
             "height": 384.0,
             "type": "List Layout",
             "properties": {
@@ -18,7 +18,7 @@
             },
             "children": [
               {
-                "title": "Shoot with Aim",
+                "title": "Shoot with Aim (Default)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
@@ -35,7 +35,7 @@
                 }
               },
               {
-                "title": "Manual Bumper Up",
+                "title": "Manual Bumper Up (X + A)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
@@ -52,7 +52,7 @@
                 }
               },
               {
-                "title": "Manual Trench",
+                "title": "Manual Trench (A + B)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
@@ -69,65 +69,6 @@
                 }
               }
             ]
-          },
-          {
-            "title": "Official",
-            "x": 1152.0,
-            "y": 0.0,
-            "width": 384.0,
-            "height": 384.0,
-            "type": "List Layout",
-            "properties": {
-              "label_position": "TOP"
-            },
-            "children": [
-              {
-                "title": "Active",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Boolean Box",
-                "properties": {
-                  "topic": "/Robot/HubShift/Official/Active",
-                  "period": 0.06,
-                  "data_type": "boolean",
-                  "true_color": 4283215696,
-                  "false_color": 4294198070,
-                  "true_icon": "None",
-                  "false_icon": "None"
-                }
-              },
-              {
-                "title": "CurrentShift",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Large Text Display",
-                "properties": {
-                  "topic": "/Robot/HubShift/Official/CurrentShift",
-                  "period": 0.06,
-                  "data_type": "string"
-                }
-              },
-              {
-                "title": "RemainingTime",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Match Time",
-                "properties": {
-                  "topic": "/Robot/HubShift/Official/RemainingTime",
-                  "period": 0.06,
-                  "data_type": "double",
-                  "time_display_mode": "Minutes and Seconds",
-                  "red_start_time": 20,
-                  "yellow_start_time": 30
-                }
-              }
-            ]
           }
         ],
         "containers": [
@@ -135,8 +76,8 @@
             "title": "Field",
             "x": 0.0,
             "y": 0.0,
-            "width": 640.0,
-            "height": 1024.0,
+            "width": 384.0,
+            "height": 896.0,
             "type": "Field",
             "properties": {
               "topic": "/SmartDashboard/Field",
@@ -154,8 +95,8 @@
           },
           {
             "title": "Auto Mode",
-            "x": 640.0,
-            "y": 0.0,
+            "x": 1024.0,
+            "y": 640.0,
             "width": 512.0,
             "height": 128.0,
             "type": "ComboBox Chooser",
@@ -167,8 +108,8 @@
           },
           {
             "title": "Superstructure State",
-            "x": 640.0,
-            "y": 768.0,
+            "x": 1536.0,
+            "y": 384.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Large Text Display",
@@ -180,10 +121,10 @@
           },
           {
             "title": "Aligned to Shoot",
-            "x": 640.0,
-            "y": 512.0,
-            "width": 512.0,
-            "height": 256.0,
+            "x": 1280.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 384.0,
             "type": "Boolean Box",
             "properties": {
               "topic": "/Robot/Superstructure/IsAlignedToTarget",
@@ -197,10 +138,10 @@
           },
           {
             "title": "AprilTagPoseEstCameraF-processed",
-            "x": 1536.0,
-            "y": 0.0,
-            "width": 768.0,
-            "height": 640.0,
+            "x": 384.0,
+            "y": 384.0,
+            "width": 640.0,
+            "height": 512.0,
             "type": "Camera Stream",
             "properties": {
               "topic": "/CameraPublisher/AprilTagPoseEstCameraF-processed",
@@ -210,8 +151,8 @@
           },
           {
             "title": "Hopper State",
-            "x": 896.0,
-            "y": 768.0,
+            "x": 1536.0,
+            "y": 512.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Large Text Display",
@@ -223,8 +164,8 @@
           },
           {
             "title": "Intake State",
-            "x": 640.0,
-            "y": 896.0,
+            "x": 1536.0,
+            "y": 640.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Large Text Display",
@@ -236,8 +177,8 @@
           },
           {
             "title": "Shooter State",
-            "x": 896.0,
-            "y": 896.0,
+            "x": 1536.0,
+            "y": 768.0,
             "width": 256.0,
             "height": 128.0,
             "type": "Large Text Display",
@@ -246,22 +187,54 @@
               "period": 0.06,
               "data_type": "string"
             }
+          },
+          {
+            "title": "CurrentShift",
+            "x": 1024.0,
+            "y": 384.0,
+            "width": 512.0,
+            "height": 256.0,
+            "type": "Large Text Display",
+            "properties": {
+              "topic": "/Robot/HubShift/Official/CurrentShift",
+              "period": 0.06,
+              "data_type": "string"
+            }
+          },
+          {
+            "title": "RemainingTime",
+            "x": 640.0,
+            "y": 0.0,
+            "width": 640.0,
+            "height": 384.0,
+            "type": "Match Time",
+            "properties": {
+              "topic": "/Robot/HubShift/Official/RemainingTime",
+              "period": 0.06,
+              "data_type": "double",
+              "time_display_mode": "Minutes and Seconds",
+              "red_start_time": 20,
+              "yellow_start_time": 30
+            }
+          },
+          {
+            "title": "Active",
+            "x": 384.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 384.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/Robot/HubShift/Official/Active",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
           }
         ]
-      }
-    },
-    {
-      "name": "Autonomous",
-      "grid_layout": {
-        "layouts": [],
-        "containers": []
-      }
-    },
-    {
-      "name": "Tab 3",
-      "grid_layout": {
-        "layouts": [],
-        "containers": []
       }
     }
   ]
