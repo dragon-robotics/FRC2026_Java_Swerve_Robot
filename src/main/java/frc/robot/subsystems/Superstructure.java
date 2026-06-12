@@ -203,20 +203,21 @@ public class Superstructure extends SubsystemBase {
 
     boolean isRed = alliance == DriverStation.Alliance.Red;
     return switch (zone) {
-      // Zone labels and aim points are both blue-relative after alliance normalization,
+      // Zone labels and aim points are both blue-relative after alliance
+      // normalization,
       // so red mappings should stay LEFT->LEFT and RIGHT->RIGHT here.
       case NEUTRAL_LEFT_SHOOT -> isRed
-        ? FieldConstants.AimPoints.RED_LEFT_SHOOT_POINT
-        : FieldConstants.AimPoints.BLUE_LEFT_SHOOT_POINT;
+          ? FieldConstants.AimPoints.RED_LEFT_SHOOT_POINT
+          : FieldConstants.AimPoints.BLUE_LEFT_SHOOT_POINT;
       case NEUTRAL_RIGHT_SHOOT -> isRed
-        ? FieldConstants.AimPoints.RED_RIGHT_SHOOT_POINT
-        : FieldConstants.AimPoints.BLUE_RIGHT_SHOOT_POINT;
+          ? FieldConstants.AimPoints.RED_RIGHT_SHOOT_POINT
+          : FieldConstants.AimPoints.BLUE_RIGHT_SHOOT_POINT;
       case NEUTRAL_LEFT_PURGE -> isRed
-        ? FieldConstants.AimPoints.RED_LEFT_PURGE_POINT
-        : FieldConstants.AimPoints.BLUE_LEFT_PURGE_POINT;
+          ? FieldConstants.AimPoints.RED_LEFT_PURGE_POINT
+          : FieldConstants.AimPoints.BLUE_LEFT_PURGE_POINT;
       case NEUTRAL_RIGHT_PURGE -> isRed
-        ? FieldConstants.AimPoints.RED_RIGHT_PURGE_POINT
-        : FieldConstants.AimPoints.BLUE_RIGHT_PURGE_POINT;
+          ? FieldConstants.AimPoints.RED_RIGHT_PURGE_POINT
+          : FieldConstants.AimPoints.BLUE_RIGHT_PURGE_POINT;
       default ->
         isRed ? FieldConstants.Hub.RED_CENTER_POSE : FieldConstants.Hub.BLUE_CENTER_POSE;
     };
@@ -401,9 +402,12 @@ public class Superstructure extends SubsystemBase {
     DriverStation.getAlliance()
         .ifPresent(
             dsAlliance -> {
+              boolean allianceChanged = dsAlliance != alliance;
               setAlliance(dsAlliance);
               allianceConfirmed = true;
-              DogLog.log("Superstructure/AllianceConfirmed", dsAlliance.name());
+              if (allianceChanged) {
+                DogLog.log("Superstructure/AllianceConfirmed", dsAlliance.name());
+              }
             });
   }
 
@@ -673,23 +677,54 @@ public class Superstructure extends SubsystemBase {
     return alignedToTarget;
   }
 
-  /** Zero-allocation alignment check using raw atan2 math. */
-  private void updateAlignmentStatus(Pose2d currentPose, Translation2d hubTarget) {
+  static double resolveGeometricTargetHeadingRadians(Pose2d currentPose, Translation2d target) {
+    double dx = target.getX() - currentPose.getX();
+    double dy = target.getY() - currentPose.getY();
+    return Math.atan2(dy, dx);
+  }
+
+  static double resolveOperatorPerspectiveTargetHeadingRadians(
+      Pose2d currentPose, Translation2d hubTarget, DriverStation.Alliance alliance) {
     double dx = hubTarget.getX() - currentPose.getX();
     double dy = hubTarget.getY() - currentPose.getY();
     double targetAngleRad = Math.atan2(dy, dx);
 
-    // Match AimAtTargetPoseCmd heading convention exactly so hopper feed gating
-    // and aim completion use the same notion of "aligned".
     if (alliance == DriverStation.Alliance.Red) {
       targetAngleRad += Math.PI;
       targetAngleRad = Math.IEEEremainder(targetAngleRad, 2.0 * Math.PI);
     }
 
+    return targetAngleRad;
+  }
+
+  static boolean isHeadingAlignedToTarget(
+      Pose2d currentPose,
+      Translation2d target,
+      DriverStation.Alliance alliance,
+      double toleranceDegrees) {
+    double targetAngleRad = resolveGeometricTargetHeadingRadians(currentPose, target);
+
     double headingErrorRad = currentPose.getRotation().getRadians() - targetAngleRad;
     headingErrorRad = Math.IEEEremainder(headingErrorRad, 2.0 * Math.PI);
 
-    alignedToTarget = Math.abs(Math.toDegrees(headingErrorRad)) < ALIGNMENT_TOLERANCE_DEGREES;
+    return Math.abs(Math.toDegrees(headingErrorRad)) < toleranceDegrees;
+  }
+
+  static boolean isHeadingAlignedToTarget(
+      Pose2d currentPose,
+      Translation2d target,
+      double toleranceDegrees) {
+    double targetAngleRad = resolveGeometricTargetHeadingRadians(currentPose, target);
+
+    double headingErrorRad = currentPose.getRotation().getRadians() - targetAngleRad;
+    headingErrorRad = Math.IEEEremainder(headingErrorRad, 2.0 * Math.PI);
+
+    return Math.abs(Math.toDegrees(headingErrorRad)) < toleranceDegrees;
+  }
+
+  /** Zero-allocation alignment check using raw atan2 math. */
+  private void updateAlignmentStatus(Pose2d currentPose, Translation2d target) {
+    alignedToTarget = isHeadingAlignedToTarget(currentPose, target, ALIGNMENT_TOLERANCE_DEGREES);
   }
 
   // Heading Lock based on zone based on user input
@@ -758,10 +793,8 @@ public class Superstructure extends SubsystemBase {
   public void periodic() {
     DogLog.time("Perf/Superstructure");
 
-    // ── Alliance (poll until confirmed, then never again) ──────────────────
-    if (!allianceConfirmed) {
-      refreshAllianceAndCachedHubTarget();
-    }
+    // ── Alliance (always poll so cached value tracks DS changes) ───────────
+    refreshAllianceAndCachedHubTarget();
 
     // Always compute telemetry regardless of alliance confirmation
     Pose2d currentPose = swerve.getState().Pose;
