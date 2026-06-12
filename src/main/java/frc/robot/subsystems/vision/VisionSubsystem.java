@@ -558,7 +558,7 @@ public class VisionSubsystem extends SubsystemBase {
   /**
    * Operator-triggered recovery: snaps the drivetrain pose to the most recent
    * accepted vision pose.
-   * This is the ONLY path that resets the pose, and it is never automatic.
+   * Note: the subsystem may also auto-reseed while disabled for pre-match localization.
    *
    * @return true if a recent accepted pose was available
    */
