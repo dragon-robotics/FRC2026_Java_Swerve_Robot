@@ -423,8 +423,11 @@ public class VisionIOPhotonVision implements VisionIO {
     double averageTagDistanceMeters;
     if (distanceSampleCountInRange > 0) {
       averageTagDistanceMeters = totalDistanceInRange / distanceSampleCountInRange;
+    } else if (distanceSampleCountAll > 0) {
+      averageTagDistanceMeters = totalDistanceAll / distanceSampleCountAll;
     } else {
-      averageTagDistanceMeters = distanceSampleCountAll == 0 ? 0.0 : totalDistanceAll / distanceSampleCountAll;
+      // No usable distance samples; force the observation to fail the distance gate.
+      averageTagDistanceMeters = Double.POSITIVE_INFINITY;
     }
 
     poseObservations.add(
