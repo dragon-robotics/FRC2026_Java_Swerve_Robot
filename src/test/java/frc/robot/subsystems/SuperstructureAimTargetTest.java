@@ -1,8 +1,8 @@
 package frc.robot.subsystems;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -20,8 +20,7 @@ class SuperstructureAimTargetTest {
     Translation2d target = new Translation2d(1.0, 0.0);
     Pose2d poseFacingGeometricTarget = new Pose2d(0.0, 0.0, Rotation2d.fromDegrees(0.0));
 
-    double geometricHeading = Superstructure.resolveGeometricTargetHeadingRadians(
-        poseFacingGeometricTarget, target);
+    double geometricHeading = Superstructure.resolveGeometricTargetHeadingRadians(poseFacingGeometricTarget, target);
     double headingErrorRad = poseFacingGeometricTarget.getRotation().getRadians() - geometricHeading;
     headingErrorRad = Math.IEEEremainder(headingErrorRad, 2.0 * Math.PI);
     double headingErrorDeg = Math.abs(Math.toDegrees(headingErrorRad));
@@ -29,7 +28,7 @@ class SuperstructureAimTargetTest {
     assertTrue(headingErrorDeg < 1e-9);
     assertTrue(
         Superstructure.isHeadingAlignedToTarget(
-            poseFacingGeometricTarget, target, DriverStation.Alliance.Red, 5.0));
+            poseFacingGeometricTarget, target, 5.0));
   }
 
   @Test
@@ -40,18 +39,14 @@ class SuperstructureAimTargetTest {
     Pose2d poseFacingAway = new Pose2d(0.0, 0.0, Rotation2d.fromDegrees(180.0));
 
     assertTrue(
-        Superstructure.isHeadingAlignedToTarget(
-            poseFacingTarget, target, DriverStation.Alliance.Blue, 5.0));
+        Superstructure.isHeadingAlignedToTarget(poseFacingTarget, target, 5.0));
     assertTrue(
-        Superstructure.isHeadingAlignedToTarget(
-            poseFacingTarget, target, DriverStation.Alliance.Red, 5.0));
+        Superstructure.isHeadingAlignedToTarget(poseFacingTarget, target, 5.0));
 
     assertFalse(
-        Superstructure.isHeadingAlignedToTarget(
-            poseFacingAway, target, DriverStation.Alliance.Red, 5.0));
+        Superstructure.isHeadingAlignedToTarget(poseFacingAway, target, 5.0));
     assertFalse(
-        Superstructure.isHeadingAlignedToTarget(
-            poseFacingAway, target, DriverStation.Alliance.Blue, 5.0));
+        Superstructure.isHeadingAlignedToTarget(poseFacingAway, target, 5.0));
   }
 
   @Test
@@ -132,15 +127,15 @@ class SuperstructureAimTargetTest {
 
     assertEquals(
         redHub,
-        Superstructure.resolveAimTargetForZone(false, FieldZones.NEUTRAL_LEFT_SHOOT, DriverStation.Alliance.Red));
+        Superstructure.resolveAimTargetForZone(
+            false, FieldZones.NEUTRAL_LEFT_SHOOT, DriverStation.Alliance.Red));
     assertEquals(
-        redHub,
-        Superstructure.resolveAimTargetForZone(true, null, DriverStation.Alliance.Red));
-    assertEquals(
-        blueHub,
-        Superstructure.resolveAimTargetForZone(false, FieldZones.NEUTRAL_RIGHT_PURGE, DriverStation.Alliance.Blue));
+        redHub, Superstructure.resolveAimTargetForZone(true, null, DriverStation.Alliance.Red));
     assertEquals(
         blueHub,
-        Superstructure.resolveAimTargetForZone(true, null, DriverStation.Alliance.Blue));
+        Superstructure.resolveAimTargetForZone(
+            false, FieldZones.NEUTRAL_RIGHT_PURGE, DriverStation.Alliance.Blue));
+    assertEquals(
+        blueHub, Superstructure.resolveAimTargetForZone(true, null, DriverStation.Alliance.Blue));
   }
 }

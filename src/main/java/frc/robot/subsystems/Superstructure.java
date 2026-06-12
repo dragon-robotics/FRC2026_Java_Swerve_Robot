@@ -218,8 +218,7 @@ public class Superstructure extends SubsystemBase {
       case NEUTRAL_RIGHT_PURGE -> isRed
           ? FieldConstants.AimPoints.RED_RIGHT_PURGE_POINT
           : FieldConstants.AimPoints.BLUE_RIGHT_PURGE_POINT;
-      default ->
-        isRed ? FieldConstants.Hub.RED_CENTER_POSE : FieldConstants.Hub.BLUE_CENTER_POSE;
+      default -> isRed ? FieldConstants.Hub.RED_CENTER_POSE : FieldConstants.Hub.BLUE_CENTER_POSE;
     };
   }
 
@@ -698,22 +697,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   static boolean isHeadingAlignedToTarget(
-      Pose2d currentPose,
-      Translation2d target,
-      DriverStation.Alliance alliance,
-      double toleranceDegrees) {
-    double targetAngleRad = resolveGeometricTargetHeadingRadians(currentPose, target);
-
-    double headingErrorRad = currentPose.getRotation().getRadians() - targetAngleRad;
-    headingErrorRad = Math.IEEEremainder(headingErrorRad, 2.0 * Math.PI);
-
-    return Math.abs(Math.toDegrees(headingErrorRad)) < toleranceDegrees;
-  }
-
-  static boolean isHeadingAlignedToTarget(
-      Pose2d currentPose,
-      Translation2d target,
-      double toleranceDegrees) {
+      Pose2d currentPose, Translation2d target, double toleranceDegrees) {
     double targetAngleRad = resolveGeometricTargetHeadingRadians(currentPose, target);
 
     double headingErrorRad = currentPose.getRotation().getRadians() - targetAngleRad;
