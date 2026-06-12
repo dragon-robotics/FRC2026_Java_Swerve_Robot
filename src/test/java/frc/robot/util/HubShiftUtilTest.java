@@ -67,7 +67,7 @@ class HubShiftUtilTest {
     DriverStationSim.setAutonomous(false);
 
     ShiftCheckpoint[] checkpoints = {
-      new ShiftCheckpoint(5.0, 140.0, ShiftEnum.TRANSITION, 35.0),
+        new ShiftCheckpoint(5.0, 140.0, ShiftEnum.TRANSITION, 35.0),
         new ShiftCheckpoint(10.0, 130.0, ShiftEnum.SHIFT1, 25.0),
         new ShiftCheckpoint(35.0, 105.0, ShiftEnum.SHIFT2, 25.0),
         new ShiftCheckpoint(60.0, 80.0, ShiftEnum.SHIFT3, 25.0),
