@@ -95,18 +95,9 @@ class HubShiftUtilTest {
       }
     }
 
-    // Combined-time behavior should distort at least one phase's remaining timer.
     assertTrue(
-        mismatches.size() > 0,
-        "Expected at least one remaining-time mismatch but found none.");
-
-    // With the current active schedule, TRANSITION gets combined with SHIFT1 for
-    // remaining time.
-    assertTrue(
-        mismatches.stream().anyMatch((m) -> m.startsWith(ShiftEnum.TRANSITION.name())),
-        "Expected TRANSITION remaining-time mismatch due to combined timing.");
-
-    System.out.println("Remaining-time mismatches: " + mismatches);
+        mismatches.isEmpty(),
+        "Expected no remaining-time mismatches, but found: " + mismatches);
   }
 
   private record ShiftCheckpoint(
