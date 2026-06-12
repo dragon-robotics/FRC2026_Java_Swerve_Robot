@@ -52,9 +52,8 @@ class HubShiftUtilTest {
 
   @Test
   void officialShiftStartRemainingTargetsShowTransitionMismatch() throws Exception {
-    DriverStationSim.setFmsAttached(false);
+    DriverStationSim.setFmsAttached(true);
     DriverStationSim.notifyNewData();
-
     // AUTO segment
     DriverStationSim.setAutonomous(true);
     fixedTimer.setTime(0.0);
