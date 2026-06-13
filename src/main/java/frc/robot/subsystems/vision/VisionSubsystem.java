@@ -45,20 +45,14 @@ import java.util.Optional;
 /**
  * Lean AprilTag pose-estimation subsystem.
  *
- * <p>
- * Design (see
- * {@code docs/superpowers/specs/2026-06-08-vision-rewrite-design.md}):
+ * <p>Design (see {@code docs/superpowers/specs/2026-06-08-vision-rewrite-design.md}):
  *
  * <ul>
- * <li>Vision NEVER hard-resets the drivetrain pose during normal operation. It
- * only feeds
- * weighted measurements through {@link VisionConsumer}; the pose estimator
- * blends them.
- * <li>Vision heading is ignored (huge angular std-dev); the gyro is
- * authoritative.
- * <li>Translation trust scales with distance and tightens while aiming.
- * <li>Simple, readable rejection: tag count, Z, field bounds, single-tag
- * ambiguity, max distance.
+ *   <li>Vision NEVER hard-resets the drivetrain pose during normal operation. It only feeds
+ *       weighted measurements through {@link VisionConsumer}; the pose estimator blends them.
+ *   <li>Vision heading is ignored (huge angular std-dev); the gyro is authoritative.
+ *   <li>Translation trust scales with distance and tightens while aiming.
+ *   <li>Simple, readable rejection: tag count, Z, field bounds, single-tag ambiguity, max distance.
  * </ul>
  */
 public class VisionSubsystem extends SubsystemBase {
@@ -69,34 +63,19 @@ public class VisionSubsystem extends SubsystemBase {
   /** Limit how often disabled auto-reseed can reset pose. */
   private static final double DISABLED_AUTO_RESEED_MIN_INTERVAL_SECONDS = 0.5;
 
-  /**
-   * Re-seed again in disabled if odometry drifts too far from latest accepted
-   * vision.
-   */
+  /** Re-seed again in disabled if odometry drifts too far from latest accepted vision. */
   private static final double DISABLED_AUTO_RESEED_DELTA_METERS = 0.25;
 
-  /**
-   * Disabled auto-reseed only trusts multi-tag solutions to avoid gyro-seeded
-   * single-tag bias.
-   */
+  /** Disabled auto-reseed only trusts multi-tag solutions to avoid gyro-seeded single-tag bias. */
   private static final int DISABLED_AUTO_RESEED_MIN_TAG_COUNT = 2;
 
-  /**
-   * Stable MultiTagPnP observations required before vision init is considered
-   * complete.
-   */
+  /** Stable MultiTagPnP observations required before vision init is considered complete. */
   private static final int MULTITAG_INIT_STABLE_POSES_REQUIRED = 5;
 
-  /**
-   * Maximum translation delta between consecutive MultiTagPnP observations to
-   * stay stable.
-   */
+  /** Maximum translation delta between consecutive MultiTagPnP observations to stay stable. */
   private static final double MULTITAG_INIT_MAX_TRANSLATION_DELTA_METERS = 0.20;
 
-  /**
-   * Maximum heading delta between consecutive MultiTagPnP observations to stay
-   * stable.
-   */
+  /** Maximum heading delta between consecutive MultiTagPnP observations to stay stable. */
   private static final double MULTITAG_INIT_MAX_HEADING_DELTA_DEGREES = 10.0;
 
   private final CommandSwerveDrivetrain swerve;
@@ -108,16 +87,10 @@ public class VisionSubsystem extends SubsystemBase {
   private final List<Pose3d> rejectedPoses = new ArrayList<>(16);
   private final RawObservationLogBuffers[] rawObservationLogBuffers;
 
-  /**
-   * True while the robot is actively aiming/aligning to score — tightens
-   * translation trust.
-   */
+  /** True while the robot is actively aiming/aligning to score — tightens translation trust. */
   private boolean aiming = false;
 
-  /**
-   * Most recent accepted observation across all cameras (for the dashboard
-   * overlay).
-   */
+  /** Most recent accepted observation across all cameras (for the dashboard overlay). */
   private Pose2d lastAcceptedPose = null;
 
   private int[] lastAcceptedTagIDs = new int[0];
@@ -142,8 +115,9 @@ public class VisionSubsystem extends SubsystemBase {
     for (int i = 0; i < io.length; i++) {
       inputs[i] = new VisionIOInputs();
       rawObservationLogBuffers[i] = new RawObservationLogBuffers();
-      disconnectedAlerts[i] = new Alert(
-          "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
+      disconnectedAlerts[i] =
+          new Alert(
+              "Vision camera " + io[i].getCameraName() + " is disconnected.", AlertType.kWarning);
 
       if (io[i] instanceof VisionIOPhotonVision photonVisionIo) {
         photonVisionIo.setHeadingProvider(new DrivetrainHeadingProvider());
@@ -159,17 +133,10 @@ public class VisionSubsystem extends SubsystemBase {
         Matrix<N3, N1> visionMeasurementStdDevs);
   }
 
-  /**
-   * Immutable snapshot of the latest accepted observation, consumed by the
-   * dashboard overlay.
-   */
-  public static record AcceptedObservationSnapshot(Pose2d pose, int[] tagIDs, double timestamp) {
-  }
+  /** Immutable snapshot of the latest accepted observation, consumed by the dashboard overlay. */
+  public static record AcceptedObservationSnapshot(Pose2d pose, int[] tagIDs, double timestamp) {}
 
-  /**
-   * Sets whether the robot is actively aiming/aligning (tightens vision
-   * translation trust).
-   */
+  /** Sets whether the robot is actively aiming/aligning (tightens vision translation trust). */
   public void setAiming(boolean aiming) {
     this.aiming = aiming;
   }
@@ -211,8 +178,10 @@ public class VisionSubsystem extends SubsystemBase {
         }
 
         Pose2d pose2d = observation.pose().toPose2d();
-        Pose2d referencePose = swerve.samplePoseAt(observation.timestamp()).orElse(swerve.getState().Pose);
-        double innovationMeters = pose2d.getTranslation().getDistance(referencePose.getTranslation());
+        Pose2d referencePose =
+            swerve.samplePoseAt(observation.timestamp()).orElse(swerve.getState().Pose);
+        double innovationMeters =
+            pose2d.getTranslation().getDistance(referencePose.getTranslation());
         boolean disabled = DriverStation.isDisabled();
         if (innovationMeters > MAX_POSE_DELTA_METERS && !disabled) {
           rejectedPoses.add(observation.pose());
@@ -233,8 +202,9 @@ public class VisionSubsystem extends SubsystemBase {
         trackMultitagInitialization(observation, pose2d, inputs[cameraIndex].getCameraName());
 
         boolean disabledForSnapshot = DriverStation.isDisabled();
-        boolean allowSnapshotUpdate = !disabledForSnapshot
-            || observation.type() == PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR;
+        boolean allowSnapshotUpdate =
+            !disabledForSnapshot
+                || observation.type() == PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR;
         if (observation.timestamp() > lastAcceptedTimestamp && allowSnapshotUpdate) {
           lastAcceptedPose = pose2d;
           lastAcceptedTagIDs = Arrays.copyOf(observation.tagIDs(), observation.tagIDs().length);
@@ -259,8 +229,7 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * While disabled, initialize (or refresh) odometry from the latest accepted
-   * vision pose. This
+   * While disabled, initialize (or refresh) odometry from the latest accepted vision pose. This
    * helps pre-match localization without requiring manual reseed.
    */
   private void maybeAutoReseedWhileDisabled() {
@@ -290,7 +259,8 @@ public class VisionSubsystem extends SubsystemBase {
 
     double now = Timer.getFPGATimestamp();
     boolean needsInitialReseed = !hasAutoReseededThisDisabledCycle;
-    boolean intervalElapsed = (now - lastDisabledAutoReseedTime) >= DISABLED_AUTO_RESEED_MIN_INTERVAL_SECONDS;
+    boolean intervalElapsed =
+        (now - lastDisabledAutoReseedTime) >= DISABLED_AUTO_RESEED_MIN_INTERVAL_SECONDS;
     boolean drifted = poseDeltaMeters > DISABLED_AUTO_RESEED_DELTA_METERS;
 
     if ((needsInitialReseed || drifted) && intervalElapsed) {
@@ -336,13 +306,16 @@ public class VisionSubsystem extends SubsystemBase {
     double headingDeltaDeg = 0.0;
     boolean isStable = true;
     if (lastStableMultitagPose != null) {
-      translationDelta = pose2d.getTranslation().getDistance(lastStableMultitagPose.getTranslation());
-      headingDeltaDeg = Math.abs(pose2d.getRotation().minus(lastStableMultitagPose.getRotation()).getDegrees());
-      isStable = isStableMultitagStep(
-          observation.timestamp(),
-          lastStableMultitagTimestamp,
-          translationDelta,
-          headingDeltaDeg);
+      translationDelta =
+          pose2d.getTranslation().getDistance(lastStableMultitagPose.getTranslation());
+      headingDeltaDeg =
+          Math.abs(pose2d.getRotation().minus(lastStableMultitagPose.getRotation()).getDegrees());
+      isStable =
+          isStableMultitagStep(
+              observation.timestamp(),
+              lastStableMultitagTimestamp,
+              translationDelta,
+              headingDeltaDeg);
     }
 
     stableMultitagPoseCount = isStable ? (stableMultitagPoseCount + 1) : 1;
@@ -383,18 +356,13 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Returns a human-readable rejection reason, or empty if the observation should
-   * be accepted.
+   * Returns a human-readable rejection reason, or empty if the observation should be accepted.
    *
-   * <p>
-   * Reject when: no tags, unrealistic Z, outside the field, a single tag with
-   * high ambiguity, or
+   * <p>Reject when: no tags, unrealistic Z, outside the field, a single tag with high ambiguity, or
    * the average tag distance exceeds {@link
    * frc.robot.util.constants.VisionConstants#MAX_AVG_TAG_DISTANCE_METERS}.
    *
-   * <p>
-   * Static and package-private so tests can exercise the real gate logic without
-   * a HAL/sim
+   * <p>Static and package-private so tests can exercise the real gate logic without a HAL/sim
    * drivetrain.
    */
   static Optional<String> rejectionReason(PoseObservation observation) {
@@ -427,8 +395,7 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Distance-scaled translation std-dev with heading ignored. Translation trust
-   * tightens while
+   * Distance-scaled translation std-dev with heading ignored. Translation trust tightens while
    * aiming. Mirrors the AdvantageKit model with 1678's heading-ignore strategy.
    */
   private Matrix<N3, N1> standardDeviations(PoseObservation observation, int cameraIndex) {
@@ -436,10 +403,8 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Pure standard-deviation model with an explicit aiming flag. Package-private
-   * so tests can
-   * exercise the exact production std-dev math without depending on subsystem
-   * state.
+   * Pure standard-deviation model with an explicit aiming flag. Package-private so tests can
+   * exercise the exact production std-dev math without depending on subsystem state.
    */
   static Matrix<N3, N1> standardDeviations(
       PoseObservation observation, int cameraIndex, boolean aiming) {
@@ -449,19 +414,23 @@ public class VisionSubsystem extends SubsystemBase {
     double distance = rawDistance > 0.0 ? rawDistance : MAX_AVG_TAG_DISTANCE_METERS;
     double factor = (distance * distance) / tagCount;
 
-    double cameraFactor = CAMERA_STDDEV_FACTORS[Math.min(cameraIndex, CAMERA_STDDEV_FACTORS.length - 1)];
+    double cameraFactor =
+        CAMERA_STDDEV_FACTORS[Math.min(cameraIndex, CAMERA_STDDEV_FACTORS.length - 1)];
     double aimFactor = aiming ? AIM_LINEAR_STDDEV_MULTIPLIER : 1.0;
     // Coplanar multi-tag observations have the same 180° flip ambiguity as
     // single-tag PnP.
     // Apply the single-tag std-dev penalty to prevent a wrong mirror solution from
     // being
     // trusted with full multi-tag confidence.
-    boolean coplanarPenaltyApplies = APPLY_COPLANAR_PENALTY && areTagsCoplanar(observation.tagIDs());
-    double singleTagFactor = (observation.tagCount() == 1 || coplanarPenaltyApplies)
-        ? SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER
-        : 1.0;
+    boolean coplanarPenaltyApplies =
+        APPLY_COPLANAR_PENALTY && areTagsCoplanar(observation.tagIDs());
+    double singleTagFactor =
+        (observation.tagCount() == 1 || coplanarPenaltyApplies)
+            ? SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER
+            : 1.0;
 
-    double linearStdDev = LINEAR_STDDEV_BASELINE * factor * cameraFactor * aimFactor * singleTagFactor;
+    double linearStdDev =
+        LINEAR_STDDEV_BASELINE * factor * cameraFactor * aimFactor * singleTagFactor;
     linearStdDev = Math.max(linearStdDev, 1e-6);
 
     return VecBuilder.fill(linearStdDev, linearStdDev, HEADING_STDDEV_IGNORE);
@@ -472,24 +441,17 @@ public class VisionSubsystem extends SubsystemBase {
   // ────────────────────────────────────────────────────────────────────────────
 
   /**
-   * Returns {@code true} when all tags in {@code tagIDs} lie on the same flat
-   * surface (same Hub
-   * face). Coplanar multi-tag PnP has the same 180° rotational ambiguity as
-   * single-tag PnP — the
-   * planar geometry admits two mirror solutions. These observations must receive
-   * the single-tag
+   * Returns {@code true} when all tags in {@code tagIDs} lie on the same flat surface (same Hub
+   * face). Coplanar multi-tag PnP has the same 180° rotational ambiguity as single-tag PnP — the
+   * planar geometry admits two mirror solutions. These observations must receive the single-tag
    * std-dev penalty even though {@code tagCount ≥ 2}.
    *
-   * <p>
-   * Detection: compare the outward Z-axis (normal) of each tag's field pose. Tags
-   * are coplanar
+   * <p>Detection: compare the outward Z-axis (normal) of each tag's field pose. Tags are coplanar
    * when all normals are within {@link
-   * frc.robot.util.constants.VisionConstants#COPLANAR_ANGLE_THRESHOLD_DEG} of the
-   * first tag's
+   * frc.robot.util.constants.VisionConstants#COPLANAR_ANGLE_THRESHOLD_DEG} of the first tag's
    * normal.
    *
-   * <p>
-   * Package-private so tests can call it directly.
+   * <p>Package-private so tests can call it directly.
    */
   static boolean areTagsCoplanar(int[] tagIDs) {
     if (tagIDs == null || tagIDs.length <= 1) {
@@ -521,12 +483,9 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Logs the raw, pre-filter observations for a camera as index-aligned scalar
-   * arrays. This
-   * captures everything the rejection and std-dev logic consume, so a real match
-   * log can be
-   * replayed through the filter offline to diagnose acceptance and pose-jump
-   * behavior.
+   * Logs the raw, pre-filter observations for a camera as index-aligned scalar arrays. This
+   * captures everything the rejection and std-dev logic consume, so a real match log can be
+   * replayed through the filter offline to diagnose acceptance and pose-jump behavior.
    */
   @SuppressWarnings("null") // DogLog null-annotation interop on Pose3d[] is benign.
   private static void logRawObservations(
@@ -576,9 +535,7 @@ public class VisionSubsystem extends SubsystemBase {
     }
   }
 
-  /**
-   * Returns a consistent snapshot of the latest accepted observation, if recent.
-   */
+  /** Returns a consistent snapshot of the latest accepted observation, if recent. */
   public Optional<AcceptedObservationSnapshot> getLatestAcceptedObservationSnapshot() {
     if (lastAcceptedPose == null
         || (Timer.getFPGATimestamp() - lastAcceptedTimestamp) > SNAPSHOT_MAX_AGE_SECONDS) {
@@ -592,10 +549,8 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Operator-triggered recovery: snaps the drivetrain pose to the most recent
-   * accepted vision pose.
-   * Note: the subsystem may also auto-reseed while disabled for pre-match
-   * localization.
+   * Operator-triggered recovery: snaps the drivetrain pose to the most recent accepted vision pose.
+   * Note: the subsystem may also auto-reseed while disabled for pre-match localization.
    *
    * @return true if a recent accepted pose was available
    */
@@ -609,10 +564,7 @@ public class VisionSubsystem extends SubsystemBase {
     return true;
   }
 
-  /**
-   * Feeds the drivetrain heading to PhotonVision for single-tag constrained
-   * solving.
-   */
+  /** Feeds the drivetrain heading to PhotonVision for single-tag constrained solving. */
   private class DrivetrainHeadingProvider implements VisionIOPhotonVision.VisionHeadingProvider {
     @Override
     public Optional<Rotation2d> getHeadingAtTimestamp(double fpgaTimestampSeconds) {

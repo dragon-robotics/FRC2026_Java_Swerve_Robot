@@ -276,3 +276,15 @@ spotless {
         endWithNewline()
     }
 }
+
+def mirrorAutosTask = tasks.named('mirrorAutos')
+tasks.matching { Task task ->
+    task.name in [
+        'spotlessJava',
+        'spotlessGroovyGradle',
+        'spotlessXml',
+        'spotlessMisc'
+    ]
+}.configureEach {
+    dependsOn mirrorAutosTask
+}
