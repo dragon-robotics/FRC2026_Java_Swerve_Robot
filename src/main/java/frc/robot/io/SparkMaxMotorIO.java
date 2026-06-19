@@ -10,6 +10,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.AbsoluteEncoderConfig;
 import com.revrobotics.spark.config.AlternateEncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.units.measure.Voltage;
 import java.util.Optional;
 
 public class SparkMaxMotorIO implements MotorIO {
@@ -98,7 +99,7 @@ public class SparkMaxMotorIO implements MotorIO {
   }
 
   @Override
-  public void setMotorVoltage(double voltage) {
+  public void setMotorVoltage(Voltage voltage) {
     motor.setVoltage(voltage);
   }
 

@@ -159,7 +159,7 @@ public class TalonFXMotorIO implements MotorIO {
   }
 
   @Override
-  public void setMotorVoltage(double voltage) {
+  public void setMotorVoltage(Voltage voltage) {
     motor.setControl(voltageRequest.withOutput(voltage));
   }
 

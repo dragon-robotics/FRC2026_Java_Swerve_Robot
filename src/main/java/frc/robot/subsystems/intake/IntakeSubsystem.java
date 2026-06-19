@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.intake;
 
+import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_FAST_PID_SLOT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_FINAL_POSITION;
@@ -15,6 +16,7 @@ import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_VOLTAGE;
 import static frc.robot.util.constants.IntakeConstants.OUTTAKE_ROLLER_VOLTAGE;
 
 import dev.doglog.DogLog;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
@@ -77,7 +79,7 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeRollerLeadIO.setMotorRPM(rpm);
   }
 
-  public void runIntakeRollerVoltage(double voltage) {
+  public void runIntakeRollerVoltage(Voltage voltage) {
     intakeRollerLeadIO.setMotorVoltage(voltage);
   }
 
@@ -94,7 +96,7 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void stopIntake() {
-    intakeRollerLeadIO.setMotorVoltage(0.0);
+    intakeRollerLeadIO.setMotorVoltage(Volts.of(0.0));
   }
 
   public void setIntakeArmSetpoint(double setpoint, int slotID) {
@@ -110,7 +112,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * once deployed — no PID needed to maintain the down position.
    */
   public void coastIntakeArm() {
-    intakeArmIO.setMotorVoltage(0.0);
+    intakeArmIO.setMotorVoltage(Volts.of(0.0));
   }
 
   public void stowIntakeArm() {
@@ -251,7 +253,9 @@ public class IntakeSubsystem extends SubsystemBase {
           deployIntakeArm();
           if (DriverStation.isAutonomous()) {
             runIntakeRollerVoltage(
-                -INTAKE_ROLLER_VOLTAGE * 0.5); // Start rollers at half speed when deploying in auto
+                INTAKE_ROLLER_VOLTAGE
+                    .unaryMinus()
+                    .times(0.5)); // Start rollers at half speed when deploying in auto
             // to help get the first ball in quicker
           } else if (DriverStation.isTeleop()) {
             stopIntake();
@@ -289,13 +293,15 @@ public class IntakeSubsystem extends SubsystemBase {
           lastCommandedState = currIntakeState;
           lastJuicerPhase = null; // Reset so first phase sends its arm command
         }
+        runIntakeRollerVoltage(
+            INTAKE_ROLLER_VOLTAGE
+                .unaryMinus()
+                .times(0.5)); // Start rollers at half speed when moving to
         switch (juicerPhase) {
           case PRE_JUICE -> {
             if (lastJuicerPhase != juicerPhase) {
               // Move arm quickly to pre-juice setpoint to clear hopper wall
               setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
-              runIntakeRollerVoltage(
-                  INTAKE_ROLLER_VOLTAGE * 0.5); // Start rollers at half speed when moving to
               // pre-juice position
               // to help get the first ball in quicker
               lastJuicerPhase = juicerPhase;
@@ -308,8 +314,6 @@ public class IntakeSubsystem extends SubsystemBase {
             if (lastJuicerPhase != juicerPhase) {
               // Slowly move arm to final juice position to squeeze remaining balls
               setIntakeArmSetpoint(INTAKE_ARM_JUICER_FINAL_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
-              runIntakeRollerVoltage(
-                  INTAKE_ROLLER_VOLTAGE * 0.5); // Start rollers at 50% when we start squeezing to
               // help get rid of balls
               // from the intake during juicing.
               lastJuicerPhase = juicerPhase;

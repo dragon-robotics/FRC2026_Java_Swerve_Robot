@@ -1,12 +1,13 @@
 package frc.robot.io;
 
 import com.ctre.phoenix6.BaseStatusSignal;
+import edu.wpi.first.units.measure.Voltage;
 import lombok.Getter;
 import lombok.Setter;
 
 public interface MotorIO {
 
-  default void setMotorVoltage(double voltage) {
+  default void setMotorVoltage(Voltage voltage) {
     throw new UnsupportedOperationException("setMotorVoltage not implemented");
   }
 
