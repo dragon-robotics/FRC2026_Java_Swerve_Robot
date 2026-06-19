@@ -28,6 +28,9 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.units.measure.Voltage;
 
 public final class ShooterConstants {
 
@@ -38,15 +41,36 @@ public final class ShooterConstants {
 
   public static final int SHOOTER_CANCODER_ID = 2;
 
+  public static final Voltage SHOOTER_VOLTAGE = Volts.of(12.0);
+  public static final Current SHOOTER_STATOR_CURRENT_LIMIT = Amps.of(60.0);
+  public static final Current SHOOTER_SUPPLY_CURRENT_LIMIT = Amps.of(40.0);
+  public static final Current SHOOTER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(20.0);
+  public static final Time SHOOTER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.25);
+  public static final double SHOOTER_P = 8.0;
+  public static final double SHOOTER_S = 4.325;
+  public static final double SHOOTER_V = 0.013;
+
+  public static final Voltage SHOOTER_KICKER_VOLTAGE = Volts.of(12.0);
+  public static final Current SHOOTER_KICKER_STATOR_CURRENT_LIMIT = Amps.of(80.0);
+  public static final Current SHOOTER_KICKER_SUPPLY_CURRENT_LIMIT = Amps.of(40.0);
+  public static final Current SHOOTER_KICKER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(30.0);
+  public static final Time SHOOTER_KICKER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.25);
+
+  public static final Voltage SHOOTER_HOOD_VOLTAGE = Volts.of(10.0);
+  public static final Current SHOOTER_HOOD_STATOR_CURRENT_LIMIT = Amps.of(25.0);
+  public static final Current SHOOTER_HOOD_SUPPLY_CURRENT_LIMIT = Amps.of(15.0);
+  public static final double SHOOTER_HOOD_P = 8.0;
+  public static final double SHOOTER_HOOD_D = 0.1;
+  public static final double SHOOTER_HOOD_G = 0.4;
+
   public static final double SHOOTER_KICKER_DUTY_CYCLE = 1.0;
-  public static final double SHOOTER_KICKER_VOLTAGE = 12.0;
-  public static final double SHOOTER_KICKER_PREP_VOLTAGE =
-      6.0; // Voltage to run kicker at during prep
-  public static final double SHOOTER_KICKER_RPM = 3000.0;
-  public static final double SHOOTER_LEAD_DUTY_CYCLE = 1.0;
-  public static final double SHOOTER_LEAD_VOLTAGE = 12.0;
-  public static final double SHOOTER_LEAD_RPM = 2500.0;
-  public static final double SHOOTER_HOOD_SETTING = 0.0;
+  public static final Voltage SHOOTER_KICKER_PREP_VOLTAGE =
+      Volts.of(6.0); // Voltage to run kicker at during prep
+
+  public static final double SHOOTER_DUTY_CYCLE = 1.0;
+  public static final double SHOOTER_RPM = 2500.0;
+
+  public static final double SHOOTER_HOOD_DEFAULT_SETTING = 0.0;
 
   public record ShooterSetpoint(double shooterRPM, double hoodAngle) {}
 
@@ -90,23 +114,26 @@ public final class ShooterConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(60))
+                  .withStatorCurrentLimit(SHOOTER_STATOR_CURRENT_LIMIT)
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(40))
-                  .withSupplyCurrentLowerLimit(Amps.of(20))
-                  .withSupplyCurrentLowerTime(Seconds.of(0.25)))
-          .withVoltage(new VoltageConfigs().withPeakForwardVoltage(12).withPeakReverseVoltage(-12))
+                  .withSupplyCurrentLimit(SHOOTER_SUPPLY_CURRENT_LIMIT)
+                  .withSupplyCurrentLowerLimit(SHOOTER_SUPPLY_CURRENT_LOWER_LIMIT)
+                  .withSupplyCurrentLowerTime(SHOOTER_SUPPLY_CURRENT_LOWER_TIME))
+          .withVoltage(
+              new VoltageConfigs()
+                  .withPeakForwardVoltage(SHOOTER_VOLTAGE)
+                  .withPeakReverseVoltage(SHOOTER_VOLTAGE.unaryMinus()))
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(8)
+                  .withKP(SHOOTER_P)
                   .withKI(0.0)
                   .withKD(0.0)
-                  .withKS(4.325)
-                  .withKV(0.013)
+                  .withKS(SHOOTER_S)
+                  .withKV(SHOOTER_V)
                   .withKA(0.0));
 
   public static final SparkBaseConfig SHOOTER_LEAD_SPARKMAX_CONFIG =
@@ -134,15 +161,15 @@ public final class ShooterConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(60))
+                  .withStatorCurrentLimit(SHOOTER_STATOR_CURRENT_LIMIT)
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(40))
-                  .withSupplyCurrentLowerLimit(Amps.of(20))
-                  .withSupplyCurrentLowerTime(Seconds.of(0.25)))
+                  .withSupplyCurrentLimit(SHOOTER_SUPPLY_CURRENT_LIMIT)
+                  .withSupplyCurrentLowerLimit(SHOOTER_SUPPLY_CURRENT_LOWER_LIMIT)
+                  .withSupplyCurrentLowerTime(SHOOTER_SUPPLY_CURRENT_LOWER_TIME))
           .withVoltage(
               new VoltageConfigs()
-                  .withPeakForwardVoltage(Volts.of(12))
-                  .withPeakReverseVoltage(Volts.of(-12)))
+                  .withPeakForwardVoltage(SHOOTER_VOLTAGE)
+                  .withPeakReverseVoltage(SHOOTER_VOLTAGE.unaryMinus()))
           .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
 
   public static final SparkBaseConfig SHOOTER_FOLLOW_SPARKMAX_CONFIG =
@@ -161,15 +188,15 @@ public final class ShooterConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(80))
+                  .withStatorCurrentLimit(SHOOTER_KICKER_STATOR_CURRENT_LIMIT)
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(40))
-                  .withSupplyCurrentLowerLimit(Amps.of(30))
-                  .withSupplyCurrentLowerTime(Seconds.of(0.25)))
+                  .withSupplyCurrentLimit(SHOOTER_KICKER_SUPPLY_CURRENT_LIMIT)
+                  .withSupplyCurrentLowerLimit(SHOOTER_KICKER_SUPPLY_CURRENT_LOWER_LIMIT)
+                  .withSupplyCurrentLowerTime(SHOOTER_KICKER_SUPPLY_CURRENT_LOWER_TIME))
           .withVoltage(
               new VoltageConfigs()
-                  .withPeakForwardVoltage(Volts.of(12))
-                  .withPeakReverseVoltage(Volts.of(-12)))
+                  .withPeakForwardVoltage(SHOOTER_KICKER_VOLTAGE)
+                  .withPeakReverseVoltage(SHOOTER_KICKER_VOLTAGE.unaryMinus()))
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Coast)
@@ -200,26 +227,26 @@ public final class ShooterConstants {
           .withCurrentLimits(
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimitEnable(true)
-                  .withStatorCurrentLimit(Amps.of(25))
+                  .withStatorCurrentLimit(SHOOTER_HOOD_STATOR_CURRENT_LIMIT)
                   .withSupplyCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(Amps.of(15)))
+                  .withSupplyCurrentLimit(SHOOTER_HOOD_SUPPLY_CURRENT_LIMIT))
           .withVoltage(
               new VoltageConfigs()
-                  .withPeakForwardVoltage(Volts.of(10))
-                  .withPeakReverseVoltage(Volts.of(-10)))
+                  .withPeakForwardVoltage(SHOOTER_HOOD_VOLTAGE)
+                  .withPeakReverseVoltage(SHOOTER_HOOD_VOLTAGE.unaryMinus()))
           .withMotorOutput(
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Brake)
                   .withInverted(InvertedValue.Clockwise_Positive))
           .withSlot0(
               new Slot0Configs()
-                  .withKP(8.0)
+                  .withKP(SHOOTER_HOOD_P)
                   .withKI(0.0)
-                  .withKD(0.1)
+                  .withKD(SHOOTER_HOOD_D)
                   .withKS(0.0)
                   .withKV(0.0)
                   .withKA(0.0)
-                  .withKG(0.4)
+                  .withKG(SHOOTER_HOOD_G)
                   .withGravityType(GravityTypeValue.Elevator_Static)
                   .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign));
 

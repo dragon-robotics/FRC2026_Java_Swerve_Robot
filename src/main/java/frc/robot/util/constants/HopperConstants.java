@@ -25,8 +25,6 @@ public final class HopperConstants {
   public static final Voltage HOPPER_ROLLER_MAX_VOLTAGE = Volts.of(12.0);
   public static final Time HOPPER_ROLLER_RAMP_RATE = Seconds.of(0.5);
   public static final double HOPPER_ROLLER_DUTY_CYCLE = 1.0;
-  public static final double HOPPER_ROLLER_RPM = 1000.0;
-  public static final double HOPPER_ROLLER_REVERSE_RPM = -1000.0;
 
   public static final TalonFXConfiguration HOPPER_ROLLER_LEAD_TALONFX_CONFIG =
       new TalonFXConfiguration()

@@ -1,9 +1,11 @@
 package frc.robot.subsystems.shooter;
 
+import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.util.constants.ShooterConstants.*;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
@@ -59,8 +61,8 @@ public class ShooterSubsystem extends SubsystemBase {
     this.currShooterState = ShooterState.STOP;
 
     // Initialize target RPM and hood angle to default values
-    this.targetRPM = ShooterConstants.SHOOTER_LEAD_RPM;
-    this.hoodAngle = ShooterConstants.SHOOTER_HOOD_SETTING; // default to home position
+    this.targetRPM = ShooterConstants.SHOOTER_RPM;
+    this.hoodAngle = ShooterConstants.SHOOTER_HOOD_DEFAULT_SETTING; // default to home position
   }
 
   public ShooterState getCurrentState() {
@@ -75,7 +77,7 @@ public class ShooterSubsystem extends SubsystemBase {
     shooterLeadIO.setMotorPercentage(percentage);
   }
 
-  public void runShooterMotorVoltage(double voltage) {
+  public void runShooterMotorVoltage(Voltage voltage) {
     shooterLeadIO.setMotorVoltage(voltage);
   }
 
@@ -93,14 +95,14 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void stopShooter() {
-    runShooterMotorVoltage(0);
+    runShooterMotorVoltage(Volts.of(0));
   }
 
   public void runKickerMotorPercentage(double percentage) {
     shooterKickerIO.setMotorPercentage(percentage);
   }
 
-  public void runKickerMotorVoltage(double voltage) {
+  public void runKickerMotorVoltage(Voltage voltage) {
     shooterKickerIO.setMotorVoltage(voltage);
   }
 
@@ -115,7 +117,7 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void stopKicker() {
-    runKickerMotorVoltage(0);
+    runKickerMotorVoltage(Volts.of(0));
   }
 
   /* Setters */

@@ -1,8 +1,10 @@
 package frc.robot.subsystems.hopper;
 
+import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MAX_VOLTAGE;
 
 import dev.doglog.DogLog;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
@@ -59,7 +61,7 @@ public class HopperSubsystem extends SubsystemBase {
     leadRollerMotorIO.setMotorRPM(rpm);
   }
 
-  public void runHopperRollerVoltage(double voltage) {
+  public void runHopperRollerVoltage(Voltage voltage) {
     leadRollerMotorIO.setMotorVoltage(voltage);
   }
 
@@ -68,15 +70,15 @@ public class HopperSubsystem extends SubsystemBase {
   }
 
   public void indexToShooter() {
-    leadRollerMotorIO.setMotorVoltage(HOPPER_ROLLER_MAX_VOLTAGE.magnitude());
+    leadRollerMotorIO.setMotorVoltage(HOPPER_ROLLER_MAX_VOLTAGE);
   }
 
   public void indexToIntake() {
-    leadRollerMotorIO.setMotorVoltage(-HOPPER_ROLLER_MAX_VOLTAGE.magnitude());
+    leadRollerMotorIO.setMotorVoltage(HOPPER_ROLLER_MAX_VOLTAGE.unaryMinus());
   }
 
   public void stopHopperRoller() {
-    leadRollerMotorIO.setMotorVoltage(0);
+    leadRollerMotorIO.setMotorVoltage(Volts.of(0.0));
   }
 
   /* State Management */
