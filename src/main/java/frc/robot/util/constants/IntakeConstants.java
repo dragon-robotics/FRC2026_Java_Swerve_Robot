@@ -36,16 +36,25 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 
+/**
+ * Intake hardware IDs, motor-controller configuration, and mechanism setpoints.
+ *
+ * <p>Arm simulation limits use radians. Arm closed-loop positions use mechanism rotations from the
+ * absolute/fused encoder. Roller commands use volts, RPM, or percent output depending on the caller.
+ */
 public final class IntakeConstants {
+
+  /* Hardware IDs */
 
   public static final int INTAKE_ROLLER_LEAD_MOTOR_ID = 21;
   public static final int INTAKE_ROLLER_FOLLOW_MOTOR_ID = 20;
   public static final int INTAKE_ARM_MOTOR_ID = 10;
   public static final int INTAKE_ARM_CANCODER_ID = 0;
 
+  /* Arm motion and sim model */
+
   public static final int INTAKE_ARM_FAST_PID_SLOT = 0;
   public static final int INTAKE_ARM_SLOW_PID_SLOT = 1;
-
   public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(13.370);
   public static final double INTAKE_ARM_MASS_KG = Units.lbsToKilograms(10);
   public static final double INTAKE_ARM_GEAR_RATIO = 36;
@@ -63,6 +72,27 @@ public final class IntakeConstants {
   public static final double INTAKE_ARM_KG = 0.5;
   public static final double INTAKE_ARM_CANCODER_OFFSET = 0.841134765625;
 
+  /** Arm stowed position in mechanism rotations. */
+  public static final double INTAKE_ARM_STOWED_POSITION = 0.37;
+
+  /**
+   * First juicer position in mechanism rotations.
+   *
+   * <p>The arm moves here quickly to avoid the hopper wall before squeezing fuel inward.
+   */
+  public static final double INTAKE_ARM_JUICER_PRE_POSITION = 0.15;
+
+  /** Final juicer squeeze position in mechanism rotations. */
+  public static final double INTAKE_ARM_JUICER_FINAL_POSITION = 0.25;
+
+  /** Deployed arm position in mechanism rotations. */
+  public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0;
+
+  /** Allowed arm position error in mechanism rotations. */
+  public static final double INTAKE_ARM_POSITION_TOLERANCE = 0.025;
+
+  /* Roller */
+
   public static final double INTAKE_ROLLER_DUTY_CYCLE = 1.0;
   public static final Voltage INTAKE_ROLLER_VOLTAGE = Volts.of(12);
   public static final double INTAKE_ROLLER_RPM = 6000.0;
@@ -75,16 +105,7 @@ public final class IntakeConstants {
   public static final Current INTAKE_ROLLER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(30);
   public static final Time INTAKE_ROLLER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.2);
 
-  public static final double INTAKE_ARM_STOWED_POSITION = 0.37;
-  public static final double INTAKE_ARM_JUICER_PRE_POSITION =
-      0.15; // Intake arm moves quickly to prevent the intake
-  // from getting stuck on the hopper wall,
-  // then moves slowly to the final juicer position to
-  // ensure the ball is fully
-  // intaken
-  public static final double INTAKE_ARM_JUICER_FINAL_POSITION = 0.25;
-  public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0;
-  public static final double INTAKE_ARM_POSITION_TOLERANCE = 0.025;
+  /* Motor controller configs */
 
   public static final TalonFXConfiguration INTAKE_ROLLER_LEAD_TALONFX_CONFIG =
       new TalonFXConfiguration()
@@ -168,10 +189,7 @@ public final class IntakeConstants {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Brake)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          /*
-           * Fast profile for deploying the intake to overcome the constant force spring
-           * of the extending hopper
-           */
+          // Fast deploy profile overcomes the constant-force spring of the extending hopper.
           .withSlot0(
               new Slot0Configs()
                   .withKP(INTAKE_ARM_FAST_P)
@@ -183,10 +201,7 @@ public final class IntakeConstants {
                   .withKG(INTAKE_ARM_KG)
                   .withGravityType(GravityTypeValue.Arm_Cosine)
                   .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign))
-          /*
-           * Slow profile for retracting the intake to push balls into the shooter (juicer
-           * mode)
-           */
+          // Slow retract profile is used by juicer mode to squeeze fuel inward.
           .withSlot1(
               new Slot1Configs()
                   .withKP(INTAKE_ARM_SLOW_P)
