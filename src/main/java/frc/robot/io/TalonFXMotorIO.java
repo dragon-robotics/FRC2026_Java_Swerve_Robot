@@ -12,6 +12,7 @@ import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -24,7 +25,7 @@ import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 import java.util.Optional;
 
-public class TalonFXMotorIO implements MotorIO {
+public class TalonFXMotorIO implements TorqueCurrentMotorIO {
 
   protected final TalonFX motor;
   protected final int canID;
@@ -38,6 +39,7 @@ public class TalonFXMotorIO implements MotorIO {
   protected final PositionVoltage positionVoltageRequest;
   protected final DutyCycleOut dutyCycleRequest;
   protected final VoltageOut voltageRequest;
+  protected final TorqueCurrentFOC torqueCurrentRequest;
 
   // Cached status signals — refreshed in batch to optimize loop time and use
   // opt-in to optimize CAN
@@ -92,7 +94,7 @@ public class TalonFXMotorIO implements MotorIO {
     positionVoltageRequest = new PositionVoltage(INTAKE_ARM_DEPLOYED_POSITION).withEnableFOC(true);
     dutyCycleRequest = new DutyCycleOut(0).withEnableFOC(true);
     voltageRequest = new VoltageOut(0).withEnableFOC(true);
-
+    torqueCurrentRequest = new TorqueCurrentFOC(0);
     // Disabled all unused signals first
     motor.optimizeBusUtilization(0);
 
@@ -181,6 +183,11 @@ public class TalonFXMotorIO implements MotorIO {
   @Override
   public void setMotorPosition(double setpoint, int slotID) {
     motor.setControl(positionVoltageRequest.withPosition(setpoint).withSlot(slotID));
+  }
+
+  @Override
+  public void setMotorTorqueCurrent(Current torqueCurrent) {
+    motor.setControl(torqueCurrentRequest.withOutput(torqueCurrent));
   }
 
   @Override
