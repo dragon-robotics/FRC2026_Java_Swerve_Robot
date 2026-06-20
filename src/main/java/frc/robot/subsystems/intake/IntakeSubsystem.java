@@ -253,9 +253,8 @@ public class IntakeSubsystem extends SubsystemBase {
           deployIntakeArm();
           if (DriverStation.isAutonomous()) {
             runIntakeRollerVoltage(
-                INTAKE_ROLLER_VOLTAGE
-                    .unaryMinus()
-                    .times(0.5)); // Start rollers at half speed when deploying in auto
+                OUTTAKE_ROLLER_VOLTAGE.times(
+                    0.5)); // Start rollers at half speed when deploying in auto
             // to help get the first ball in quicker
           } else if (DriverStation.isTeleop()) {
             stopIntake();
@@ -290,13 +289,11 @@ public class IntakeSubsystem extends SubsystemBase {
       }
       case JUICER -> {
         if (lastCommandedState != currIntakeState) {
+          runIntakeRollerVoltage(
+              INTAKE_ROLLER_VOLTAGE.times(0.5)); // Start rollers at half speed when moving to
           lastCommandedState = currIntakeState;
           lastJuicerPhase = null; // Reset so first phase sends its arm command
         }
-        runIntakeRollerVoltage(
-            INTAKE_ROLLER_VOLTAGE
-                .unaryMinus()
-                .times(0.5)); // Start rollers at half speed when moving to
         switch (juicerPhase) {
           case PRE_JUICE -> {
             if (lastJuicerPhase != juicerPhase) {
