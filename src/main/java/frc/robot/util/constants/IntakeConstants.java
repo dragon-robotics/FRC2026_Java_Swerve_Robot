@@ -56,6 +56,7 @@ public final class IntakeConstants {
   public static final Voltage INTAKE_ARM_MAX_VOLTAGE = Volts.of(10);
   public static final Current INTAKE_ARM_STATOR_CURRENT_LIMIT = Amps.of(50);
   public static final Current INTAKE_ARM_SUPPLY_CURRENT_LIMIT = Amps.of(30);
+  public static final Current INTAKE_ARM_DEPLOY_TENSION_CURRENT = Amps.of(20);
   public static final double INTAKE_ARM_SLOW_P = 8;
   public static final double INTAKE_ARM_FAST_P = 14;
   public static final double INTAKE_ARM_KV = 2.4;

@@ -6,6 +6,7 @@ package frc.robot.subsystems.intake;
 
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOY_TENSION_CURRENT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_FAST_PID_SLOT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_FINAL_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_PRE_POSITION;
@@ -21,6 +22,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
+import frc.robot.io.TorqueCurrentMotorIO;
 
 public class IntakeSubsystem extends SubsystemBase {
 
@@ -105,6 +107,18 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public void deployIntakeArm() {
     intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_FAST_PID_SLOT);
+  }
+
+  public void tensionDeployedIntakeArm() {
+    if (!isIntakeArmAtDeployed()) {
+      deployIntakeArm();
+      return;
+    }
+    if (intakeArmIO instanceof TorqueCurrentMotorIO torqueCurrentArmIO) {
+      torqueCurrentArmIO.setMotorTorqueCurrent(INTAKE_ARM_DEPLOY_TENSION_CURRENT);
+    } else {
+      deployIntakeArm();
+    }
   }
 
   /**
@@ -229,7 +243,7 @@ public class IntakeSubsystem extends SubsystemBase {
       }
       case INTAKE -> {
         if (lastCommandedState != currIntakeState) {
-          deployIntakeArm();
+          tensionDeployedIntakeArm();
           runIntake();
           lastCommandedState = currIntakeState;
         }
@@ -273,6 +287,9 @@ public class IntakeSubsystem extends SubsystemBase {
                 case OUTTAKE -> IntakeState.OUTTAKE;
                 default -> IntakeState.DEPLOYED;
               };
+          if (currIntakeState == IntakeState.INTAKE) {
+            tensionDeployedIntakeArm();
+          }
         }
       }
       case STOWING -> {
