@@ -32,7 +32,15 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 
+/**
+ * Shooter hardware IDs, motor-controller configuration, and scoring setpoints.
+ *
+ * <p>Distances are stored in meters. Flywheel setpoints are RPM. Hood positions are mechanism
+ * rotations from the hood encoder.
+ */
 public final class ShooterConstants {
+
+  /* Hardware IDs */
 
   public static final int SHOOTER_HOOD_MOTOR_ID = 13;
   public static final int SHOOTER_KICKER_MOTOR_ID = 14;
@@ -40,6 +48,8 @@ public final class ShooterConstants {
   public static final int SHOOTER_FOLLOW_MOTOR_ID = 16;
 
   public static final int SHOOTER_CANCODER_ID = 2;
+
+  /* Flywheel */
 
   public static final Voltage SHOOTER_VOLTAGE = Volts.of(12.0);
   public static final Current SHOOTER_STATOR_CURRENT_LIMIT = Amps.of(60.0);
@@ -49,12 +59,26 @@ public final class ShooterConstants {
   public static final double SHOOTER_P = 8.0;
   public static final double SHOOTER_S = 4.325;
   public static final double SHOOTER_V = 0.013;
+  public static final double SHOOTER_DUTY_CYCLE = 1.0;
+  public static final double SHOOTER_RPM = 2500.0;
+  public static final double SHOOTER_PREP_RPM = 1200.0;
+  public static final double SHOOTER_PREP_READY_RATIO = 0.3;
+  public static final double SHOOTER_READY_TOLERANCE_RPM = 60.0;
+  public static final double SHOOTER_STOPPED_TOLERANCE_RPM = 0.5;
+
+  /* Kicker */
 
   public static final Voltage SHOOTER_KICKER_VOLTAGE = Volts.of(12.0);
   public static final Current SHOOTER_KICKER_STATOR_CURRENT_LIMIT = Amps.of(80.0);
   public static final Current SHOOTER_KICKER_SUPPLY_CURRENT_LIMIT = Amps.of(40.0);
   public static final Current SHOOTER_KICKER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(30.0);
   public static final Time SHOOTER_KICKER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.25);
+  public static final double SHOOTER_KICKER_DUTY_CYCLE = 1.0;
+  public static final Voltage SHOOTER_KICKER_PREP_VOLTAGE = Volts.of(6.0);
+  public static final double SHOOTER_KICKER_STOP_PERCENT_OUTPUT = 0.5;
+  public static final double SHOOTER_KICKER_STOP_DELAY_SECONDS = 1.0;
+
+  /* Hood */
 
   public static final Voltage SHOOTER_HOOD_VOLTAGE = Volts.of(10.0);
   public static final Current SHOOTER_HOOD_STATOR_CURRENT_LIMIT = Amps.of(25.0);
@@ -62,27 +86,21 @@ public final class ShooterConstants {
   public static final double SHOOTER_HOOD_P = 8.0;
   public static final double SHOOTER_HOOD_D = 0.1;
   public static final double SHOOTER_HOOD_G = 0.4;
-
-  public static final double SHOOTER_KICKER_DUTY_CYCLE = 1.0;
-  public static final Voltage SHOOTER_KICKER_PREP_VOLTAGE =
-      Volts.of(6.0); // Voltage to run kicker at during prep
-
-  public static final double SHOOTER_DUTY_CYCLE = 1.0;
-  public static final double SHOOTER_RPM = 2500.0;
-
   public static final double SHOOTER_HOOD_DEFAULT_SETTING = 0.0;
+  public static final double SHOOTER_HOOD_READY_TOLERANCE_ROTATIONS = 0.125;
 
+  /** Shooter flywheel RPM and hood position in mechanism rotations for one target distance. */
   public record ShooterSetpoint(double shooterRPM, double hoodAngle) {}
 
-  /** Interpolating table for shooter RPM based on distance in meters */
+  /** Interpolating table for shooter RPM based on distance in meters. */
   public static final InterpolatingDoubleTreeMap SHOOTER_RPM_MAP = new InterpolatingDoubleTreeMap();
 
-  /** Interpolating table for hood angle (rotations) based on distance in meters */
+  /** Interpolating table for hood position in mechanism rotations based on distance in meters. */
   public static final InterpolatingDoubleTreeMap SHOOTER_HOOD_MAP =
       new InterpolatingDoubleTreeMap();
 
   static {
-    // Distance (ft) -> RPM
+    // Distances are authored in feet for tuning readability, then stored as meters.
     SHOOTER_RPM_MAP.put(Units.feetToMeters(5), 2450.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(6), 2500.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(7), 2550.0);
@@ -92,7 +110,7 @@ public final class ShooterConstants {
     SHOOTER_RPM_MAP.put(Units.feetToMeters(11), 2900.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(12), 3000.0);
 
-    // Distance (ft) -> Hood angle (rotations)
+    // Hood positions are mechanism rotations.
     SHOOTER_HOOD_MAP.put(Units.feetToMeters(5), 0.00);
     SHOOTER_HOOD_MAP.put(Units.feetToMeters(6), 0.00);
     SHOOTER_HOOD_MAP.put(Units.feetToMeters(7), 0.00);
@@ -103,7 +121,7 @@ public final class ShooterConstants {
     SHOOTER_HOOD_MAP.put(Units.feetToMeters(12), 1.25);
   }
 
-  /** Returns interpolated RPM and hood angle for a given distance in meters */
+  /** Returns interpolated flywheel RPM and hood rotations for a target distance in meters. */
   public static ShooterSetpoint getSetpointForDistance(double distanceMeters) {
     return new ShooterSetpoint(
         SHOOTER_RPM_MAP.get(distanceMeters), SHOOTER_HOOD_MAP.get(distanceMeters));
@@ -254,10 +272,8 @@ public final class ShooterConstants {
       new CANcoderConfiguration()
           .withMagnetSensor(
               new MagnetSensorConfigs()
-                  // choose one; common is signed ±0.5 rotations
                   .withAbsoluteSensorDiscontinuityPoint(0.5)
                   .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
-                  // set this to your calibrated zero (rotations)
                   .withMagnetOffset(0.0));
 
   public static final SparkBaseConfig SHOOTER_HOOD_SPARKMAX_CONFIG =
