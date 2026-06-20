@@ -24,6 +24,13 @@ import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
 import frc.robot.io.TorqueCurrentMotorIO;
 
+/**
+ * Controls the slapdown intake arm and intake roller.
+ *
+ * <p>Arm positions are mechanism rotations from the absolute/fused encoder. Roller commands use
+ * volts, RPM, or percent output based on the method name. The state machine sends motor commands on
+ * state entry, then uses sensor feedback in {@link #periodic()} to advance transition states.
+ */
 public class IntakeSubsystem extends SubsystemBase {
 
   public enum IntakeState {
@@ -45,22 +52,27 @@ public class IntakeSubsystem extends SubsystemBase {
   protected IntakeState currIntakeState;
   protected IntakeState desiredIntakeState;
 
-  protected final MotorIO intakeRollerLeadIO, intakeRollerFollowIO;
+  protected final MotorIO intakeRollerLeadIO;
+  protected final MotorIO intakeRollerFollowIO;
   protected final MotorIO intakeArmIO;
-  protected final MotorIOInputs intakeRollerLeadInputs, intakeRollerFollowInputs;
+  protected final MotorIOInputs intakeRollerLeadInputs;
+  protected final MotorIOInputs intakeRollerFollowInputs;
   protected final MotorIOInputs intakeArmInputs;
 
-  /**
-   * Tracks the last state for which CAN commands were sent, so we can skip redundant writes when
-   * the state hasn't changed. Reset to null on any state transition.
-   */
+  /** Last state that received entry CAN commands. Reset to null when entering a new state. */
   private IntakeState lastCommandedState = null;
 
-  // Juicer sub-phase tracking — always reset to WAIT on (re-)entry
+  // Juicer sub-phase tracking; reset to PRE_JUICE on entry.
   private JuicerPhase juicerPhase = JuicerPhase.PRE_JUICE;
   private JuicerPhase lastJuicerPhase = null;
 
-  /** Creates a new IntakeSubsystem. */
+  /**
+   * Creates a new intake subsystem.
+   *
+   * @param intakeRollerLeadIO lead roller motor IO; this motor receives roller commands
+   * @param intakeRollerFollowIO follower roller motor IO; updated for telemetry
+   * @param intakeArmIO arm motor IO; controls deploy, stow, and juicer positions
+   */
   public IntakeSubsystem(
       MotorIO intakeRollerLeadIO, MotorIO intakeRollerFollowIO, MotorIO intakeArmIO) {
     this.intakeRollerLeadIO = intakeRollerLeadIO;
@@ -70,45 +82,64 @@ public class IntakeSubsystem extends SubsystemBase {
     this.intakeRollerFollowInputs = new MotorIOInputs();
     this.intakeArmInputs = new MotorIOInputs();
 
-    /* Initialize intake states */
     currIntakeState = IntakeState.HOME;
     desiredIntakeState = IntakeState.HOME;
   }
 
   /* Setters */
 
+  /** Directly commands the lead intake roller velocity in RPM. */
   public void runIntakeRollerRPM(double rpm) {
     intakeRollerLeadIO.setMotorRPM(rpm);
   }
 
+  /** Directly commands the lead intake roller voltage. */
   public void runIntakeRollerVoltage(Voltage voltage) {
     intakeRollerLeadIO.setMotorVoltage(voltage);
   }
 
+  /** Directly commands the lead intake roller percent output from -1.0 to 1.0. */
   public void runIntakeRollerPercentage(double percentage) {
     intakeRollerLeadIO.setMotorPercentage(percentage);
   }
 
+  /** Runs the roller inward at the configured intake voltage. */
   public void runIntake() {
     runIntakeRollerVoltage(INTAKE_ROLLER_VOLTAGE);
   }
 
+  /** Runs the roller outward at the configured outtake voltage. */
   public void runOuttake() {
     runIntakeRollerVoltage(OUTTAKE_ROLLER_VOLTAGE);
   }
 
+  /** Stops the intake roller with 0 volts. */
   public void stopIntake() {
-    intakeRollerLeadIO.setMotorVoltage(Volts.of(0.0));
+    runIntakeRollerVoltage(Volts.of(0.0));
   }
 
+  /**
+   * Commands the intake arm to a mechanism position.
+   *
+   * @param setpoint mechanism rotations from the arm absolute/fused encoder
+   * @param slotID closed-loop slot used by the motor controller
+   */
   public void setIntakeArmSetpoint(double setpoint, int slotID) {
     intakeArmIO.setMotorPosition(setpoint, slotID);
   }
 
+  /** Commands the arm to the deployed position in mechanism rotations. */
   public void deployIntakeArm() {
     intakeArmIO.setMotorPosition(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_FAST_PID_SLOT);
   }
 
+  /**
+   * Holds the deployed arm down while intaking.
+   *
+   * <p>If the arm is not deployed yet, this commands the deployed position first. TalonFX-backed
+   * arms use torque current in amps after reaching deployed; other motor IO implementations fall
+   * back to position hold because not every controller supports torque-current control.
+   */
   public void tensionDeployedIntakeArm() {
     if (!isIntakeArmAtDeployed()) {
       deployIntakeArm();
@@ -122,13 +153,16 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /**
-   * Release the arm motor to neutral output (0%). For a slapdown intake, gravity holds the arm down
-   * once deployed — no PID needed to maintain the down position.
+   * Releases the arm motor to neutral output.
+   *
+   * <p>For this slapdown intake, gravity holds the arm down after deploy. Use only when coasting the
+   * arm is intentional.
    */
   public void coastIntakeArm() {
     intakeArmIO.setMotorVoltage(Volts.of(0.0));
   }
 
+  /** Commands the arm to the stowed position in mechanism rotations. */
   public void stowIntakeArm() {
     intakeArmIO.setMotorPosition(INTAKE_ARM_STOWED_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
   }
@@ -151,18 +185,21 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeRollerLeadInputs.getMotorVelocity();
   }
 
+  /** Returns true when arm position is within configured tolerance of deployed rotations. */
   public boolean isIntakeArmAtDeployed() {
     double positionError =
         Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
+  /** Returns true when arm position is within configured tolerance of stowed rotations. */
   public boolean isIntakeArmAtStowed() {
     double positionError =
         Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
+  /** Returns true when arm position is within configured tolerance of pre-juice rotations. */
   public boolean isIntakeArmAtPreJuice() {
     double positionError =
         Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
@@ -187,6 +224,13 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /* State Management */
 
+  private boolean canStartRollerStateImmediately() {
+    return currIntakeState == IntakeState.INTAKE
+        || currIntakeState == IntakeState.OUTTAKE
+        || currIntakeState == IntakeState.DEPLOYED;
+  }
+
+  /** Requests an intake state; transition states finish inside {@link #handleStateTransition()}. */
   public void setDesiredState(IntakeState state) {
     this.desiredIntakeState = state;
 
@@ -194,31 +238,13 @@ public class IntakeSubsystem extends SubsystemBase {
       return;
     }
 
-    // State is changing — reset the guard so the new state sends CAN commands on
-    // entry
+    // Force one-shot CAN commands to resend after state changes.
     lastCommandedState = null;
 
-    // Handle state transitions
-    switch (desiredIntakeState) {
+    switch (state) {
       case HOME -> currIntakeState = IntakeState.STOWING;
-      case INTAKE -> {
-        if (currIntakeState == IntakeState.OUTTAKE
-            || currIntakeState == IntakeState.DEPLOYED
-            || currIntakeState == IntakeState.INTAKE) {
-          currIntakeState = IntakeState.INTAKE;
-        } else {
-          currIntakeState = IntakeState.DEPLOYING;
-        }
-      }
-      case OUTTAKE -> {
-        if (currIntakeState == IntakeState.INTAKE
-            || currIntakeState == IntakeState.DEPLOYED
-            || currIntakeState == IntakeState.OUTTAKE) {
-          currIntakeState = IntakeState.OUTTAKE;
-        } else {
-          currIntakeState = IntakeState.DEPLOYING;
-        }
-      }
+      case INTAKE, OUTTAKE ->
+          currIntakeState = canStartRollerStateImmediately() ? state : IntakeState.DEPLOYING;
       case DEPLOYED -> currIntakeState = IntakeState.DEPLOYING;
       case JUICER -> {
         currIntakeState = IntakeState.JUICER;
@@ -226,121 +252,157 @@ public class IntakeSubsystem extends SubsystemBase {
         juicerPhase = JuicerPhase.PRE_JUICE;
         lastJuicerPhase = null;
       }
-      default -> {}
+      default -> {
+      }
     }
   }
 
+  /** Advances the intake state machine and sends hardware commands on state entry. */
   public void handleStateTransition() {
-    // Handle the state transitions
     switch (currIntakeState) {
-      case HOME -> {
-        if (lastCommandedState != currIntakeState) {
-          // Command arm to stow via PID and stop rollers on state entry.
-          stowIntakeArm();
-          stopIntake();
-          lastCommandedState = currIntakeState;
-        }
-      }
-      case INTAKE -> {
-        if (lastCommandedState != currIntakeState) {
-          tensionDeployedIntakeArm();
-          runIntake();
-          lastCommandedState = currIntakeState;
-        }
-      }
-      case OUTTAKE -> {
-        if (lastCommandedState != currIntakeState) {
-          deployIntakeArm();
-          runOuttake();
-          lastCommandedState = currIntakeState;
-        }
-      }
-      case DEPLOYED -> {
-        if (lastCommandedState != currIntakeState) {
-          deployIntakeArm();
-          stopIntake();
-          lastCommandedState = currIntakeState;
-        }
-      }
-      case DEPLOYING -> {
-        if (lastCommandedState != currIntakeState) {
-          deployIntakeArm();
-          if (DriverStation.isAutonomous()) {
-            runIntakeRollerVoltage(
-                OUTTAKE_ROLLER_VOLTAGE.times(
-                    0.5)); // Start rollers at half speed when deploying in auto
-            // to help get the first ball in quicker
-          } else if (DriverStation.isTeleop()) {
-            stopIntake();
-          } else {
-            stopIntake();
-          }
-          lastCommandedState = currIntakeState;
-        }
-        // When intake arm reaches setpoint, transition to INTAKE or OUTTAKE state
-        // depending on desired state
-        if (isIntakeArmAtDeployed()) {
-          lastCommandedState = null; // Reset so next state sends commands
-          currIntakeState =
-              switch (desiredIntakeState) {
-                case INTAKE -> IntakeState.INTAKE;
-                case OUTTAKE -> IntakeState.OUTTAKE;
-                default -> IntakeState.DEPLOYED;
-              };
-          if (currIntakeState == IntakeState.INTAKE) {
-            tensionDeployedIntakeArm();
-          }
-        }
-      }
-      case STOWING -> {
-        if (lastCommandedState != currIntakeState) {
-          stowIntakeArm();
-          stopIntake();
-          lastCommandedState = currIntakeState;
-        }
-        // When intake arm reaches setpoint, transition to HOME state
-        if (isIntakeArmAtStowed()) {
-          lastCommandedState = null; // Reset so next state sends commands
-          currIntakeState = IntakeState.HOME;
-        }
-      }
-      case JUICER -> {
-        if (lastCommandedState != currIntakeState) {
-          runIntakeRollerVoltage(
-              INTAKE_ROLLER_VOLTAGE.times(0.5)); // Start rollers at half speed when moving to
-          lastCommandedState = currIntakeState;
-          lastJuicerPhase = null; // Reset so first phase sends its arm command
-        }
-        switch (juicerPhase) {
-          case PRE_JUICE -> {
-            if (lastJuicerPhase != juicerPhase) {
-              // Move arm quickly to pre-juice setpoint to clear hopper wall
-              setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
-              // pre-juice position
-              // to help get the first ball in quicker
-              lastJuicerPhase = juicerPhase;
-            }
-            if (isIntakeArmAtPreJuice()) {
-              juicerPhase = JuicerPhase.SQUEEZE;
-            }
-          }
-          case SQUEEZE -> {
-            if (lastJuicerPhase != juicerPhase) {
-              // Slowly move arm to final juice position to squeeze remaining balls
-              setIntakeArmSetpoint(INTAKE_ARM_JUICER_FINAL_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
-              // help get rid of balls
-              // from the intake during juicing.
-              lastJuicerPhase = juicerPhase;
-            }
-          }
-        }
-      }
+      case HOME -> handleHomeState();
+      case INTAKE -> handleIntakeState();
+      case OUTTAKE -> handleOuttakeState();
+      case DEPLOYED -> handleDeployedState();
+      case DEPLOYING -> handleDeployingState();
+      case STOWING -> handleStowingState();
+      case JUICER -> handleJuicerState();
     }
-    // ── Steady states: only send CAN commands on state entry ──
-    // ── Transition states: send arm + roller commands once on entry ──
-    // TalonFX maintains its onboard PID loop once commanded,
-    // so we only need to send the position setpoint once.
-    // We still check feedback each loop to know when to transition.
+  }
+
+  private void markStateEntryHandled() {
+    lastCommandedState = currIntakeState;
+  }
+
+  private boolean isStateEntry() {
+    return lastCommandedState != currIntakeState;
+  }
+
+  private void handleHomeState() {
+    if (!isStateEntry()) {
+      return;
+    }
+
+    stowIntakeArm();
+    stopIntake();
+    markStateEntryHandled();
+  }
+
+  private void handleIntakeState() {
+    if (!isStateEntry()) {
+      return;
+    }
+
+    tensionDeployedIntakeArm();
+    runIntake();
+    markStateEntryHandled();
+  }
+
+  private void handleOuttakeState() {
+    if (!isStateEntry()) {
+      return;
+    }
+
+    deployIntakeArm();
+    runOuttake();
+    markStateEntryHandled();
+  }
+
+  private void handleDeployedState() {
+    if (!isStateEntry()) {
+      return;
+    }
+
+    deployIntakeArm();
+    stopIntake();
+    markStateEntryHandled();
+  }
+
+  private void handleDeployingState() {
+    if (isStateEntry()) {
+      deployIntakeArm();
+      runDeployingRoller();
+      markStateEntryHandled();
+    }
+
+    if (!isIntakeArmAtDeployed()) {
+      return;
+    }
+
+    lastCommandedState = null;
+    currIntakeState = deployedTargetState();
+    if (currIntakeState == IntakeState.INTAKE) {
+      tensionDeployedIntakeArm();
+    }
+  }
+
+  private void runDeployingRoller() {
+    if (DriverStation.isAutonomous()) {
+      runIntakeRollerVoltage(OUTTAKE_ROLLER_VOLTAGE.times(0.5));
+    } else {
+      stopIntake();
+    }
+  }
+
+  private IntakeState deployedTargetState() {
+    return switch (desiredIntakeState) {
+      case INTAKE -> IntakeState.INTAKE;
+      case OUTTAKE -> IntakeState.OUTTAKE;
+      default -> IntakeState.DEPLOYED;
+    };
+  }
+
+  private void handleStowingState() {
+    if (isStateEntry()) {
+      stowIntakeArm();
+      stopIntake();
+      markStateEntryHandled();
+    }
+
+    if (isIntakeArmAtStowed()) {
+      lastCommandedState = null;
+      currIntakeState = IntakeState.HOME;
+    }
+  }
+
+  private void handleJuicerState() {
+    if (isStateEntry()) {
+      runIntakeRollerVoltage(INTAKE_ROLLER_VOLTAGE.times(0.5));
+      lastJuicerPhase = null;
+      markStateEntryHandled();
+    }
+
+    switch (juicerPhase) {
+      case PRE_JUICE -> {
+        handlePreJuicePhase();
+        if (isIntakeArmAtPreJuice()) {
+          juicerPhase = JuicerPhase.SQUEEZE;
+        }
+      }
+      case SQUEEZE -> handleSqueezePhase();
+    }
+  }
+
+  private boolean isJuicerPhaseEntry() {
+    return lastJuicerPhase != juicerPhase;
+  }
+
+  private void handlePreJuicePhase() {
+    if (!isJuicerPhaseEntry()) {
+      return;
+    }
+
+    setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
+    lastJuicerPhase = juicerPhase;
+  }
+
+  private void handleSqueezePhase() {
+    if (!isJuicerPhaseEntry()) {
+      return;
+    }
+
+    setIntakeArmSetpoint(INTAKE_ARM_JUICER_FINAL_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
+    lastJuicerPhase = juicerPhase;
   }
 
   @Override
