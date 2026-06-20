@@ -13,7 +13,15 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.units.measure.Voltage;
 import java.util.Optional;
 
+/**
+ * REV Spark MAX implementation of {@link MotorIO}.
+ *
+ * <p>Velocity setpoints use RPM. Position setpoints use the configured encoder's position units.
+ * Spark MAX does not support the torque-current control mode, so that capability lives in
+ * {@link TorqueCurrentMotorIO} instead of this class.
+ */
 public class SparkMaxMotorIO implements MotorIO {
+  /** Encoder source used for position telemetry. */
   protected enum EncoderMode {
     PRIMARY,
     ABSOLUTE,
@@ -28,6 +36,7 @@ public class SparkMaxMotorIO implements MotorIO {
   private final SparkClosedLoopController motorController;
   private final EncoderMode encoderMode;
 
+  /** Creates a Spark MAX using the primary relative encoder. */
   public SparkMaxMotorIO(int canID, SparkMaxConfig config, String motorType, String motorName) {
     this(
         canID,
@@ -39,6 +48,7 @@ public class SparkMaxMotorIO implements MotorIO {
         Optional.empty());
   }
 
+  /** Creates a Spark MAX using the absolute encoder. */
   public SparkMaxMotorIO(
       int canID,
       SparkMaxConfig config,
@@ -55,6 +65,7 @@ public class SparkMaxMotorIO implements MotorIO {
         Optional.empty());
   }
 
+  /** Creates a Spark MAX using the alternate encoder. */
   public SparkMaxMotorIO(
       int canID,
       SparkMaxConfig config,
@@ -71,6 +82,7 @@ public class SparkMaxMotorIO implements MotorIO {
         Optional.of(altEncoderConfig));
   }
 
+  /** Full constructor for selecting the encoder source and optional encoder config. */
   public SparkMaxMotorIO(
       int canID,
       SparkMaxConfig config,
@@ -84,15 +96,12 @@ public class SparkMaxMotorIO implements MotorIO {
     this.motorType = motorType;
     this.encoderMode = encoderMode;
 
-    /* Instantiate the motors and encoders */
     motor = new SparkMax(this.canID, MotorType.kBrushless);
     motorController = motor.getClosedLoopController();
 
-    /* Clear any existing faults */
     motor.clearFaults();
 
-    absEncoderConfig.ifPresent(this.config::apply);
-    altEncoderConfig.ifPresent(this.config::apply);
+    applyEncoderConfigs(absEncoderConfig, altEncoderConfig);
 
     motor.configure(this.config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
     motor.getEncoder().setPosition(0);
@@ -121,18 +130,26 @@ public class SparkMaxMotorIO implements MotorIO {
 
   @Override
   public void updateInputs(MotorIOInputs inputs) {
-
     inputs.setMotorConnected(motor.getDeviceId() == canID);
-
     inputs.setMotorVoltage(motor.getAppliedOutput() * motor.getBusVoltage());
     inputs.setMotorCurrent(motor.getOutputCurrent());
     inputs.setMotorTemperature(motor.getMotorTemperature());
     inputs.setMotorVelocity(motor.getEncoder().getVelocity());
+    inputs.setMotorPosition(readSelectedEncoderPosition());
+  }
 
-    switch (encoderMode) {
-      case ABSOLUTE -> inputs.setMotorPosition(motor.getAbsoluteEncoder().getPosition());
-      case ALTERNATE -> inputs.setMotorPosition(motor.getAlternateEncoder().getPosition());
-      case PRIMARY -> inputs.setMotorPosition(motor.getEncoder().getPosition());
-    }
+  private void applyEncoderConfigs(
+      Optional<AbsoluteEncoderConfig> absEncoderConfig,
+      Optional<AlternateEncoderConfig> altEncoderConfig) {
+    absEncoderConfig.ifPresent(this.config::apply);
+    altEncoderConfig.ifPresent(this.config::apply);
+  }
+
+  private double readSelectedEncoderPosition() {
+    return switch (encoderMode) {
+      case ABSOLUTE -> motor.getAbsoluteEncoder().getPosition();
+      case ALTERNATE -> motor.getAlternateEncoder().getPosition();
+      case PRIMARY -> motor.getEncoder().getPosition();
+    };
   }
 }

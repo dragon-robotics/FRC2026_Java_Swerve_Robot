@@ -4,21 +4,27 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Registry for CTRE status signals that should be refreshed in one batch call.
+ *
+ * <p>Robot code should register each {@link MotorIO} once, then call {@link #refreshAll()} once per
+ * robot loop before subsystem periodic methods read cached signal values.
+ */
 public class SignalRegistry {
 
-  // Singleton instance — one registry for the entire robot
   private static final SignalRegistry INSTANCE = new SignalRegistry();
 
   private final List<BaseStatusSignal> allSignals = new ArrayList<>();
   private BaseStatusSignal[] signalArray = new BaseStatusSignal[0];
 
-  // Private constructor — use getInstance()
   private SignalRegistry() {}
 
+  /** Returns the process-wide signal registry. */
   public static SignalRegistry getInstance() {
     return INSTANCE;
   }
 
+  /** Adds CTRE signals exposed by a motor IO implementation. */
   public void registerMotorIO(MotorIO motorIO) {
     BaseStatusSignal[] signals = motorIO.getStatusSignals();
 
@@ -38,12 +44,17 @@ public class SignalRegistry {
    * robotPeriodic() BEFORE CommandScheduler.run().
    */
   public void refreshAll() {
-    if (signalArray.length > 0) {
+    if (hasRegisteredSignals()) {
       BaseStatusSignal.refreshAll(signalArray);
     }
   }
 
+  /** Returns the number of registered CTRE status signals. */
   public int getSignalCount() {
     return signalArray.length;
+  }
+
+  private boolean hasRegisteredSignals() {
+    return signalArray.length > 0;
   }
 }
