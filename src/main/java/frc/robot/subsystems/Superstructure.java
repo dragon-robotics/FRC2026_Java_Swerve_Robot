@@ -33,36 +33,38 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
+/**
+ * Coordinates drivetrain, intake, hopper, shooter, and vision into driver-facing robot states.
+ *
+ * <p>This subsystem owns cross-subsystem command factories and telemetry only. Mechanism commands
+ * still require the individual subsystems so WPILib scheduling can handle preemption correctly.
+ */
 public class Superstructure extends SubsystemBase {
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // State Enum
-  // ──────────────────────────────────────────────────────────────────────────
-
+  /** Driver-facing robot modes composed from individual subsystem states. */
   public enum SuperState {
     DRIVE_STARTING_CONFIG,
     DRIVE,
     INTAKE,
     OUTTAKE,
-    SHOOT_WITH_AIM, // Shooting while aiming with vision assistance (default shoot behavior)
-    SHOOT_NO_AIM, // Shooting without aiming assistance, but still calculating shooter setpoint
-    // based on distance using vision pose estimation (e.g., bumper up shot)
-    MANUAL_SHOOT, // Shooting with manual setpoint and no vision assistance if vision is bad or
-    // unavailable
-    PURGE // Shooting while outtaking to get rid of FUEL as fast as possible for passing
-    // purposes
+    /** Shooting while aiming with vision assistance. */
+    SHOOT_WITH_AIM,
+    /** Shooting without aiming assistance while still using distance-based shooter setpoints. */
+    SHOOT_NO_AIM,
+    /** Shooting with fixed manual shooter setpoints. */
+    MANUAL_SHOOT,
+    /** Shooting while outtaking to clear fuel quickly. */
+    PURGE
   }
 
-  // Used to select which shooting state we are in
+  /** Selects which command runs when the driver requests a shot. */
   public enum ShootMode {
     DEFAULT_SHOOT_WITH_AIM,
     MANUAL_BUMPER_UP,
     MANUAL_TRENCH
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Subsystem References
-  // ──────────────────────────────────────────────────────────────────────────
+  /* Subsystem references */
 
   private final CommandSwerveDrivetrain swerve;
   private final IntakeSubsystem intake;
@@ -72,25 +74,19 @@ public class Superstructure extends SubsystemBase {
   private final RobotContainer container;
   private final Telemetry logger;
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Swerve Requests
-  // ──────────────────────────────────────────────────────────────────────────
+  /* Swerve requests */
 
   private final SwerveRequest.SwerveDriveBrake brake;
   private final SwerveRequest.PointWheelsAt point;
   private final SwerveRequest.ApplyFieldSpeeds applyFieldSpeeds;
   private final SwerveRequest.ApplyRobotSpeeds applyRobotSpeeds;
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Heading Tracking
-  // ──────────────────────────────────────────────────────────────────────────
+  /* Heading tracking */
 
   private Optional<Rotation2d> currentHeading;
   private double rotationLastTriggered;
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Alignment & Targeting
-  // ──────────────────────────────────────────────────────────────────────────
+  /* Alignment and targeting */
 
   private static final double ALIGNMENT_TOLERANCE_DEGREES = 5;
   private boolean alignedToTarget = false;
@@ -98,15 +94,14 @@ public class Superstructure extends SubsystemBase {
   private FieldZones currentZone;
   private ShootMode shootMode = ShootMode.DEFAULT_SHOOT_WITH_AIM;
 
-  // Used for manual override if vision fails and we need to shoot with driver
-  // manually aiming
+  /* Manual shot setpoints */
   private static final double MANUAL_BUMPER_UP_RPM = 2500.0;
   private static final double MANUAL_BUMPER_UP_HOOD = 0.0;
   private static final double MANUAL_TRENCH_RPM = 2900.0;
   private static final double MANUAL_TRENCH_HOOD = 0.75;
   private static final double NEUTRAL_ZONE_HOOD_LOCK = 2.0;
 
-  // Pre-cached zone name strings — avoids .name() heap allocation every cycle
+  /** Pre-cached zone names avoid .name() heap allocation every cycle. */
   private static final String[] ZONE_NAMES;
 
   static {
@@ -117,20 +112,11 @@ public class Superstructure extends SubsystemBase {
     }
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // State Machine
-  // ──────────────────────────────────────────────────────────────────────────
-
+  /* State machine */
   private SuperState state;
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Alliance Initialization
-  // ──────────────────────────────────────────────────────────────────────────
+  /* Alliance state */
   private DriverStation.Alliance alliance;
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Constructor
-  // ──────────────────────────────────────────────────────────────────────────
 
   public Superstructure(
       CommandSwerveDrivetrain swerve,
@@ -170,11 +156,10 @@ public class Superstructure extends SubsystemBase {
     currentZone = null;
     refreshAllianceAndCachedHubTarget();
 
-    // ── Default Commands ─────────────────────────────────────────────────
-    // These run whenever no other command requires the subsystem.
-    // They define the "DRIVE" superstate behavior. When any button-triggered
-    // command ends, the scheduler automatically resumes these defaults —
-    // no god loop needed.
+    configureDefaultCommands();
+  }
+
+  private void configureDefaultCommands() {
     intake.setDefaultCommand(
         intake
             .runOnce(() -> intake.setDesiredState(IntakeState.DEPLOYED))
@@ -269,13 +254,7 @@ public class Superstructure extends SubsystemBase {
             () -> {
               setDesiredSuperState(withAim ? SuperState.SHOOT_WITH_AIM : SuperState.SHOOT_NO_AIM);
               shooter.setDesiredState(ShooterState.SHOOT);
-              // Require alignment before feeding; AimAtTargetPoseCmd handles swerve in
-              // parallel.
-              if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-                hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-              } else {
-                hopper.setDesiredState(HopperState.STOP);
-              }
+              setHopperFeedWhenShooterReady(true);
             },
             shooter,
             hopper)
@@ -291,11 +270,7 @@ public class Superstructure extends SubsystemBase {
               setDesiredSuperState(SuperState.PURGE);
               intake.setDesiredState(IntakeState.OUTTAKE);
               shooter.setDesiredState(ShooterState.SHOOT);
-              if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-                hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-              } else {
-                hopper.setDesiredState(HopperState.STOP);
-              }
+              setHopperFeedWhenShooterReady(true);
             },
             intake,
             shooter,
@@ -312,16 +287,19 @@ public class Superstructure extends SubsystemBase {
               shooter.setSetpoint(shooterRpm, hoodAngle);
               setDesiredSuperState(SuperState.MANUAL_SHOOT);
               shooter.setDesiredState(ShooterState.SHOOT);
-              if (shooter.getCurrentState() == ShooterState.SHOOT) {
-                hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-              } else {
-                hopper.setDesiredState(HopperState.STOP);
-              }
+              setHopperFeedWhenShooterReady(false);
             },
             shooter,
             hopper)
         .alongWith(Commands.run(() -> swerve.setControl(brake), swerve))
         .withName("SuperState(MANUAL_SHOOT)");
+  }
+
+  private void setHopperFeedWhenShooterReady(boolean requireAlignment) {
+    boolean shooterReady = shooter.getCurrentState() == ShooterState.SHOOT;
+    boolean alignmentReady = !requireAlignment || isAlignedToTarget();
+    hopper.setDesiredState(
+        shooterReady && alignmentReady ? HopperState.INDEXTOSHOOTER : HopperState.STOP);
   }
 
   /**
@@ -346,11 +324,7 @@ public class Superstructure extends SubsystemBase {
                                 : IntakeState.DEPLOYED);
                       }
                       shooter.setDesiredState(ShooterState.SHOOT);
-                      if (shooter.getCurrentState() == ShooterState.SHOOT && isAlignedToTarget()) {
-                        hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-                      } else {
-                        hopper.setDesiredState(HopperState.STOP);
-                      }
+                      setHopperFeedWhenShooterReady(true);
                     },
                     intake,
                     shooter,
@@ -407,9 +381,7 @@ public class Superstructure extends SubsystemBase {
             });
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Heading Accessors (used by DefaultDriveCmd)
-  // ──────────────────────────────────────────────────────────────────────────
+  /* Heading accessors used by DefaultDriveCmd */
 
   public Optional<Rotation2d> getCurrentHeading() {
     return currentHeading;
@@ -427,9 +399,7 @@ public class Superstructure extends SubsystemBase {
     this.rotationLastTriggered = t;
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Drive Commands
-  // ──────────────────────────────────────────────────────────────────────────
+  /* Drive command factories */
 
   public Command defaultDrive(
       DoubleSupplier translationSup,
@@ -481,10 +451,6 @@ public class Superstructure extends SubsystemBase {
         });
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Intake Commands
-  // ──────────────────────────────────────────────────────────────────────────
-
   public void setDesiredSuperState(SuperState state) {
     this.state = state;
   }
@@ -501,117 +467,110 @@ public class Superstructure extends SubsystemBase {
    * @return A command that controls subsystems for the duration of the state
    */
   public Command setStateCmd(SuperState desiredState) {
-    switch (desiredState) {
-      case DRIVE_STARTING_CONFIG -> {
-        return Commands.run(
-                () -> {
-                  setDesiredSuperState(SuperState.DRIVE_STARTING_CONFIG);
-                  intake.setDesiredState(IntakeState.HOME);
-                  hopper.setDesiredState(HopperState.STOP);
-                  shooter.setDesiredState(ShooterState.PREPFUEL);
-                },
-                intake,
-                hopper,
-                shooter)
-            .withName("SuperState(DRIVE_STARTING_CONFIG)");
-      }
-      case DRIVE -> {
-        // No subsystem commands needed — releasing any other state command
-        // causes the scheduler to resume default commands, which already
-        // implement DRIVE behavior (intake=DEPLOYED, hopper=STOP, shooter=PREPFUEL).
-        return Commands.run(
-                () -> {
-                  setDesiredSuperState(SuperState.DRIVE);
-                  intake.setDesiredState(IntakeState.DEPLOYED);
-                  hopper.setDesiredState(HopperState.STOP);
-                  shooter.setDesiredState(ShooterState.PREPFUEL);
-                },
-                intake,
-                hopper,
-                shooter)
-            .withName("SuperState(DRIVE)");
-      }
-
-      case INTAKE -> {
-        return Commands.run(
-                () -> {
-                  setDesiredSuperState(SuperState.INTAKE);
-                  intake.setDesiredState(IntakeState.INTAKE);
-                  hopper.setDesiredState(HopperState.STOP);
-                  shooter.setDesiredState(ShooterState.PREPFUEL);
-                },
-                intake,
-                hopper,
-                shooter)
-            .withName("SuperState(INTAKE)");
-      }
-
-      case OUTTAKE -> {
-        return Commands.run(
-                () -> {
-                  setDesiredSuperState(SuperState.OUTTAKE);
-                  intake.setDesiredState(IntakeState.OUTTAKE);
-                  hopper.setDesiredState(HopperState.INDEXTOINTAKE);
-                  shooter.setDesiredState(ShooterState.PREPFUEL);
-                },
-                intake,
-                hopper,
-                shooter)
-            .withName("SuperState(OUTTAKE)");
-      }
-
-      case SHOOT_WITH_AIM -> {
-        // SHOOT_WITH_AIM is only enabled in designated field zones.
-        if (!isShootAllowedZone()) {
-          return Commands.idle().withName("SuperState(SHOOT_WITH_AIM:DISALLOWED)");
-        }
-        if (isPurgeZone()) {
-          return createPurgeStateCommand().withName("SuperState(SHOOT_WITH_AIM->PURGE)");
-        }
-        return createShootStateCommand(true).withName("SuperState(SHOOT_WITH_AIM)");
-      }
-      case SHOOT_NO_AIM -> {
-        // SHOOT_NO_AIM is only enabled in designated field zones.
-        if (!isShootAllowedZone()) {
-          return Commands.idle().withName("SuperState(SHOOT_NO_AIM:DISALLOWED)");
-        }
-        return createShootStateCommand(false).withName("SuperState(SHOOT_NO_AIM)");
-      }
-      case MANUAL_SHOOT -> {
-        return Commands.run(
-                () -> {
-                  setDesiredSuperState(SuperState.MANUAL_SHOOT);
-                  shooter.setDesiredState(ShooterState.SHOOT);
-                  if (shooter.getCurrentState() == ShooterState.SHOOT) {
-                    hopper.setDesiredState(HopperState.INDEXTOSHOOTER);
-                  } else {
-                    hopper.setDesiredState(HopperState.STOP);
-                  }
-                },
-                shooter,
-                hopper)
-            .alongWith(Commands.run(() -> swerve.setControl(brake), swerve))
-            .withName("SuperState(MANUAL_SHOOT)");
-      }
-      case PURGE -> {
-        if (!isPurgeZone()) {
-          return Commands.idle().withName("SuperState(PURGE:DISALLOWED)");
-        }
-        return createPurgeStateCommand().withName("SuperState(PURGE)");
-      }
-      default -> {
-        return Commands.none();
-      }
-    }
+    return switch (desiredState) {
+      case DRIVE_STARTING_CONFIG -> driveStartingConfigCmd();
+      case DRIVE -> driveCmd();
+      case INTAKE -> intakeCmd();
+      case OUTTAKE -> outtakeCmd();
+      case SHOOT_WITH_AIM -> shootWithAimCmd();
+      case SHOOT_NO_AIM -> shootNoAimCmd();
+      case MANUAL_SHOOT -> manualShootCmd();
+      case PURGE -> purgeCmd();
+    };
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Individual Subsystem Override Commands
-  //
-  // These require ONLY their specific subsystem — they preempt the default
-  // command on that subsystem without affecting others. When released,
-  // the default command resumes automatically.
-  // ──────────────────────────────────────────────────────────────────────────
+  private Command driveStartingConfigCmd() {
+    return Commands.run(
+            () -> {
+              setDesiredSuperState(SuperState.DRIVE_STARTING_CONFIG);
+              intake.setDesiredState(IntakeState.HOME);
+              hopper.setDesiredState(HopperState.STOP);
+              shooter.setDesiredState(ShooterState.PREPFUEL);
+            },
+            intake,
+            hopper,
+            shooter)
+        .withName("SuperState(DRIVE_STARTING_CONFIG)");
+  }
+
+  private Command driveCmd() {
+    return Commands.run(
+            () -> {
+              setDesiredSuperState(SuperState.DRIVE);
+              intake.setDesiredState(IntakeState.DEPLOYED);
+              hopper.setDesiredState(HopperState.STOP);
+              shooter.setDesiredState(ShooterState.PREPFUEL);
+            },
+            intake,
+            hopper,
+            shooter)
+        .withName("SuperState(DRIVE)");
+  }
+
+  private Command intakeCmd() {
+    return Commands.run(
+            () -> {
+              setDesiredSuperState(SuperState.INTAKE);
+              intake.setDesiredState(IntakeState.INTAKE);
+              hopper.setDesiredState(HopperState.STOP);
+              shooter.setDesiredState(ShooterState.PREPFUEL);
+            },
+            intake,
+            hopper,
+            shooter)
+        .withName("SuperState(INTAKE)");
+  }
+
+  private Command outtakeCmd() {
+    return Commands.run(
+            () -> {
+              setDesiredSuperState(SuperState.OUTTAKE);
+              intake.setDesiredState(IntakeState.OUTTAKE);
+              hopper.setDesiredState(HopperState.INDEXTOINTAKE);
+              shooter.setDesiredState(ShooterState.PREPFUEL);
+            },
+            intake,
+            hopper,
+            shooter)
+        .withName("SuperState(OUTTAKE)");
+  }
+
+  private Command shootWithAimCmd() {
+    if (!isShootAllowedZone()) {
+      return Commands.idle().withName("SuperState(SHOOT_WITH_AIM:DISALLOWED)");
+    }
+    if (isPurgeZone()) {
+      return createPurgeStateCommand().withName("SuperState(SHOOT_WITH_AIM->PURGE)");
+    }
+    return createShootStateCommand(true).withName("SuperState(SHOOT_WITH_AIM)");
+  }
+
+  private Command shootNoAimCmd() {
+    if (!isShootAllowedZone()) {
+      return Commands.idle().withName("SuperState(SHOOT_NO_AIM:DISALLOWED)");
+    }
+    return createShootStateCommand(false).withName("SuperState(SHOOT_NO_AIM)");
+  }
+
+  private Command manualShootCmd() {
+    return Commands.run(
+            () -> {
+              setDesiredSuperState(SuperState.MANUAL_SHOOT);
+              shooter.setDesiredState(ShooterState.SHOOT);
+              setHopperFeedWhenShooterReady(false);
+            },
+            shooter,
+            hopper)
+        .alongWith(Commands.run(() -> swerve.setControl(brake), swerve))
+        .withName("SuperState(MANUAL_SHOOT)");
+  }
+
+  private Command purgeCmd() {
+    if (!isPurgeZone()) {
+      return Commands.idle().withName("SuperState(PURGE:DISALLOWED)");
+    }
+    return createPurgeStateCommand().withName("SuperState(PURGE)");
+  }
 
   /** Override intake independently — preempts default, doesn't touch hopper/shooter. */
   public Command intakeOverrideCmd(IntakeState intakeState) {
@@ -653,9 +612,7 @@ public class Superstructure extends SubsystemBase {
         });
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Alignment
-  // ──────────────────────────────────────────────────────────────────────────
+  /* Alignment */
 
   /** Returns true if the robot heading is within tolerance of the angle to the hub. */
   public boolean isAlignedToTarget() {
@@ -697,7 +654,6 @@ public class Superstructure extends SubsystemBase {
     alignedToTarget = isHeadingAlignedToTarget(currentPose, target, ALIGNMENT_TOLERANCE_DEGREES);
   }
 
-  // Heading Lock based on zone based on user input
   /**
    * Returns the desired locked heading angle (in degrees) based on the current field zone and
    * alliance. Returns empty if no lock is defined for the zone.
@@ -723,9 +679,7 @@ public class Superstructure extends SubsystemBase {
     };
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Hub Shift Accessors
-  // ──────────────────────────────────────────────────────────────────────────
+  /* Hub shift accessors */
 
   /**
    * Returns true if our hub is currently active and we should be shooting. Uses the shifted
@@ -746,71 +700,74 @@ public class Superstructure extends SubsystemBase {
     return HubShiftUtil.getShiftedShiftInfo().remainingTime();
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Periodic — telemetry and vision reseed ONLY, no subsystem state writes
-  // ──────────────────────────────────────────────────────────────────────────
-
+  /** Updates cached targeting state and publishes superstructure telemetry. */
   @Override
   public void periodic() {
     DogLog.time("Perf/Superstructure");
 
-    // ── Alliance (always poll so cached value tracks DS changes) ───────────
     refreshAllianceAndCachedHubTarget();
-
-    // Always compute telemetry regardless of alliance confirmation
     Pose2d currentPose = swerve.getState().Pose;
 
-    // ── Zone detection (zero-alloc via pre-cached name strings) ────────────
+    updateCurrentZone(currentPose);
+    updateShooterSetpointAndAlignment(currentPose);
+    updateVisionAimingMode();
+    logHubShiftTelemetry();
+    logSuperstructureTelemetry();
+
+    DogLog.timeEnd("Perf/Superstructure");
+  }
+
+  private void updateCurrentZone(Pose2d currentPose) {
     if (allianceConfirmed) {
       currentZone = FieldZones.fromPose(currentPose, alliance);
       DogLog.log("Superstructure/Zone", ZONE_NAMES[currentZone.ordinal()]);
     }
+  }
 
-    // ── Distance + alignment (needed by SHOOT command group) ──────────────
+  private void updateShooterSetpointAndAlignment(Pose2d currentPose) {
     Translation2d aimTarget = getCurrentAimTarget();
     if (aimTarget != null) {
       double distanceToTarget = currentPose.getTranslation().getDistance(aimTarget);
       DogLog.log("Superstructure/Distance to Target (feet)", Units.metersToFeet(distanceToTarget));
-      if (state != SuperState.MANUAL_SHOOT) {
-        shooter.setSetpointForDistance(distanceToTarget);
-        if (isNeutralShootOrPurgeZone()) {
-          shooter.setSetpoint(shooter.getTargetRPM(), NEUTRAL_ZONE_HOOD_LOCK);
-        }
-      }
+      updateShooterSetpointForDistance(distanceToTarget);
       updateAlignmentStatus(currentPose, aimTarget);
     }
+  }
 
-    // Tighten vision translation trust while aiming/aligning to score.
+  private void updateShooterSetpointForDistance(double distanceToTarget) {
+    if (state == SuperState.MANUAL_SHOOT) {
+      return;
+    }
+
+    shooter.setSetpointForDistance(distanceToTarget);
+    if (isNeutralShootOrPurgeZone()) {
+      shooter.setSetpoint(shooter.getTargetRPM(), NEUTRAL_ZONE_HOOD_LOCK);
+    }
+  }
+
+  private void updateVisionAimingMode() {
     if (vision != null) {
       vision.setAiming(state == SuperState.SHOOT_WITH_AIM || state == SuperState.SHOOT_NO_AIM);
     }
+  }
 
-    // // ── Vision reseed — no-op if no qualifying fix available ──────────────
-    // if (vision != null) {
-    // vision.tryReseedFromVision(currentPose);
-    // }
-
-    // ── Hub Shift Tracking ─────────────────────────────────────────────────
+  private void logHubShiftTelemetry() {
     ShiftInfo officialShift = HubShiftUtil.getOfficialShiftInfo();
     ShiftInfo shiftedShift = HubShiftUtil.getShiftedShiftInfo();
 
-    // Official shift info (matches FMS timing exactly)
-    DogLog.log("HubShift/Official/CurrentShift", officialShift.currentShift().name());
-    DogLog.log("HubShift/Official/Active", officialShift.active());
-    DogLog.log("HubShift/Official/ElapsedTime", officialShift.elapsedTime());
-    DogLog.log("HubShift/Official/RemainingTime", officialShift.remainingTime());
-
-    // Shifted info (accounts for fuel flight time + count delay).
-    // Use THIS for robot decisions — it tells you when to START and STOP
-    // shooting so fuel arrives during the active window.
-    DogLog.log("HubShift/Shifted/CurrentShift", shiftedShift.currentShift().name());
-    DogLog.log("HubShift/Shifted/Active", shiftedShift.active());
-    DogLog.log("HubShift/Shifted/ElapsedTime", shiftedShift.elapsedTime());
-    DogLog.log("HubShift/Shifted/RemainingTime", shiftedShift.remainingTime());
-
-    // Which alliance goes first (for driver awareness)
+    logShiftInfo("HubShift/Official", officialShift);
+    logShiftInfo("HubShift/Shifted", shiftedShift);
     DogLog.log("HubShift/FirstActiveAlliance", HubShiftUtil.getFirstActiveAlliance().name());
+  }
 
+  private static void logShiftInfo(String prefix, ShiftInfo shiftInfo) {
+    DogLog.log(prefix + "/CurrentShift", shiftInfo.currentShift().name());
+    DogLog.log(prefix + "/Active", shiftInfo.active());
+    DogLog.log(prefix + "/ElapsedTime", shiftInfo.elapsedTime());
+    DogLog.log(prefix + "/RemainingTime", shiftInfo.remainingTime());
+  }
+
+  private void logSuperstructureTelemetry() {
     DogLog.log("Superstructure/CurrentState", state.toString());
     DogLog.log("Superstructure/IsAlignedToTarget", alignedToTarget);
     DogLog.log(
@@ -818,7 +775,5 @@ public class Superstructure extends SubsystemBase {
         shootMode == ShootMode.DEFAULT_SHOOT_WITH_AIM);
     DogLog.log("Superstructure/ShootMode/ManualBumperUp", shootMode == ShootMode.MANUAL_BUMPER_UP);
     DogLog.log("Superstructure/ShootMode/ManualTrench", shootMode == ShootMode.MANUAL_TRENCH);
-
-    DogLog.timeEnd("Perf/Superstructure");
   }
 }
