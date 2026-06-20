@@ -9,7 +9,16 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 
+/**
+ * Vision camera transforms, AprilTag acceptance gates, and pose-estimator uncertainty settings.
+ *
+ * <p>Camera transforms are robot-relative. Translation values are meters in the WPILib robot frame
+ * (+X forward, +Y left, +Z up). Rotation values are radians.
+ */
 public final class VisionConstants {
+
+  /* AprilTag pose-estimation cameras */
+
   public static final String[] APTAG_CAMERA_NAMES = {
     "AprilTagPoseEstCameraF",
     "AprilTagPoseEstCameraR",
@@ -56,9 +65,11 @@ public final class VisionConstants {
     APTAG_POSE_EST_CAM_L_POS
   };
 
+  /** Default x, y, and heading standard deviations used when no richer model is available. */
   public static final Matrix<N3, N1> DEFAULT_TAG_STDDEV = VecBuilder.fill(0.9, 0.9, 0.9);
 
-  // Acceptance gates.
+  /* Acceptance gates */
+
   /** Reject single-tag observations whose ambiguity exceeds this. */
   public static final double MAX_AMBIGUITY = 0.3;
 
@@ -81,7 +92,8 @@ public final class VisionConstants {
    */
   public static final double MAX_POSE_DELTA_METERS = 2.5;
 
-  // Standard-deviation model.
+  /* Standard-deviation model */
+
   /**
    * Baseline translation std-dev at 1 m / 1 tag, scaled by dist^2 / tagCount in VisionSubsystem.
    */
@@ -101,7 +113,9 @@ public final class VisionConstants {
    */
   public static final double SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER = 5.0;
 
-  // Constrained SolvePnP hybrid fallback (PhotonVision IO).
+  /* PhotonVision fallback strategies */
+
+  /** Enables constrained SolvePnP fallback in PhotonVision IO. */
   public static final boolean ENABLE_CONSTRAINED_FALLBACK = true;
 
   /**
@@ -119,7 +133,10 @@ public final class VisionConstants {
   /** Weight on heading error in constrained solve. Higher values trust heading more strongly. */
   public static final double CONSTRAINED_HEADING_SCALE_FACTOR = 0.2;
 
+  /** Per-camera translation standard-deviation multipliers ordered like APTAG_CAMERA_NAMES. */
   public static double[] CAMERA_STDDEV_FACTORS = new double[] {1.0, 1.0, 1.0, 1.0};
+
+  /* Coplanar tag handling */
 
   /**
    * Tags are considered coplanar (same Hub face) when the angle between their outward Z-axis

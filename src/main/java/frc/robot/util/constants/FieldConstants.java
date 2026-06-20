@@ -11,11 +11,18 @@ import edu.wpi.first.wpilibj.Filesystem;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Field geometry, AprilTag layout, and derived field-zone helpers.
+ *
+ * <p>All field distances use meters in the WPILib field coordinate frame. Zone classification
+ * normalizes poses to the blue-alliance perspective before applying boundaries.
+ */
 public final class FieldConstants {
-  // The different layouts of the AprilTags on the field
-  public static final AprilTagFieldLayout APTAG_FIELD_LAYOUT;
 
-  static {
+  /** AprilTag field layout loaded from deploy, with WPILib default field fallback. */
+  public static final AprilTagFieldLayout APTAG_FIELD_LAYOUT = loadDefaultAprilTagLayout();
+
+  private static AprilTagFieldLayout loadDefaultAprilTagLayout() {
     Path defaultPath =
         Path.of(
             Filesystem.getDeployDirectory().getPath(),
@@ -31,13 +38,19 @@ public final class FieldConstants {
           "CRITICAL: Failed to load default AprilTag field resource: " + e.getMessage(), true);
       defaultLayout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
     }
-    APTAG_FIELD_LAYOUT = defaultLayout;
+    return defaultLayout;
   }
 
+  /** Field length in meters from the active AprilTag layout. */
   public static final double FIELD_LENGTH = APTAG_FIELD_LAYOUT.getFieldLength();
+
+  /** Field width in meters from the active AprilTag layout. */
   public static final double FIELD_WIDTH = APTAG_FIELD_LAYOUT.getFieldWidth();
+
+  /** Approximate playable field height in meters. */
   public static final double FIELD_HEIGHT = Units.inchesToMeters(72);
 
+  /** Named field zones used by autonomous pathing, aiming, and purge decisions. */
   public static enum FieldZones {
     ALLIANCE_LEFT,
     ALLIANCE_LEFT_TRENCH,
@@ -58,15 +71,20 @@ public final class FieldConstants {
     OPPONENT_RIGHT_TRENCH,
     OPPONENT_RIGHT_BUMP;
 
+    /**
+     * Classifies a robot pose into a named field zone.
+     *
+     * <p>Red-alliance poses are mirrored into the blue-alliance frame before classification, so
+     * left/right labels are relative to the active alliance driver-station perspective.
+     */
     public static FieldZones fromPose(Pose2d pose, DriverStation.Alliance alliance) {
       double x = pose.getX();
       double y = pose.getY();
 
-      // Flip the field for red since everything is calculated relatively to blue //
+      // Zone boundaries are authored from the blue-alliance perspective.
       double normalizedX = alliance == DriverStation.Alliance.Red ? FIELD_LENGTH - x : x;
       double normalizedY = alliance == DriverStation.Alliance.Red ? FIELD_WIDTH - y : y;
 
-      // Check if we're left or right
       boolean isLeft = normalizedY > LinesHorizontal.CENTER;
 
       if (normalizedX < allianceZoneBoundaryX()) {
@@ -253,6 +271,7 @@ public final class FieldConstants {
     }
   }
 
+  /** Alliance-specific target points for shooting and purging from neutral-field positions. */
   public static class AimPoints {
 
     public static final Translation2d BLUE_HUB_CENTER = Hub.BLUE_CENTER_POSE;
@@ -261,7 +280,7 @@ public final class FieldConstants {
     private static final double BLUE_NEUTRAL_AIM_X = LinesVertical.ALLIANCE_ZONE * 0.90;
     private static final double RED_NEUTRAL_AIM_X = FIELD_LENGTH - BLUE_NEUTRAL_AIM_X;
 
-    /* Blue */
+    /* Blue alliance */
     public static final Translation2d BLUE_LEFT_PURGE_POINT =
         new Translation2d(
             BLUE_NEUTRAL_AIM_X,
@@ -283,7 +302,7 @@ public final class FieldConstants {
             BLUE_NEUTRAL_AIM_X,
             (LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START + LinesHorizontal.CENTER) / 2.0);
 
-    /* Red */
+    /* Red alliance */
     public static final Translation2d RED_LEFT_PURGE_POINT =
         new Translation2d(
             RED_NEUTRAL_AIM_X,
@@ -302,9 +321,7 @@ public final class FieldConstants {
         new Translation2d(RED_NEUTRAL_AIM_X, FIELD_WIDTH - RED_LEFT_SHOOT_POINT.getY());
   }
 
-  /**
-   * Officially defined and relevant vertical lines found on the field (defined by X-axis offset)
-   */
+  /** Relevant field lines defined by X-axis offset in meters. */
   public static class LinesVertical {
     public static final double CENTER = FIELD_LENGTH / 2.0;
     public static final double STARTING = APTAG_FIELD_LAYOUT.getTagPose(26).get().getX();
@@ -319,10 +336,10 @@ public final class FieldConstants {
   }
 
   /**
-   * Officially defined and relevant horizontal lines found on the field (defined by Y-axis offset)
+   * Relevant field lines defined by Y-axis offset in meters.
    *
-   * <p>NOTE: The field element start and end are always left to right from the perspective of the
-   * alliance station
+   * <p>Field element start/end labels are left-to-right from the perspective of that alliance
+   * station.
    */
   public static class LinesHorizontal {
 
@@ -363,9 +380,10 @@ public final class FieldConstants {
     public static final double RED_LEFT_TRENCH_OPEN_START = FIELD_WIDTH;
   }
 
+  /** Hub dimensions, corners, centers, and AprilTag face poses. */
   public static final class Hub {
 
-    // Dimensions
+    /* Dimensions */
     public static final double WIDTH = Units.inchesToMeters(47.0);
     public static final double HEIGHT =
         Units.inchesToMeters(72.0); // includes the catcher at the top
@@ -451,8 +469,9 @@ public final class FieldConstants {
     public static final Pose2d RED_LEFT_FACE = APTAG_FIELD_LAYOUT.getTagPose(5).get().toPose2d();
   }
 
+  /** Left-side bump geometry, mirrored for each alliance perspective. */
   public static final class LeftBump {
-    // Dimensions
+    /* Dimensions */
     public static final double WIDTH = Units.inchesToMeters(73.0);
     public static final double HEIGHT = Units.inchesToMeters(6.513);
     public static final double DEPTH = Units.inchesToMeters(44.4);
@@ -481,9 +500,10 @@ public final class FieldConstants {
         Hub.RED_FAR_RIGHT_CORNER.plus(new Translation2d(0.0, WIDTH));
   }
 
+  /** Right-side bump geometry, mirrored for each alliance perspective. */
   public static final class RightBump {
 
-    // Dimensions
+    /* Dimensions */
     public static final double WIDTH = Units.inchesToMeters(73.0);
     public static final double HEIGHT = Units.inchesToMeters(6.513);
     public static final double DEPTH = Units.inchesToMeters(44.4);
@@ -508,8 +528,9 @@ public final class FieldConstants {
         Hub.RED_FAR_RIGHT_CORNER.minus(new Translation2d(0.0, WIDTH));
   }
 
+  /** Left trench dimensions and opening points. */
   public static final class LeftTrench {
-    // Dimensions
+    /* Dimensions */
     public static final double WIDTH = Units.inchesToMeters(65.65);
     public static final double DEPTH = Units.inchesToMeters(47.0);
     public static final double HEIGHT = Units.inchesToMeters(40.25);
@@ -532,8 +553,9 @@ public final class FieldConstants {
         new Translation3d(LinesVertical.HUB_CENTER, OPENING_WIDTH, OPENING_HEIGHT);
   }
 
+  /** Right trench dimensions and opening points. */
   public static final class RightTrench {
-    // Dimensions
+    /* Dimensions */
     public static final double WIDTH = Units.inchesToMeters(65.65);
     public static final double DEPTH = Units.inchesToMeters(47.0);
     public static final double HEIGHT = Units.inchesToMeters(40.25);
@@ -556,62 +578,9 @@ public final class FieldConstants {
         new Translation3d(LinesVertical.HUB_CENTER, FIELD_WIDTH, OPENING_HEIGHT);
   }
 
-  // public static final class Tower {
-  // // Dimensions
-  // public static final double WIDTH = Units.inchesToMeters(49.25);
-  // public static final double DEPTH = Units.inchesToMeters(45.0);
-  // public static final double HEIGHT = Units.inchesToMeters(78.25);
-  // public static final double INNER_OPENING_WIDTH =
-  // Units.inchesToMeters(32.250);
-  // public static final double FRONT_FACE_X = Units.inchesToMeters(43.51);
-  // public static final double UPRIGHT_HEIGHT = Units.inchesToMeters(72.1);
-
-  // // Rung heights from the floor
-  // public static final double LOW_RUNG_HEIGHT = Units.inchesToMeters(27.0);
-  // public static final double MID_RUNG_HEIGHT = Units.inchesToMeters(45.0);
-  // public static final double HIGH_RUNG_HEIGHT = Units.inchesToMeters(63.0);
-
-  // // ── Blue Alliance ──────────────────────────────────────────────────────
-  // public static final Translation2d BLUE_CENTER_POINT =
-  // new Translation2d(FRONT_FACE_X,
-  // APTAG_FIELD_LAYOUT.getTagPose(31).get().getY());
-  // public static final Translation2d BLUE_LEFT_UPRIGHT =
-  // new Translation2d(
-  // FRONT_FACE_X,
-  // (APTAG_FIELD_LAYOUT.getTagPose(31).get().getY())
-  // + INNER_OPENING_WIDTH / 2
-  // + Units.inchesToMeters(0.75));
-  // public static final Translation2d BLUE_RIGHT_UPRIGHT =
-  // new Translation2d(
-  // FRONT_FACE_X,
-  // (APTAG_FIELD_LAYOUT.getTagPose(31).get().getY())
-  // - INNER_OPENING_WIDTH / 2
-  // - Units.inchesToMeters(0.75));
-
-  // // ── Red Alliance ───────────────────────────────────────────────────────
-  // // Red trench is the field-symmetric mirror of blue:
-  // // X_red = FIELD_LENGTH - X_blue
-  // // Y_red = FIELD_WIDTH - Y_blue (left/right labels swap across centerline)
-  // public static final Translation2d RED_CENTER_POINT =
-  // new Translation2d(
-  // FIELD_LENGTH - FRONT_FACE_X,
-  // FIELD_WIDTH - APTAG_FIELD_LAYOUT.getTagPose(31).get().getY());
-  // public static final Translation2d RED_LEFT_UPRIGHT =
-  // new Translation2d(
-  // FIELD_LENGTH - FRONT_FACE_X,
-  // (FIELD_WIDTH - APTAG_FIELD_LAYOUT.getTagPose(31).get().getY())
-  // + INNER_OPENING_WIDTH / 2
-  // + Units.inchesToMeters(0.75));
-  // public static final Translation2d RED_RIGHT_UPRIGHT =
-  // new Translation2d(
-  // FIELD_LENGTH - FRONT_FACE_X,
-  // (FIELD_WIDTH - APTAG_FIELD_LAYOUT.getTagPose(31).get().getY())
-  // - INNER_OPENING_WIDTH / 2
-  // - Units.inchesToMeters(0.75));
-  // }
-
+  /** Depot dimensions and corner points. */
   public static final class Depot {
-    // Dimensions
+    /* Dimensions */
     public static final double WIDTH = Units.inchesToMeters(42.0);
     public static final double DEPTH = Units.inchesToMeters(27.0);
     public static final double HEIGHT = Units.inchesToMeters(1.125);
@@ -639,23 +608,4 @@ public final class FieldConstants {
             FIELD_LENGTH - DEPTH, (FIELD_WIDTH / 2) - DISTANCE_FROM_CENTER_Y - (WIDTH / 2), HEIGHT);
   }
 
-  // public static final class Outpost {
-  // // Dimensions
-  // public static final double WIDTH = Units.inchesToMeters(31.8);
-  // public static final double OPENING_DISTANCE_FROM_FLOOR =
-  // Units.inchesToMeters(28.1);
-  // public static final double HEIGHT = Units.inchesToMeters(7.0);
-
-  // // ── Blue Alliance ───────────────────────────────────────────────────────
-  // public static final Translation2d BLUE_CENTER_POINT =
-  // new Translation2d(0, APTAG_FIELD_LAYOUT.getTagPose(29).get().getY());
-
-  // // ── Red Alliance ───────────────────────────────────────────────────────
-  // // Red outpost is the field-symmetric mirror of blue:
-  // // X_red = FIELD_LENGTH - X_blue
-  // // Y_red = FIELD_WIDTH - Y_blue (left/right labels swap across centerline)
-  // public static final Translation2d RED_CENTER_POINT =
-  // new Translation2d(
-  // FIELD_LENGTH, FIELD_WIDTH - APTAG_FIELD_LAYOUT.getTagPose(29).get().getY());
-  // }
 }
