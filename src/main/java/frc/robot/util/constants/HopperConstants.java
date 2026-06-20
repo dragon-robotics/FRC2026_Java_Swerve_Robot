@@ -15,16 +15,34 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 
+/**
+ * Hopper roller hardware IDs, motor-controller configuration, and indexing voltages.
+ *
+ * <p>The hopper uses a lead/follower roller pair. Positive voltage indexes fuel toward the shooter;
+ * negative voltage indexes fuel back toward the intake.
+ */
 public final class HopperConstants {
+
+  /* Hardware IDs */
+
   public static final int HOPPER_ROLLER_LEAD_MOTOR_ID = 17;
   public static final int HOPPER_ROLLER_FOLLOW_MOTOR_ID = 18;
+
+  /* Roller limits and commands */
+
   public static final Current HOPPER_ROLLER_STATOR_CURRENT_LIMIT = Amps.of(50.0);
   public static final Current HOPPER_ROLLER_SUPPLY_CURRENT_LIMIT = Amps.of(40.0);
   public static final Current HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(20.0);
   public static final Time HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.2);
   public static final Voltage HOPPER_ROLLER_MAX_VOLTAGE = Volts.of(12.0);
+  public static final Voltage HOPPER_INDEX_TO_SHOOTER_VOLTAGE = HOPPER_ROLLER_MAX_VOLTAGE;
+  public static final Voltage HOPPER_INDEX_TO_INTAKE_VOLTAGE =
+      HOPPER_ROLLER_MAX_VOLTAGE.unaryMinus();
+  public static final Voltage HOPPER_STOP_VOLTAGE = Volts.of(0.0);
   public static final Time HOPPER_ROLLER_RAMP_RATE = Seconds.of(0.5);
   public static final double HOPPER_ROLLER_DUTY_CYCLE = 1.0;
+
+  /* Motor controller configs */
 
   public static final TalonFXConfiguration HOPPER_ROLLER_LEAD_TALONFX_CONFIG =
       new TalonFXConfiguration()
