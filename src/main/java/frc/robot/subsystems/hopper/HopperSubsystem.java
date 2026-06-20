@@ -1,7 +1,8 @@
 package frc.robot.subsystems.hopper;
 
-import static edu.wpi.first.units.Units.Volts;
-import static frc.robot.util.constants.HopperConstants.HOPPER_ROLLER_MAX_VOLTAGE;
+import static frc.robot.util.constants.HopperConstants.HOPPER_INDEX_TO_INTAKE_VOLTAGE;
+import static frc.robot.util.constants.HopperConstants.HOPPER_INDEX_TO_SHOOTER_VOLTAGE;
+import static frc.robot.util.constants.HopperConstants.HOPPER_STOP_VOLTAGE;
 
 import dev.doglog.DogLog;
 import edu.wpi.first.units.measure.Voltage;
@@ -9,30 +10,40 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
 
+/**
+ * Controls the hopper roller pair that moves fuel between the intake and shooter.
+ *
+ * <p>Positive voltage indexes fuel toward the shooter. Negative voltage indexes fuel back toward
+ * the intake. State commands are only sent on state entry to avoid redundant CAN writes.
+ */
 public class HopperSubsystem extends SubsystemBase {
 
+  /** Hopper roller states requested by the superstructure. */
   public enum HopperState {
     STOP,
     INDEXTOSHOOTER,
     INDEXTOINTAKE
   }
 
-  // current state
   private HopperState currHopperState;
-  // desired state
   private HopperState desiredHopperState;
-  // inputs
 
   private final MotorIO leadRollerMotorIO;
   private final MotorIO followRollerMotorIO;
 
-  // hardware layer
   private final MotorIOInputs leadRollerMotorIOInputs;
   private final MotorIOInputs followRollerMotorIOInputs;
 
-  /* Creates new HopperSubsystem */
-  public HopperSubsystem(MotorIO leadRollerMotorIO, MotorIO followRollerMotorIO) {
+  /** Last state that received entry CAN commands. */
+  private HopperState lastCommandedState = null;
 
+  /**
+   * Creates a new hopper subsystem.
+   *
+   * @param leadRollerMotorIO lead roller motor IO; receives hopper commands
+   * @param followRollerMotorIO follower roller motor IO; updated for telemetry
+   */
+  public HopperSubsystem(MotorIO leadRollerMotorIO, MotorIO followRollerMotorIO) {
     this.leadRollerMotorIO = leadRollerMotorIO;
     this.followRollerMotorIO = followRollerMotorIO;
 
@@ -47,67 +58,81 @@ public class HopperSubsystem extends SubsystemBase {
 
   /* Getters */
 
+  /** Returns the current hopper roller state. */
   public HopperState getCurrentState() {
     return currHopperState;
   }
 
+  /** Returns the stored desired hopper state. */
   public HopperState getDesiredState() {
     return desiredHopperState;
   }
 
   /* Functions */
 
+  /** Directly commands the lead hopper roller velocity in RPM. */
   public void runHopperRollerRPM(double rpm) {
     leadRollerMotorIO.setMotorRPM(rpm);
   }
 
+  /** Directly commands the lead hopper roller voltage. */
   public void runHopperRollerVoltage(Voltage voltage) {
     leadRollerMotorIO.setMotorVoltage(voltage);
   }
 
+  /** Directly commands the lead hopper roller percent output from -1.0 to 1.0. */
   public void runHopperRollerPercentage(double percentage) {
     leadRollerMotorIO.setMotorPercentage(percentage);
   }
 
+  /** Runs the hopper toward the shooter at the configured voltage. */
   public void indexToShooter() {
-    leadRollerMotorIO.setMotorVoltage(HOPPER_ROLLER_MAX_VOLTAGE);
+    runHopperRollerVoltage(HOPPER_INDEX_TO_SHOOTER_VOLTAGE);
   }
 
+  /** Runs the hopper toward the intake at the configured reverse voltage. */
   public void indexToIntake() {
-    leadRollerMotorIO.setMotorVoltage(HOPPER_ROLLER_MAX_VOLTAGE.unaryMinus());
+    runHopperRollerVoltage(HOPPER_INDEX_TO_INTAKE_VOLTAGE);
   }
 
+  /** Stops the hopper roller with 0 volts. */
   public void stopHopperRoller() {
-    leadRollerMotorIO.setMotorVoltage(Volts.of(0.0));
+    runHopperRollerVoltage(HOPPER_STOP_VOLTAGE);
   }
 
   /* State Management */
+
+  /** Sets the hopper state executed by {@link #handleStateTransition()}. */
   public void setDesiredState(HopperState state) {
     this.currHopperState = state;
   }
 
-  // Track the last state we sent CAN commands for to avoid redundant writes
-  private HopperState lastCommandedState = null;
-
+  /** Sends hopper motor commands for the current state on state entry. */
   public void handleStateTransition() {
-    // Skip redundant CAN writes if state hasn't changed
-    if (currHopperState == lastCommandedState) {
+    if (!isStateEntry()) {
       return;
     }
-    lastCommandedState = currHopperState;
+    markStateEntryHandled();
 
-    /* Handle the state transitions */
     switch (currHopperState) {
-      case STOP -> /* Stop rollers */ stopHopperRoller();
-      case INDEXTOSHOOTER -> /* set hopper rollers to index to shooter speed */ indexToShooter();
-      case INDEXTOINTAKE -> /* set hopper rollers to index to outtake speed */ indexToIntake();
-      default -> {}
+      case STOP -> stopHopperRoller();
+      case INDEXTOSHOOTER -> indexToShooter();
+      case INDEXTOINTAKE -> indexToIntake();
+      default -> {
+      }
     }
+  }
+
+  private boolean isStateEntry() {
+    return currHopperState != lastCommandedState;
+  }
+
+  private void markStateEntryHandled() {
+    lastCommandedState = currHopperState;
   }
 
   @Override
   public void periodic() {
-    /* This method will be called once per scheduler run */
     handleStateTransition();
 
     leadRollerMotorIO.updateInputs(leadRollerMotorIOInputs);
