@@ -41,7 +41,7 @@ class IntakeSubsystemTest {
     intake.periodic();
 
     assertNotNull(arm.lastTorqueCurrent);
-    assertEquals(20.0, arm.lastTorqueCurrent.in(edu.wpi.first.units.Units.Amps), 1e-9);
+    assertEquals(-20.0, arm.lastTorqueCurrent.in(edu.wpi.first.units.Units.Amps), 1e-9);
   }
 
   @Test
@@ -102,7 +102,8 @@ class IntakeSubsystemTest {
     protected Double lastPositionSetpoint;
 
     @Override
-    public void setMotorVoltage(Voltage voltage) {}
+    public void setMotorVoltage(Voltage voltage) {
+    }
 
     @Override
     public void setMotorPosition(double setpoint, int slotID) {
