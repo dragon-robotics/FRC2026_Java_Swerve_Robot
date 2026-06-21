@@ -40,7 +40,8 @@ import edu.wpi.first.units.measure.Voltage;
  * Intake hardware IDs, motor-controller configuration, and mechanism setpoints.
  *
  * <p>Arm simulation limits use radians. Arm closed-loop positions use mechanism rotations from the
- * absolute/fused encoder. Roller commands use volts, RPM, or percent output depending on the caller.
+ * absolute/fused encoder. Roller commands use volts, RPM, or percent output depending on the
+ * caller.
  */
 public final class IntakeConstants {
 
@@ -65,7 +66,7 @@ public final class IntakeConstants {
   public static final Voltage INTAKE_ARM_MAX_VOLTAGE = Volts.of(10);
   public static final Current INTAKE_ARM_STATOR_CURRENT_LIMIT = Amps.of(50);
   public static final Current INTAKE_ARM_SUPPLY_CURRENT_LIMIT = Amps.of(30);
-  public static final Current INTAKE_ARM_DEPLOY_TENSION_CURRENT = Amps.of(20);
+  public static final Current INTAKE_ARM_DEPLOY_TENSION_CURRENT = Amps.of(-20);
   public static final double INTAKE_ARM_SLOW_P = 8;
   public static final double INTAKE_ARM_FAST_P = 14;
   public static final double INTAKE_ARM_KV = 2.4;
@@ -189,7 +190,8 @@ public final class IntakeConstants {
               new MotorOutputConfigs()
                   .withNeutralMode(NeutralModeValue.Brake)
                   .withInverted(InvertedValue.Clockwise_Positive))
-          // Fast deploy profile overcomes the constant-force spring of the extending hopper.
+          // Fast deploy profile overcomes the constant-force spring of the extending
+          // hopper.
           .withSlot0(
               new Slot0Configs()
                   .withKP(INTAKE_ARM_FAST_P)

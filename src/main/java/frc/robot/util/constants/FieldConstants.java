@@ -607,5 +607,4 @@ public final class FieldConstants {
         new Translation3d(
             FIELD_LENGTH - DEPTH, (FIELD_WIDTH / 2) - DISTANCE_FROM_CENTER_Y - (WIDTH / 2), HEIGHT);
   }
-
 }

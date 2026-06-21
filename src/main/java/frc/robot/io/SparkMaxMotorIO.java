@@ -17,8 +17,8 @@ import java.util.Optional;
  * REV Spark MAX implementation of {@link MotorIO}.
  *
  * <p>Velocity setpoints use RPM. Position setpoints use the configured encoder's position units.
- * Spark MAX does not support the torque-current control mode, so that capability lives in
- * {@link TorqueCurrentMotorIO} instead of this class.
+ * Spark MAX does not support the torque-current control mode, so that capability lives in {@link
+ * TorqueCurrentMotorIO} instead of this class.
  */
 public class SparkMaxMotorIO implements MotorIO {
   /** Encoder source used for position telemetry. */

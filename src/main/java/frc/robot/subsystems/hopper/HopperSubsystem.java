@@ -118,8 +118,7 @@ public class HopperSubsystem extends SubsystemBase {
       case STOP -> stopHopperRoller();
       case INDEXTOSHOOTER -> indexToShooter();
       case INDEXTOINTAKE -> indexToIntake();
-      default -> {
-      }
+      default -> {}
     }
   }
 

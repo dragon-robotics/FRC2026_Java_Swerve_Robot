@@ -155,8 +155,8 @@ public class IntakeSubsystem extends SubsystemBase {
   /**
    * Releases the arm motor to neutral output.
    *
-   * <p>For this slapdown intake, gravity holds the arm down after deploy. Use only when coasting the
-   * arm is intentional.
+   * <p>For this slapdown intake, gravity holds the arm down after deploy. Use only when coasting
+   * the arm is intentional.
    */
   public void coastIntakeArm() {
     intakeArmIO.setMotorVoltage(Volts.of(0.0));
@@ -243,8 +243,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
     switch (state) {
       case HOME -> currIntakeState = IntakeState.STOWING;
-      case INTAKE, OUTTAKE ->
-          currIntakeState = canStartRollerStateImmediately() ? state : IntakeState.DEPLOYING;
+      case INTAKE, OUTTAKE -> currIntakeState =
+          canStartRollerStateImmediately() ? state : IntakeState.DEPLOYING;
       case DEPLOYED -> currIntakeState = IntakeState.DEPLOYING;
       case JUICER -> {
         currIntakeState = IntakeState.JUICER;
@@ -252,8 +252,7 @@ public class IntakeSubsystem extends SubsystemBase {
         juicerPhase = JuicerPhase.PRE_JUICE;
         lastJuicerPhase = null;
       }
-      default -> {
-      }
+      default -> {}
     }
   }
 

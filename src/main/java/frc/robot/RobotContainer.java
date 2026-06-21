@@ -108,7 +108,8 @@ public class RobotContainer {
 
   private final Field2d field = new Field2d();
   private static final Pose2d HIDDEN_VISION_POSE = new Pose2d(-10.0, -10.0, new Rotation2d());
-  // Most FRC views expose fewer than 8 tags at once; cap keeps NT topic count stable.
+  // Most FRC views expose fewer than 8 tags at once; cap keeps NT topic count
+  // stable.
   private static final int MAX_VISION_TAG_LINE_OBJECTS = 8;
   private static final double VISION_TAG_LINE_HOLD_SECONDS = 0.2;
   private final List<Pose2d[]> lastVisionTagLineSegments = new ArrayList<>();
@@ -257,8 +258,7 @@ public class RobotContainer {
                 new Follower(SHOOTER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
             new TalonFXMotorIO(
                 SHOOTER_KICKER_MOTOR_ID, SHOOTER_KICKER_TALONFX_CONFIG, "Shooter Kicker"),
-            new TalonFXMotorIO(
-                SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
+            new TalonFXMotorIO(SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "Shooter Hood"));
 
     return new MechanismSubsystems(intake, hopper, shooter, createRealVisionSubsystem());
   }
@@ -315,10 +315,7 @@ public class RobotContainer {
                 "KrakenX60_FOC",
                 "Shooter Kicker"),
             new TalonFXMotorIOSim(
-                SHOOTER_HOOD_MOTOR_ID,
-                SHOOTER_HOOD_TALONFX_CONFIG,
-                "KrakenX44",
-                "Shooter Hood"));
+                SHOOTER_HOOD_MOTOR_ID, SHOOTER_HOOD_TALONFX_CONFIG, "KrakenX44", "Shooter Hood"));
 
     return new MechanismSubsystems(intake, hopper, shooter, createSimulationVisionSubsystem());
   }
@@ -469,6 +466,7 @@ public class RobotContainer {
     /* Operator mainly controls the Juicer mode */
     operatorController
         .b()
+        .and(operatorController.a().negate())
         .whileTrue(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER))
         .onFalse(superstructureSubsystem.intakeOverrideCmd(IntakeState.DEPLOYED));
 
@@ -529,7 +527,8 @@ public class RobotContainer {
     for (int tagId : snapshot.tagIDs()) {
       FieldConstants.APTAG_FIELD_LAYOUT
           .getTagPose(tagId)
-          .ifPresent(tagPose -> newSegments.add(new Pose2d[] {snapshot.pose(), tagPose.toPose2d()}));
+          .ifPresent(
+              tagPose -> newSegments.add(new Pose2d[] {snapshot.pose(), tagPose.toPose2d()}));
     }
     if (!newSegments.isEmpty()) {
       lastVisionTagLineSegments.clear();
