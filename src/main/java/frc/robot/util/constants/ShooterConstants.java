@@ -62,7 +62,6 @@ public final class ShooterConstants {
   public static final double SHOOTER_DUTY_CYCLE = 1.0;
   public static final double SHOOTER_RPM = 2500.0;
   public static final double SHOOTER_PREP_RPM = 1200.0;
-  public static final double SHOOTER_PREP_READY_RATIO = 0.3;
   public static final double SHOOTER_READY_TOLERANCE_RPM = 60.0;
   public static final double SHOOTER_STOPPED_TOLERANCE_RPM = 0.5;
 
