@@ -72,6 +72,7 @@ public final class SwerveConstants {
 
   /** Robot mass in kilograms. */
   public static final double ROBOT_MASS = (148 - 20.3) * 0.453592;
+
   public static final double CHASSIS_MASS = ROBOT_MASS;
 
   /** Chassis center of gravity in the robot frame, in meters. */

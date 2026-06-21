@@ -7,7 +7,6 @@ import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_PREP_VOLT
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_STOP_DELAY_SECONDS;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_STOP_PERCENT_OUTPUT;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_VOLTAGE;
-import static frc.robot.util.constants.ShooterConstants.SHOOTER_PREP_READY_RATIO;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_PREP_RPM;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_READY_TOLERANCE_RPM;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_RPM;
@@ -27,8 +26,8 @@ import frc.robot.util.constants.ShooterConstants.ShooterSetpoint;
  * Controls the shooter flywheel, kicker, and adjustable hood.
  *
  * <p>Flywheel commands are RPM or volts depending on the method name. Hood setpoints are mechanism
- * rotations from the hood encoder. The kicker keeps feeding briefly when stopping so fuel clears the
- * shooter path.
+ * rotations from the hood encoder. The kicker keeps feeding briefly when stopping so fuel clears
+ * the shooter path.
  */
 public class ShooterSubsystem extends SubsystemBase {
   /** Shooter state machine states requested by the superstructure. */
@@ -219,8 +218,7 @@ public class ShooterSubsystem extends SubsystemBase {
     if (desiredShooterState != currShooterState) {
       switch (desiredShooterState) {
         case STOP, PREPFUEL, SHOOT -> currShooterState = ShooterState.TRANSITION;
-        default -> {
-        }
+        default -> {}
       }
     }
   }
@@ -267,8 +265,7 @@ public class ShooterSubsystem extends SubsystemBase {
       case STOP -> transitionToStop();
       case PREPFUEL -> transitionToPrepFuel();
       case SHOOT -> transitionToShoot();
-      default -> {
-      }
+      default -> {}
     }
   }
 
@@ -276,8 +273,7 @@ public class ShooterSubsystem extends SubsystemBase {
     stopShooter();
     startKickerStopTimerIfNeeded();
 
-    if (kickerStopTimerRunning
-        && !kickerStopTimer.hasElapsed(SHOOTER_KICKER_STOP_DELAY_SECONDS)) {
+    if (kickerStopTimerRunning && !kickerStopTimer.hasElapsed(SHOOTER_KICKER_STOP_DELAY_SECONDS)) {
       runKickerMotorPercentage(SHOOTER_KICKER_STOP_PERCENT_OUTPUT);
     } else {
       stopKicker();
@@ -294,8 +290,7 @@ public class ShooterSubsystem extends SubsystemBase {
     prepKicker();
     setHoodAngle(SHOOTER_HOOD_DEFAULT_SETTING);
 
-    if (MathUtil.isNear(
-        targetRPM * SHOOTER_PREP_READY_RATIO, getShooterSpeed(), SHOOTER_READY_TOLERANCE_RPM)) {
+    if (MathUtil.isNear(SHOOTER_PREP_RPM, getShooterSpeed(), SHOOTER_READY_TOLERANCE_RPM)) {
       currShooterState = ShooterState.PREPFUEL;
     }
   }
