@@ -45,7 +45,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.generated.TunerConstants;
@@ -189,12 +188,7 @@ public class RobotContainer {
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
     intakeCommand = superstructureSubsystem.setStateCmd(SuperState.INTAKE);
     shootCommand = superstructureSubsystem.shootWithJuicerDelayCmd();
-    shootNoAimCommand =
-        superstructureSubsystem
-            .setStateCmd(SuperState.SHOOT_NO_AIM)
-            .alongWith(
-                new WaitCommand(1.5)
-                    .andThen(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER)));
+    shootNoAimCommand = superstructureSubsystem.shootNoAimWithJuicerDelayCmd();
     driveCommand = superstructureSubsystem.setStateCmd(SuperState.DRIVE);
   }
 
