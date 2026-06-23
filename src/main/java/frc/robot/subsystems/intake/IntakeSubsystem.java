@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.intake;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOY_TENSION_CURRENT;
@@ -13,10 +14,15 @@ import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_PRE_POS
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_POSITION_TOLERANCE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_SLOW_PID_SLOT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TORQUE_CURRENT;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_VOLTAGE;
+import static frc.robot.util.constants.IntakeConstants.OUTTAKE_ROLLER_TORQUE_CURRENT;
+import static frc.robot.util.constants.IntakeConstants.OUTTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE;
 import static frc.robot.util.constants.IntakeConstants.OUTTAKE_ROLLER_VOLTAGE;
 
 import dev.doglog.DogLog;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -103,14 +109,36 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeRollerLeadIO.setMotorPercentage(percentage);
   }
 
-  /** Runs the roller inward at the configured intake voltage. */
-  public void runIntake() {
-    runIntakeRollerVoltage(INTAKE_ROLLER_VOLTAGE);
+  /** Directly commands the lead intake roller torque current with a duty-cycle cap. */
+  public void runIntakeRollerTorqueCurrentFOC(Current torqueCurrent, double maxAbsDutyCycle) {
+    if (intakeRollerLeadIO instanceof TorqueCurrentMotorIO torqueCurrentRollerIO) {
+      torqueCurrentRollerIO.setMotorTorqueCurrent(torqueCurrent, maxAbsDutyCycle);
+    } else {
+      runIntakeRollerVoltage(
+          torqueCurrent.in(Amps) > 0 ? INTAKE_ROLLER_VOLTAGE : OUTTAKE_ROLLER_VOLTAGE);
+    }
   }
 
-  /** Runs the roller outward at the configured outtake voltage. */
+  /** Runs the roller inward with torque-current control. */
+  public void runIntakeRollerTorqueCurrentFOC() {
+    runIntakeRollerTorqueCurrentFOC(
+        INTAKE_ROLLER_TORQUE_CURRENT, INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE);
+  }
+
+  /** Runs the roller outward with torque-current control. */
+  public void runOuttakeRollerTorqueCurrentFOC() {
+    runIntakeRollerTorqueCurrentFOC(
+        OUTTAKE_ROLLER_TORQUE_CURRENT, OUTTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE);
+  }
+
+  /** Runs the roller inward at the configured intake torque current. */
+  public void runIntake() {
+    runIntakeRollerTorqueCurrentFOC();
+  }
+
+  /** Runs the roller outward at the configured outtake torque current. */
   public void runOuttake() {
-    runIntakeRollerVoltage(OUTTAKE_ROLLER_VOLTAGE);
+    runOuttakeRollerTorqueCurrentFOC();
   }
 
   /** Stops the intake roller with 0 volts. */

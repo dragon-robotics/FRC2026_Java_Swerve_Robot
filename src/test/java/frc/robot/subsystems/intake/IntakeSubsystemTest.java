@@ -5,6 +5,7 @@ import static frc.robot.subsystems.intake.IntakeSubsystem.IntakeState.INTAKE;
 import static frc.robot.subsystems.intake.IntakeSubsystem.IntakeState.OUTTAKE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -97,13 +98,48 @@ class IntakeSubsystemTest {
     assertNull(arm.lastTorqueCurrent);
   }
 
+  @Test
+  void runIntakeCommandsRollerTorqueCurrentWithDutyCycleCap() {
+    FakeTorqueCurrentMotorIO rollerLead = new FakeTorqueCurrentMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runIntake();
+
+    assertAll(
+        () -> assertNotNull(rollerLead.lastTorqueCurrent),
+        () ->
+            assertEquals(
+                80.0, rollerLead.lastTorqueCurrent.in(edu.wpi.first.units.Units.Amps), 1e-9),
+        () -> assertEquals(0.75, rollerLead.lastMaxAbsDutyCycle, 1e-9));
+  }
+
+  @Test
+  void runOuttakeCommandsRollerTorqueCurrentWithDutyCycleCap() {
+    FakeTorqueCurrentMotorIO rollerLead = new FakeTorqueCurrentMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runOuttake();
+
+    assertAll(
+        () -> assertNotNull(rollerLead.lastTorqueCurrent),
+        () ->
+            assertEquals(
+                -80.0, rollerLead.lastTorqueCurrent.in(edu.wpi.first.units.Units.Amps), 1e-9),
+        () -> assertEquals(0.75, rollerLead.lastMaxAbsDutyCycle, 1e-9));
+  }
+
   private static class FakeMotorIO implements MotorIO {
     protected double position;
     protected Double lastPositionSetpoint;
 
     @Override
-    public void setMotorVoltage(Voltage voltage) {
-    }
+    public void setMotorVoltage(Voltage voltage) {}
 
     @Override
     public void setMotorPosition(double setpoint, int slotID) {
@@ -119,10 +155,16 @@ class IntakeSubsystemTest {
   private static class FakeTorqueCurrentMotorIO extends FakeMotorIO
       implements TorqueCurrentMotorIO {
     private Current lastTorqueCurrent;
+    private Double lastMaxAbsDutyCycle;
 
     @Override
     public void setMotorTorqueCurrent(Current torqueCurrent) {
       lastTorqueCurrent = torqueCurrent;
+    }
+
+    public void setMotorTorqueCurrent(Current torqueCurrent, double maxAbsDutyCycle) {
+      lastTorqueCurrent = torqueCurrent;
+      lastMaxAbsDutyCycle = maxAbsDutyCycle;
     }
   }
 }

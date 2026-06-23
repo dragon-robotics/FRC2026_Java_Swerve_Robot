@@ -199,6 +199,12 @@ public class TalonFXMotorIO implements TorqueCurrentMotorIO {
   }
 
   @Override
+  public void setMotorTorqueCurrent(Current torqueCurrent, double maxAbsDutyCycle) {
+    motor.setControl(
+        torqueCurrentRequest.withOutput(torqueCurrent).withMaxAbsDutyCycle(maxAbsDutyCycle));
+  }
+
+  @Override
   public BaseStatusSignal[] getStatusSignals() {
     return new BaseStatusSignal[] {
       motorVoltageSignal,
