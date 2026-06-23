@@ -397,7 +397,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   private void handleJuicerState() {
     if (isStateEntry()) {
-      runIntakeRollerVoltage(INTAKE_ROLLER_VOLTAGE.times(0.5));
+      runIntakeRollerTorqueCurrentFOC(INTAKE_ROLLER_TORQUE_CURRENT, 0.5);
       lastJuicerPhase = null;
       markStateEntryHandled();
     }

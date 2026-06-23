@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.intake.IntakeSubsystem.IntakeState.DEPLOYED;
 import static frc.robot.subsystems.intake.IntakeSubsystem.IntakeState.INTAKE;
+import static frc.robot.subsystems.intake.IntakeSubsystem.IntakeState.JUICER;
 import static frc.robot.subsystems.intake.IntakeSubsystem.IntakeState.OUTTAKE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
@@ -101,6 +102,25 @@ class IntakeSubsystemTest {
   }
 
   @Test
+  void juicerRunsRollerWithTorqueCurrentControl() {
+    FakeTorqueCurrentMotorIO rollerLead = new FakeTorqueCurrentMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.setDesiredState(JUICER);
+    intake.periodic();
+
+    assertAll(
+        () -> assertNotNull(rollerLead.lastTorqueCurrent),
+        () -> assertEquals(80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertNotNull(rollerLead.lastMaxAbsDutyCycle),
+        () -> assertEquals(0.5, rollerLead.lastMaxAbsDutyCycle, 1e-9),
+        () -> assertNull(rollerLead.lastVoltage));
+  }
+
+  @Test
   void runIntakeCommandsRollerTorqueCurrentWithDutyCycleCap() {
     FakeTorqueCurrentMotorIO rollerLead = new FakeTorqueCurrentMotorIO();
     FakeMotorIO rollerFollow = new FakeMotorIO();
@@ -114,6 +134,7 @@ class IntakeSubsystemTest {
         () -> assertNotNull(rollerLead.lastTorqueCurrent),
         () -> assertEquals(
             80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertNotNull(rollerLead.lastMaxAbsDutyCycle),
         () -> assertEquals(0.75, rollerLead.lastMaxAbsDutyCycle, 1e-9));
   }
 
@@ -131,6 +152,7 @@ class IntakeSubsystemTest {
         () -> assertNotNull(rollerLead.lastTorqueCurrent),
         () -> assertEquals(
             -80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertNotNull(rollerLead.lastMaxAbsDutyCycle),
         () -> assertEquals(0.75, rollerLead.lastMaxAbsDutyCycle, 1e-9));
   }
 
