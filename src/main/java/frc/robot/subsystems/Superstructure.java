@@ -250,16 +250,22 @@ public class Superstructure extends SubsystemBase {
   }
 
   private Command createShootStateCommand(boolean withAim) {
-    return Commands.run(
+    Command shootCommand =
+        Commands.run(
             () -> {
               setDesiredSuperState(withAim ? SuperState.SHOOT_WITH_AIM : SuperState.SHOOT_NO_AIM);
               shooter.setDesiredState(ShooterState.SHOOT);
               setHopperFeedWhenShooterReady(true);
             },
             shooter,
-            hopper)
-        .alongWith(
-            new AimAtTargetPoseCmd(swerve, this::setCurrentHeading, this::getCurrentAimTarget));
+            hopper);
+
+    if (!withAim) {
+      return shootCommand;
+    }
+
+    return shootCommand.alongWith(
+        new AimAtTargetPoseCmd(swerve, this::setCurrentHeading, this::getCurrentAimTarget));
   }
 
   private Command createPurgeStateCommand() {
@@ -329,6 +335,28 @@ public class Superstructure extends SubsystemBase {
                     new AimAtTargetPoseCmd(
                         swerve, this::setCurrentHeading, this::getCurrentAimTarget)))
         .withName("SuperState(SHOOT_WITH_AIM+Juicer)");
+  }
+
+  /**
+   * Shoot without drivetrain aiming, transitioning intake to JUICER after 1.5 s. Owns intake,
+   * shooter, and hopper so autonomous event markers do not need a parallel intake override.
+   */
+  public Command shootNoAimWithJuicerDelayCmd() {
+    Timer juicerTimer = new Timer();
+    return Commands.runOnce(juicerTimer::restart)
+        .andThen(
+            Commands.run(
+                () -> {
+                  setDesiredSuperState(SuperState.SHOOT_NO_AIM);
+                  intake.setDesiredState(
+                      juicerTimer.hasElapsed(1.5) ? IntakeState.JUICER : IntakeState.DEPLOYED);
+                  shooter.setDesiredState(ShooterState.SHOOT);
+                  setHopperFeedWhenShooterReady(true);
+                },
+                intake,
+                shooter,
+                hopper))
+        .withName("SuperState(SHOOT_NO_AIM+Juicer)");
   }
 
   public Command selectedShootModeCmd() {
