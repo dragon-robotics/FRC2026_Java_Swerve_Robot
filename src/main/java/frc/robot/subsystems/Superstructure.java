@@ -259,9 +259,7 @@ public class Superstructure extends SubsystemBase {
             shooter,
             hopper)
         .alongWith(
-            new AimAtTargetPoseCmd(swerve, this::setCurrentHeading, this::getCurrentAimTarget)
-                .until(this::isAlignedToTarget)
-                .andThen(Commands.run(() -> swerve.setControl(brake), swerve)));
+            new AimAtTargetPoseCmd(swerve, this::setCurrentHeading, this::getCurrentAimTarget));
   }
 
   private Command createPurgeStateCommand() {
@@ -276,9 +274,7 @@ public class Superstructure extends SubsystemBase {
             shooter,
             hopper)
         .alongWith(
-            new AimAtTargetPoseCmd(swerve, this::setCurrentHeading, this::getCurrentAimTarget)
-                .until(this::isAlignedToTarget)
-                .andThen(Commands.run(() -> swerve.setControl(brake), swerve)));
+            new AimAtTargetPoseCmd(swerve, this::setCurrentHeading, this::getCurrentAimTarget));
   }
 
   private Command createManualShootStateCommand(double shooterRpm, double hoodAngle) {
@@ -331,9 +327,7 @@ public class Superstructure extends SubsystemBase {
                     hopper)
                 .alongWith(
                     new AimAtTargetPoseCmd(
-                            swerve, this::setCurrentHeading, this::getCurrentAimTarget)
-                        .until(this::isAlignedToTarget)
-                        .andThen(Commands.run(() -> swerve.setControl(brake), swerve))))
+                        swerve, this::setCurrentHeading, this::getCurrentAimTarget)))
         .withName("SuperState(SHOOT_WITH_AIM+Juicer)");
   }
 
