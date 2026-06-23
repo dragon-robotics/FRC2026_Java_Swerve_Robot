@@ -1,5 +1,7 @@
 package frc.robot.subsystems.intake;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.intake.IntakeSubsystem.IntakeState.DEPLOYED;
 import static frc.robot.subsystems.intake.IntakeSubsystem.IntakeState.INTAKE;
 import static frc.robot.subsystems.intake.IntakeSubsystem.IntakeState.OUTTAKE;
@@ -110,9 +112,8 @@ class IntakeSubsystemTest {
 
     assertAll(
         () -> assertNotNull(rollerLead.lastTorqueCurrent),
-        () ->
-            assertEquals(
-                80.0, rollerLead.lastTorqueCurrent.in(edu.wpi.first.units.Units.Amps), 1e-9),
+        () -> assertEquals(
+            80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
         () -> assertEquals(0.75, rollerLead.lastMaxAbsDutyCycle, 1e-9));
   }
 
@@ -128,18 +129,80 @@ class IntakeSubsystemTest {
 
     assertAll(
         () -> assertNotNull(rollerLead.lastTorqueCurrent),
-        () ->
-            assertEquals(
-                -80.0, rollerLead.lastTorqueCurrent.in(edu.wpi.first.units.Units.Amps), 1e-9),
+        () -> assertEquals(
+            -80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
         () -> assertEquals(0.75, rollerLead.lastMaxAbsDutyCycle, 1e-9));
+  }
+
+  @Test
+  void runTorqueCurrentClampsDutyCycleCapBeforeCommandingTorqueCurrentMotor() {
+    FakeTorqueCurrentMotorIO rollerLead = new FakeTorqueCurrentMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runIntakeRollerTorqueCurrentFOC(Amps.of(80.0), 1.25);
+    assertEquals(1.0, rollerLead.lastMaxAbsDutyCycle, 1e-9);
+
+    intake.runIntakeRollerTorqueCurrentFOC(Amps.of(80.0), -0.25);
+    assertEquals(0.0, rollerLead.lastMaxAbsDutyCycle, 1e-9);
+  }
+
+  @Test
+  void runIntakeFallsBackToCappedVoltageWhenTorqueCurrentUnsupported() {
+    FakeMotorIO rollerLead = new FakeMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runIntake();
+
+    assertAll(
+        () -> assertNotNull(rollerLead.lastVoltage),
+        () -> assertEquals(9.0, rollerLead.lastVoltage.in(Volts), 1e-9));
+  }
+
+  @Test
+  void runOuttakeFallsBackToCappedVoltageWhenTorqueCurrentUnsupported() {
+    FakeMotorIO rollerLead = new FakeMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runOuttake();
+
+    assertAll(
+        () -> assertNotNull(rollerLead.lastVoltage),
+        () -> assertEquals(-9.0, rollerLead.lastVoltage.in(Volts), 1e-9));
+  }
+
+  @Test
+  void runTorqueCurrentFallbackClampsDutyCycleCapBeforeCommandingVoltage() {
+    FakeMotorIO rollerLead = new FakeMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runIntakeRollerTorqueCurrentFOC(Amps.of(80.0), 1.25);
+    assertEquals(12.0, rollerLead.lastVoltage.in(Volts), 1e-9);
+
+    intake.runIntakeRollerTorqueCurrentFOC(Amps.of(80.0), -0.25);
+    assertEquals(0.0, rollerLead.lastVoltage.in(Volts), 1e-9);
   }
 
   private static class FakeMotorIO implements MotorIO {
     protected double position;
     protected Double lastPositionSetpoint;
+    protected Voltage lastVoltage;
 
     @Override
-    public void setMotorVoltage(Voltage voltage) {}
+    public void setMotorVoltage(Voltage voltage) {
+      lastVoltage = voltage;
+    }
 
     @Override
     public void setMotorPosition(double setpoint, int slotID) {
@@ -162,6 +225,7 @@ class IntakeSubsystemTest {
       lastTorqueCurrent = torqueCurrent;
     }
 
+    @Override
     public void setMotorTorqueCurrent(Current torqueCurrent, double maxAbsDutyCycle) {
       lastTorqueCurrent = torqueCurrent;
       lastMaxAbsDutyCycle = maxAbsDutyCycle;

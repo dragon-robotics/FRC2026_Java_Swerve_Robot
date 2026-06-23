@@ -22,6 +22,7 @@ import static frc.robot.util.constants.IntakeConstants.OUTTAKE_ROLLER_TORQUE_CUR
 import static frc.robot.util.constants.IntakeConstants.OUTTAKE_ROLLER_VOLTAGE;
 
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -111,11 +112,13 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Directly commands the lead intake roller torque current with a duty-cycle cap. */
   public void runIntakeRollerTorqueCurrentFOC(Current torqueCurrent, double maxAbsDutyCycle) {
+    double cappedMaxAbsDutyCycle = MathUtil.clamp(maxAbsDutyCycle, 0.0, 1.0);
     if (intakeRollerLeadIO instanceof TorqueCurrentMotorIO torqueCurrentRollerIO) {
-      torqueCurrentRollerIO.setMotorTorqueCurrent(torqueCurrent, maxAbsDutyCycle);
+      torqueCurrentRollerIO.setMotorTorqueCurrent(torqueCurrent, cappedMaxAbsDutyCycle);
     } else {
-      runIntakeRollerVoltage(
-          torqueCurrent.in(Amps) > 0 ? INTAKE_ROLLER_VOLTAGE : OUTTAKE_ROLLER_VOLTAGE);
+      Voltage fallbackVoltage =
+          torqueCurrent.in(Amps) > 0 ? INTAKE_ROLLER_VOLTAGE : OUTTAKE_ROLLER_VOLTAGE;
+      runIntakeRollerVoltage(fallbackVoltage.times(cappedMaxAbsDutyCycle));
     }
   }
 
