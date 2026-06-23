@@ -12,4 +12,9 @@ public interface TorqueCurrentMotorIO extends MotorIO {
 
   /** Commands torque current in amps. */
   void setMotorTorqueCurrent(Current torqueCurrent);
+
+  /** Commands torque current in amps with a maximum absolute duty cycle. */
+  default void setMotorTorqueCurrent(Current torqueCurrent, double maxAbsDutyCycle) {
+    setMotorTorqueCurrent(torqueCurrent);
+  }
 }

@@ -97,9 +97,13 @@ public final class IntakeConstants {
   public static final double INTAKE_ROLLER_DUTY_CYCLE = 1.0;
   public static final Voltage INTAKE_ROLLER_VOLTAGE = Volts.of(12);
   public static final double INTAKE_ROLLER_RPM = 6000.0;
+  public static final Current INTAKE_ROLLER_TORQUE_CURRENT = Amps.of(80);
+  public static final double INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE = 0.75;
   public static final double OUTTAKE_ROLLER_DUTY_CYCLE = -1.0;
   public static final Voltage OUTTAKE_ROLLER_VOLTAGE = Volts.of(-12);
   public static final double OUTTAKE_ROLLER_RPM = -6000.0;
+  public static final Current OUTTAKE_ROLLER_TORQUE_CURRENT = Amps.of(-80);
+  public static final double OUTTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE = 0.75;
 
   public static final Current INTAKE_ROLLER_STATOR_CURRENT_LIMIT = Amps.of(80);
   public static final Current INTAKE_ROLLER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
