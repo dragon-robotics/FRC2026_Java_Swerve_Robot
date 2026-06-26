@@ -5,9 +5,17 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Hardware abstraction for robot vision cameras.
+ *
+ * <p>Implementations update {@link VisionIOInputs} with raw target angles and zero or more
+ * timestamped robot-pose observations. The subsystem owns all filtering, weighting, and drivetrain
+ * pose-estimator handoff.
+ */
 public interface VisionIO {
 
-  public static class VisionIOInputs {
+  /** Mutable camera input snapshot populated once per robot loop. */
+  class VisionIOInputs {
     @Getter @Setter private String cameraName = "";
     @Getter @Setter private boolean connected = false;
 
@@ -18,7 +26,7 @@ public interface VisionIO {
     @Getter @Setter private PoseObservation[] poseObservations = new PoseObservation[0];
     @Getter @Setter private int[] tagIds = new int[0];
 
-    /** Copy all fields from another VisionIOInputs into this one (for thread-safe handoff). */
+    /** Copies all fields from another input snapshot for thread-safe handoff. */
     public void copyFrom(VisionIOInputs other) {
       this.cameraName = other.cameraName;
       this.connected = other.connected;
@@ -28,30 +36,42 @@ public interface VisionIO {
     }
   }
 
-  /** Represents the angle to a simple target, not used for pose estimation. */
-  public static record TargetObservation(Rotation2d tx, Rotation2d ty) {}
+  /** Angle to the best visible target, where tx is yaw and ty is pitch. */
+  record TargetObservation(Rotation2d tx, Rotation2d ty) {}
 
-  /** Represents a robot pose sample used for pose estimation. */
-  public static record PoseObservation(
-      double timestamp, // seconds since of the pose observation
-      Pose3d pose, // pose of the robot in the camera frame
-      double ambiguity, // ambiguity of the pose estimate
-      int tagCount, // number of tags used to estimate the pose
-      double averageTagDistance, // average distance to the tags used to estimate the pose
+  /**
+   * Robot pose estimate produced by one camera frame.
+   *
+   * @param timestamp FPGA timestamp in seconds for the camera frame
+   * @param pose estimated robot pose in the field coordinate frame
+   * @param ambiguity average PhotonVision pose ambiguity for the tags used
+   * @param tagCount number of AprilTags used to estimate the pose
+   * @param averageTagDistance distance-confidence value in meters consumed by acceptance gating
+   * @param type solver/source classification for downstream trust decisions
+   * @param tagIDs fiducial IDs used by the accepted pose solver
+   */
+  record PoseObservation(
+      double timestamp,
+      Pose3d pose,
+      double ambiguity,
+      int tagCount,
+      double averageTagDistance,
       PoseObservationType type,
-      int[] tagIDs // fiducial IDs of the tags used in this observation
-      ) {}
+      int[] tagIDs) {}
 
-  public enum PoseObservationType {
+  /** Vision pose-estimation source used for filtering and standard-deviation selection. */
+  enum PoseObservationType {
     MEGATAG_1,
     MEGATAG_2,
     PHOTONVISION,
     PHOTONVISION_MULTITAG_COPROCESSOR
   }
 
-  public default void updateInputs(VisionIOInputs inputs) {}
+  /** Refreshes camera inputs. Default implementation is for disconnected/fake cameras. */
+  default void updateInputs(VisionIOInputs inputs) {}
 
-  public default String getCameraName() {
+  /** Returns the camera name used for alerts and telemetry. */
+  default String getCameraName() {
     return "";
   }
 }
