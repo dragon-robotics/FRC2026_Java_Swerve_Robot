@@ -28,6 +28,14 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
+/**
+ * PhotonVision camera IO for AprilTag pose estimation.
+ *
+ * <p>This class owns camera-frame processing only: it reads unread PhotonVision pipeline results,
+ * attempts configured pose solvers, and converts successful estimates into {@link PoseObservation}
+ * values for {@link VisionSubsystem}. Field-bound checks, drivetrain innovation checks, and
+ * standard-deviation weighting stay in the subsystem.
+ */
 public class VisionIOPhotonVision implements VisionIO {
   protected final PhotonCamera camera;
   protected final Transform3d robotToCamera;
@@ -55,13 +63,26 @@ public class VisionIOPhotonVision implements VisionIO {
     MAX_TAG_DISTANCE
   }
 
+  /** Supplies drivetrain state needed by heading-seeded PhotonVision strategies. */
   public interface VisionHeadingProvider {
+    /**
+     * Returns drivetrain heading at a PhotonVision frame timestamp.
+     *
+     * @param fpgaTimestampSeconds FPGA timestamp in seconds
+     */
     Optional<Rotation2d> getHeadingAtTimestamp(double fpgaTimestampSeconds);
 
+    /**
+     * Returns a field-relative pose seed for constrained SolvePnP.
+     *
+     * @param fpgaTimestampSeconds FPGA timestamp in seconds
+     */
     Optional<Pose3d> getSeedPoseAtTimestamp(double fpgaTimestampSeconds);
 
+    /** Returns current drivetrain angular rate in radians per second. */
     double getAngularRateRadPerSec();
 
+    /** Returns current drivetrain linear speed in meters per second. */
     double getLinearSpeedMetersPerSecond();
   }
 
@@ -75,6 +96,12 @@ public class VisionIOPhotonVision implements VisionIO {
   private static final PoseObservation[] EMPTY_POSE_OBSERVATIONS = new PoseObservation[0];
   private static final int[] EMPTY_TAG_IDS = new int[0];
 
+  /**
+   * Creates a PhotonVision IO wrapper.
+   *
+   * @param name PhotonVision camera name
+   * @param robotToCamera transform from robot frame to camera frame
+   */
   public VisionIOPhotonVision(String name, Transform3d robotToCamera) {
     this.camera = new PhotonCamera(name);
     this.robotToCamera = robotToCamera;
@@ -86,10 +113,12 @@ public class VisionIOPhotonVision implements VisionIO {
     return camera.getName();
   }
 
+  /** Sets the drivetrain-state source used by heading-seeded pose solvers. */
   public void setHeadingProvider(VisionHeadingProvider headingProvider) {
     this.headingProvider = headingProvider;
   }
 
+  /** Allows normal dynamic strategy selection after stable startup localization completes. */
   public void markVisionInitializationComplete() {
     preferMultitagUntilInitialized = false;
   }

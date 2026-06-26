@@ -1,6 +1,6 @@
 package frc.robot.subsystems.vision;
 
-import static frc.robot.util.constants.FieldConstants.*;
+import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -10,35 +10,44 @@ import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 
+/** PhotonVision IO backed by PhotonLib simulation for deterministic vision tests. */
 public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
+  private static final String VISION_SIM_NAME = "main";
+  private static final int CAMERA_RESOLUTION_WIDTH_PIXELS = 800;
+  private static final int CAMERA_RESOLUTION_HEIGHT_PIXELS = 600;
+  private static final double CAMERA_DIAGONAL_FOV_DEGREES = 72.0;
+  private static final double CAMERA_AVERAGE_LATENCY_MS = 10.0;
+  private static final double CAMERA_LATENCY_STD_DEV_MS = 5.0;
+  private static final int CAMERA_FPS = 60;
 
   private final VisionSystemSim visionSim;
   private final PhotonCameraSim cameraSim;
   private final Supplier<Pose2d> poseSupplier;
 
   /**
-   * Creates a new VisionIOPhotonVisionSim.
+   * Creates a simulated PhotonVision camera.
    *
-   * @param name The name of the camera.
-   * @param robotToCamera Transform from robot to camera.
-   * @param poseSupplier Supplier for the robot pose to use in simulation.
+   * @param name PhotonVision camera name
+   * @param robotToCamera transform from robot frame to camera frame
+   * @param poseSupplier current robot pose supplier in the field coordinate frame
    */
   public VisionIOPhotonVisionSim(
       String name, Transform3d robotToCamera, Supplier<Pose2d> poseSupplier) {
     super(name, robotToCamera);
     this.poseSupplier = poseSupplier;
 
-    // Initialize vision sim
-    visionSim = new VisionSystemSim("main");
+    visionSim = new VisionSystemSim(VISION_SIM_NAME);
     visionSim.addAprilTags(APTAG_FIELD_LAYOUT);
 
-    // Add sim camera
     var cameraProperties = new SimCameraProperties();
-    cameraProperties.setCalibration(800, 600, Rotation2d.fromDegrees(72));
+    cameraProperties.setCalibration(
+        CAMERA_RESOLUTION_WIDTH_PIXELS,
+        CAMERA_RESOLUTION_HEIGHT_PIXELS,
+        Rotation2d.fromDegrees(CAMERA_DIAGONAL_FOV_DEGREES));
     cameraProperties.setCalibError(0.38, 0.1);
-    cameraProperties.setFPS(60);
-    cameraProperties.setAvgLatencyMs(10);
-    cameraProperties.setLatencyStdDevMs(5);
+    cameraProperties.setFPS(CAMERA_FPS);
+    cameraProperties.setAvgLatencyMs(CAMERA_AVERAGE_LATENCY_MS);
+    cameraProperties.setLatencyStdDevMs(CAMERA_LATENCY_STD_DEV_MS);
 
     cameraSim = new PhotonCameraSim(camera, cameraProperties, APTAG_FIELD_LAYOUT);
 
@@ -47,10 +56,10 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
 
   @Override
   public String getCameraName() {
-    // Get the camera object
     return camera.getName();
   }
 
+  /** Advances the simulated vision system using the supplied robot pose. */
   @Override
   public void updateInputs(VisionIOInputs inputs) {
     visionSim.update(poseSupplier.get());

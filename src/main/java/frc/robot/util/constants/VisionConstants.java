@@ -20,6 +20,8 @@ import edu.wpi.first.math.util.Units;
  */
 public final class VisionConstants {
 
+  private VisionConstants() {}
+
   /* AprilTag pose-estimation cameras */
 
   public static final String[] APTAG_CAMERA_NAMES = {
