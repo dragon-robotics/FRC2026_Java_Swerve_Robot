@@ -265,6 +265,22 @@ class VisionDynamicStrategyBakeoffTest {
             .contains(org.photonvision.PhotonPoseEstimator.PoseStrategy.CONSTRAINED_SOLVEPNP));
   }
 
+  @Test
+  void hybridOrderPrefersConstrainedForCoplanarMultiTag() {
+    var order = VisionIOPhotonVision.hybridStrategyOrderForTest(2, true, 0.0, 0.0);
+
+    assertEquals(
+        org.photonvision.PhotonPoseEstimator.PoseStrategy.CONSTRAINED_SOLVEPNP, order[0]);
+  }
+
+  @Test
+  void hybridOrderPrefersCoprocessorMultiTagForNonCoplanarMultiTag() {
+    var order = VisionIOPhotonVision.hybridStrategyOrderForTest(2, false, 0.0, 0.0);
+
+    assertEquals(
+        org.photonvision.PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, order[0]);
+  }
+
   private static DynamicScenario leftSpinScenario() {
     return new DynamicScenario(
         "left_spin", new Pose2d(2.5, 5.5, Rotation2d.kZero), false, DEFAULT_SPIN_RATE_RAD_PER_SEC);

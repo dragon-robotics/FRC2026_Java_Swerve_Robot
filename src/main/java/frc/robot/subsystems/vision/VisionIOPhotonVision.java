@@ -4,7 +4,6 @@ import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
 import static frc.robot.util.constants.VisionConstants.CONSTRAINED_HEADING_SCALE_FACTOR;
 import static frc.robot.util.constants.VisionConstants.CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC;
 import static frc.robot.util.constants.VisionConstants.ENABLE_CONSTRAINED_FALLBACK;
-import static frc.robot.util.constants.VisionConstants.MAX_AVG_TAG_DISTANCE_METERS;
 import static frc.robot.util.constants.VisionConstants.MAX_TAG_DISTANCE;
 import static frc.robot.util.constants.VisionConstants.PHOTON_POSE_STRATEGY_ORDER;
 import static frc.robot.util.constants.VisionConstants.TRIG_MAX_ANGULAR_RATE_RAD_PER_SEC;
@@ -20,6 +19,7 @@ import edu.wpi.first.math.numbers.N8;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
@@ -37,10 +37,23 @@ public class VisionIOPhotonVision implements VisionIO {
   private static final TargetObservation NO_TARGET =
       new TargetObservation(new Rotation2d(), new Rotation2d());
 
+  // Kept as a quick throttle knob if processing every unread frame gets too expensive.
+  @SuppressWarnings("unused")
   private static final int MAX_RESULTS_PER_UPDATE = 2;
   private static final String STRATEGY_MODE_PROPERTY = "vision.photon.strategyMode";
+  private static final String TAG_DISTANCE_CONFIDENCE_MODE_PROPERTY =
+      "vision.tagDistanceConfidenceMode";
   private static final String HYBRID_STRATEGY_MODE = "HYBRID";
   private static final double HYBRID_TRANSLATION_SPEED_THRESHOLD_METERS_PER_SECOND = 0.5;
+  private static final TagDistanceConfidenceMode TAG_DISTANCE_CONFIDENCE_MODE =
+      configuredTagDistanceConfidenceMode();
+
+  enum TagDistanceConfidenceMode {
+    /** Average every tag used by the pose estimate. */
+    ALL_TAG_AVERAGE,
+    /** Use the farthest tag used by the pose estimate. */
+    MAX_TAG_DISTANCE
+  }
 
   public interface VisionHeadingProvider {
     Optional<Rotation2d> getHeadingAtTimestamp(double fpgaTimestampSeconds);
@@ -97,8 +110,7 @@ public class VisionIOPhotonVision implements VisionIO {
       return;
     }
 
-    int startIndex = Math.max(0, allResults.size() - MAX_RESULTS_PER_UPDATE);
-    for (int resultIndex = startIndex; resultIndex < allResults.size(); resultIndex++) {
+    for (int resultIndex = 0; resultIndex < allResults.size(); resultIndex++) {
       processResult(allResults.get(resultIndex), inputs);
     }
 
@@ -208,12 +220,17 @@ public class VisionIOPhotonVision implements VisionIO {
       };
     }
 
-    if (HYBRID_STRATEGY_MODE.equalsIgnoreCase(System.getProperty(STRATEGY_MODE_PROPERTY, ""))) {
+    String configuredStrategyOrder = System.getProperty("vision.photon.strategyOrder");
+    if (configuredStrategyOrder != null && !configuredStrategyOrder.isBlank()) {
+      return parseStrategyOrder(configuredStrategyOrder);
+    }
+
+    if (HYBRID_STRATEGY_MODE.equalsIgnoreCase(
+        System.getProperty(STRATEGY_MODE_PROPERTY, HYBRID_STRATEGY_MODE))) {
       return resolveHybridStrategyOrder(result);
     }
 
-    return parseStrategyOrder(
-        System.getProperty("vision.photon.strategyOrder", PHOTON_POSE_STRATEGY_ORDER));
+    return parseStrategyOrder(PHOTON_POSE_STRATEGY_ORDER);
   }
 
   private PoseStrategy[] resolveHybridStrategyOrder(PhotonPipelineResult result) {
@@ -222,15 +239,31 @@ public class VisionIOPhotonVision implements VisionIO {
     double angularRateRadPerSec =
         headingProvider == null ? 0.0 : Math.abs(headingProvider.getAngularRateRadPerSec());
     int visibleTargetCount = result.getTargets().size();
+    int[] observedTagIds = toObservedTagIds(result.getTargets());
+    boolean coplanarTargetSet = VisionSubsystem.areTagsCoplanar(observedTagIds);
 
     DogLog.log("Vision/TargetCount", visibleTargetCount);
+    DogLog.log("Vision/CoplanarTargetSet", coplanarTargetSet);
 
     return hybridStrategyOrderForTest(
-        visibleTargetCount, linearSpeedMetersPerSecond, angularRateRadPerSec);
+        visibleTargetCount, coplanarTargetSet, linearSpeedMetersPerSecond, angularRateRadPerSec);
   }
 
   static PoseStrategy[] hybridStrategyOrderForTest(
       int visibleTargetCount, double linearSpeedMetersPerSecond, double angularRateRadPerSec) {
+    boolean coplanarTargetSet = visibleTargetCount <= 1;
+    return hybridStrategyOrderForTest(
+        visibleTargetCount,
+        coplanarTargetSet,
+        linearSpeedMetersPerSecond,
+        angularRateRadPerSec);
+  }
+
+  static PoseStrategy[] hybridStrategyOrderForTest(
+      int visibleTargetCount,
+      boolean coplanarTargetSet,
+      double linearSpeedMetersPerSecond,
+      double angularRateRadPerSec) {
     if (angularRateRadPerSec > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
       if (visibleTargetCount >= 2) {
         return new PoseStrategy[] {
@@ -248,6 +281,15 @@ public class VisionIOPhotonVision implements VisionIO {
     }
 
     if (visibleTargetCount >= 2) {
+      if (coplanarTargetSet) {
+        return new PoseStrategy[] {
+          PoseStrategy.CONSTRAINED_SOLVEPNP,
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.LOWEST_AMBIGUITY
+        };
+      }
+
       return new PoseStrategy[] {
         PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
         PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
@@ -383,9 +425,8 @@ public class VisionIOPhotonVision implements VisionIO {
     int[] observedTagIds = new int[targets.size()];
     int observedTagCount = 0;
     int distanceSampleCountAll = 0;
-    int distanceSampleCountInRange = 0;
     double totalDistanceAll = 0.0;
-    double totalDistanceInRange = 0.0;
+    double maxDistanceAll = 0.0;
     double totalAmbiguity = 0.0;
 
     for (PhotonTrackedTarget target : targets) {
@@ -402,14 +443,7 @@ public class VisionIOPhotonVision implements VisionIO {
         double distanceMeters = cameraToTarget.getTranslation().getNorm();
         totalDistanceAll += distanceMeters;
         distanceSampleCountAll++;
-
-        // Exclude far-tag outliers from the average distance used by acceptance
-        // gating. If all tags are far, we intentionally fall back to the full
-        // average so the observation is still rejected by distance.
-        if (distanceMeters <= MAX_AVG_TAG_DISTANCE_METERS) {
-          totalDistanceInRange += distanceMeters;
-          distanceSampleCountInRange++;
-        }
+        maxDistanceAll = Math.max(maxDistanceAll, distanceMeters);
       }
 
       totalAmbiguity += Math.max(0.0, target.getPoseAmbiguity());
@@ -428,15 +462,12 @@ public class VisionIOPhotonVision implements VisionIO {
             ? VisionIO.PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR
             : VisionIO.PoseObservationType.PHOTONVISION;
 
-    double averageTagDistanceMeters;
-    if (distanceSampleCountInRange > 0) {
-      averageTagDistanceMeters = totalDistanceInRange / distanceSampleCountInRange;
-    } else if (distanceSampleCountAll > 0) {
-      averageTagDistanceMeters = totalDistanceAll / distanceSampleCountAll;
-    } else {
-      // No usable distance samples; force the observation to fail the distance gate.
-      averageTagDistanceMeters = Double.POSITIVE_INFINITY;
-    }
+    double averageTagDistanceMeters =
+        confidenceDistance(
+            TAG_DISTANCE_CONFIDENCE_MODE,
+            totalDistanceAll,
+            distanceSampleCountAll,
+            maxDistanceAll);
 
     poseObservations.add(
         new PoseObservation(
@@ -447,6 +478,42 @@ public class VisionIOPhotonVision implements VisionIO {
             averageTagDistanceMeters,
             observationType,
             observedTagIds));
+  }
+
+  static double confidenceDistanceForTest(
+      TagDistanceConfidenceMode mode,
+      double totalDistanceAll,
+      int distanceSampleCountAll,
+      double maxDistanceAll) {
+    return confidenceDistance(
+        mode, totalDistanceAll, distanceSampleCountAll, maxDistanceAll);
+  }
+
+  private static double confidenceDistance(
+      TagDistanceConfidenceMode mode,
+      double totalDistanceAll,
+      int distanceSampleCountAll,
+      double maxDistanceAll) {
+    if (distanceSampleCountAll <= 0) {
+      // No usable distance samples; force the observation to fail the distance gate.
+      return Double.POSITIVE_INFINITY;
+    }
+
+    return switch (mode) {
+      case ALL_TAG_AVERAGE -> totalDistanceAll / distanceSampleCountAll;
+      case MAX_TAG_DISTANCE -> maxDistanceAll;
+    };
+  }
+
+  private static TagDistanceConfidenceMode configuredTagDistanceConfidenceMode() {
+    String raw =
+        System.getProperty(
+            TAG_DISTANCE_CONFIDENCE_MODE_PROPERTY, TagDistanceConfidenceMode.ALL_TAG_AVERAGE.name());
+    try {
+      return TagDistanceConfidenceMode.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+    } catch (IllegalArgumentException ex) {
+      return TagDistanceConfidenceMode.ALL_TAG_AVERAGE;
+    }
   }
 
   private void addTagId(int tagId) {
