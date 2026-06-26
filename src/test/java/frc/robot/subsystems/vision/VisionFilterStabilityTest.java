@@ -431,6 +431,53 @@ class VisionFilterStabilityTest {
     assertArrayEquals(new int[] {1, 2}, copied.getTagIds());
   }
 
+  @Test
+  void consensusSelectsSingleCandidate() {
+    VisionSubsystem.ConsensusCandidate onlyCandidate =
+        consensusCandidate("front", 4.0, 4.0, 2.0, 1.0);
+
+    Optional<VisionSubsystem.ConsensusCandidate> selected =
+        VisionSubsystem.selectConsensusCandidate(List.of(onlyCandidate));
+
+    assertTrue(selected.isPresent());
+    assertEquals(onlyCandidate, selected.get());
+  }
+
+  @Test
+  void consensusChoosesAgreeingClusterOverFarOutlier() {
+    VisionSubsystem.ConsensusCandidate nearFront =
+        consensusCandidate("front", 4.00, 4.00, 2.0, 1.0);
+    VisionSubsystem.ConsensusCandidate nearLeft =
+        consensusCandidate("left", 4.10, 4.03, 2.0, 1.0);
+    VisionSubsystem.ConsensusCandidate farOutlier =
+        consensusCandidate("rear", 5.40, 2.70, 2.0, 1.0);
+
+    Optional<VisionSubsystem.ConsensusCandidate> selected =
+        VisionSubsystem.selectConsensusCandidate(List.of(nearFront, nearLeft, farOutlier));
+
+    assertTrue(selected.isPresent());
+    assertTrue(
+        selected.get().equals(nearFront) || selected.get().equals(nearLeft),
+        "Consensus should select a member of the largest agreeing pose cluster");
+  }
+
+  @Test
+  void consensusTieBreakerPrefersLowerStandardDeviation() {
+    VisionSubsystem.ConsensusCandidate lowStdDev =
+        consensusCandidate("front", 4.0, 4.0, 1.0, 1.0);
+    VisionSubsystem.ConsensusCandidate highStdDev =
+        consensusCandidate("rear", 5.0, 5.0, 4.0, 1.0);
+
+    Optional<VisionSubsystem.ConsensusCandidate> selected =
+        VisionSubsystem.selectConsensusCandidate(List.of(highStdDev, lowStdDev));
+
+    assertTrue(selected.isPresent());
+    assertEquals(
+        lowStdDev,
+        selected.get(),
+        "When cluster size is tied, consensus should keep the most trusted observation");
+  }
+
   private static SwerveDriveKinematics dummyKinematics() {
     double o = 0.3;
     return new SwerveDriveKinematics(
@@ -481,5 +528,26 @@ class VisionFilterStabilityTest {
         2.0,
         PoseObservationType.PHOTONVISION,
         new int[] {1});
+  }
+
+  private static VisionSubsystem.ConsensusCandidate consensusCandidate(
+      String cameraName, double x, double y, double averageTagDistanceMeters, double timestamp) {
+    PoseObservation observation =
+        new PoseObservation(
+            timestamp,
+            new Pose3d(x, y, 0.0, new Rotation3d()),
+            0.05,
+            2,
+            averageTagDistanceMeters,
+            PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR,
+            new int[] {1, 2});
+    return new VisionSubsystem.ConsensusCandidate(
+        0,
+        cameraName,
+        "Vision/" + cameraName,
+        observation,
+        observation.pose().toPose2d(),
+        VisionSubsystem.standardDeviations(observation, 0, false),
+        0.0);
   }
 }
