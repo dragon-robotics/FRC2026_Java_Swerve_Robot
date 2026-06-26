@@ -9,6 +9,9 @@ import static frc.robot.util.constants.VisionConstants.AIM_LINEAR_STDDEV_MULTIPL
 import static frc.robot.util.constants.VisionConstants.APPLY_COPLANAR_PENALTY;
 import static frc.robot.util.constants.VisionConstants.CAMERA_STDDEV_FACTORS;
 import static frc.robot.util.constants.VisionConstants.COPLANAR_ANGLE_THRESHOLD_DEG;
+import static frc.robot.util.constants.VisionConstants.DISABLED_AUTO_RESEED_DELTA_METERS;
+import static frc.robot.util.constants.VisionConstants.DISABLED_AUTO_RESEED_MIN_INTERVAL_SECONDS;
+import static frc.robot.util.constants.VisionConstants.DISABLED_AUTO_RESEED_MIN_TAG_COUNT;
 import static frc.robot.util.constants.VisionConstants.HEADING_STDDEV_IGNORE;
 import static frc.robot.util.constants.VisionConstants.LINEAR_STDDEV_BASELINE;
 import static frc.robot.util.constants.VisionConstants.MAX_ABS_TILT_DEGREES_FOR_VISION;
@@ -16,6 +19,10 @@ import static frc.robot.util.constants.VisionConstants.MAX_AMBIGUITY;
 import static frc.robot.util.constants.VisionConstants.MAX_AVG_TAG_DISTANCE_METERS;
 import static frc.robot.util.constants.VisionConstants.MAX_POSE_DELTA_METERS;
 import static frc.robot.util.constants.VisionConstants.MAX_Z_ERROR;
+import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_MAX_HEADING_DELTA_DEGREES;
+import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_MAX_TRANSLATION_DELTA_METERS;
+import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_STABLE_POSES_REQUIRED;
+import static frc.robot.util.constants.VisionConstants.SNAPSHOT_MAX_AGE_SECONDS;
 import static frc.robot.util.constants.VisionConstants.SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER;
 
 import com.ctre.phoenix6.Utils;
@@ -56,27 +63,6 @@ import java.util.Optional;
  * </ul>
  */
 public class VisionSubsystem extends SubsystemBase {
-
-  /** Snapshots older than this are treated as stale by the dashboard accessor. */
-  private static final double SNAPSHOT_MAX_AGE_SECONDS = 0.5;
-
-  /** Limit how often disabled auto-reseed can reset pose. */
-  private static final double DISABLED_AUTO_RESEED_MIN_INTERVAL_SECONDS = 0.5;
-
-  /** Re-seed again in disabled if odometry drifts too far from latest accepted vision. */
-  private static final double DISABLED_AUTO_RESEED_DELTA_METERS = 0.25;
-
-  /** Disabled auto-reseed only trusts multi-tag solutions to avoid gyro-seeded single-tag bias. */
-  private static final int DISABLED_AUTO_RESEED_MIN_TAG_COUNT = 2;
-
-  /** Stable MultiTagPnP observations required before vision init is considered complete. */
-  private static final int MULTITAG_INIT_STABLE_POSES_REQUIRED = 5;
-
-  /** Maximum translation delta between consecutive MultiTagPnP observations to stay stable. */
-  private static final double MULTITAG_INIT_MAX_TRANSLATION_DELTA_METERS = 0.20;
-
-  /** Maximum heading delta between consecutive MultiTagPnP observations to stay stable. */
-  private static final double MULTITAG_INIT_MAX_HEADING_DELTA_DEGREES = 10.0;
 
   private final CommandSwerveDrivetrain swerve;
   private final VisionConsumer consumer;
@@ -220,6 +206,15 @@ public class VisionSubsystem extends SubsystemBase {
     logPoseArray("Vision/AcceptedPoses", acceptedPoses);
     logPoseArray("Vision/RejectedPoses", rejectedPoses);
     DogLog.log("Vision/Aiming", aiming);
+    var drivetrainState = swerve.getState();
+    double linearSpeedMetersPerSecond =
+        Math.hypot(
+            drivetrainState.Speeds.vxMetersPerSecond,
+            drivetrainState.Speeds.vyMetersPerSecond);
+    double angularSpeedRadiansPerSecond = drivetrainState.Speeds.omegaRadiansPerSecond;
+    DogLog.log("Vision/RobotLinearSpeedMetersPerSecond", linearSpeedMetersPerSecond);
+    DogLog.log("Vision/RobotAngularSpeedRadiansPerSecond", angularSpeedRadiansPerSecond);
+    DogLog.log("Vision/RobotAngularSpeedDegreesPerSecond", Math.toDegrees(angularSpeedRadiansPerSecond));
     DogLog.log("Vision/Initialization/StableMultitagPoseCount", stableMultitagPoseCount);
     DogLog.log("Vision/Initialization/Complete", visionInitializationComplete);
 

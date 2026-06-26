@@ -99,6 +99,10 @@ test {
     if (applyCoplanarPenalty != null) {
         systemProperty 'vision.applyCoplanarPenalty', applyCoplanarPenalty
     }
+    def tagDistanceConfidenceMode = System.getProperty('vision.tagDistanceConfidenceMode')
+    if (tagDistanceConfidenceMode != null) {
+        systemProperty 'vision.tagDistanceConfidenceMode', tagDistanceConfidenceMode
+    }
 }
 
 // Simulation configuration (e.g. environment variables).
@@ -143,6 +147,10 @@ tasks.register('visionStabilityTest', Test) {
     def applyCoplanarPenalty = System.getProperty('vision.applyCoplanarPenalty')
     if (applyCoplanarPenalty != null) {
         systemProperty 'vision.applyCoplanarPenalty', applyCoplanarPenalty
+    }
+    def tagDistanceConfidenceMode = System.getProperty('vision.tagDistanceConfidenceMode')
+    if (tagDistanceConfidenceMode != null) {
+        systemProperty 'vision.tagDistanceConfidenceMode', tagDistanceConfidenceMode
     }
     testLogging {
         showStandardStreams = true
