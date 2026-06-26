@@ -72,6 +72,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /** Central wiring point for robot subsystems, command factories, controls, and dashboards. */
 public class RobotContainer {
@@ -113,6 +114,7 @@ public class RobotContainer {
   private static final double VISION_TAG_LINE_HOLD_SECONDS = 0.2;
   private final List<Pose2d[]> lastVisionTagLineSegments = new ArrayList<>();
   private double lastVisionTagUpdateTimestamp = -1.0;
+  private Supplier<Pose2d> visionSimulationPoseSupplier;
 
   private record MechanismSubsystems(
       IntakeSubsystem intake,
@@ -128,6 +130,7 @@ public class RobotContainer {
     operatorController = new CommandXboxController(OperatorConstants.OPERATOR_PORT);
 
     swerveSubsystem = createSwerveSubsystem();
+    visionSimulationPoseSupplier = () -> swerveSubsystem.getState().Pose;
     MechanismSubsystems mechanisms = createMechanismSubsystems();
     intakeSubsystem = mechanisms.intake();
     hopperSubsystem = mechanisms.hopper();
@@ -373,19 +376,34 @@ public class RobotContainer {
         new VisionIOPhotonVisionSim(
             APTAG_CAMERA_NAMES[0],
             VisionConstants.APTAG_POSE_EST_CAM_F_POS,
-            () -> swerveSubsystem.getState().Pose),
+            this::getVisionSimulationPose),
         new VisionIOPhotonVisionSim(
             APTAG_CAMERA_NAMES[1],
             VisionConstants.APTAG_POSE_EST_CAM_R_POS,
-            () -> swerveSubsystem.getState().Pose),
+            this::getVisionSimulationPose),
         new VisionIOPhotonVisionSim(
             APTAG_CAMERA_NAMES[2],
             VisionConstants.APTAG_POSE_EST_CAM_B_POS,
-            () -> swerveSubsystem.getState().Pose),
+            this::getVisionSimulationPose),
         new VisionIOPhotonVisionSim(
             APTAG_CAMERA_NAMES[3],
             VisionConstants.APTAG_POSE_EST_CAM_L_POS,
-            () -> swerveSubsystem.getState().Pose));
+            this::getVisionSimulationPose));
+  }
+
+  private Pose2d getVisionSimulationPose() {
+    return visionSimulationPoseSupplier.get();
+  }
+
+  /**
+   * Overrides the field-relative robot pose used by simulated PhotonVision cameras.
+   *
+   * <p>Real robot code does not use this hook. Vision regression tests set it to their independent
+   * ground-truth pose so simulated detections are not sourced from the drivetrain estimator they are
+   * validating.
+   */
+  public void setVisionSimulationPoseSupplier(Supplier<Pose2d> poseSupplier) {
+    visionSimulationPoseSupplier = poseSupplier;
   }
 
   private void configureBindings() {
