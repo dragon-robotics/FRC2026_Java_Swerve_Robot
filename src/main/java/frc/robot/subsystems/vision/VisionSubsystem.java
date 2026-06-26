@@ -316,14 +316,12 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     boolean isMultitagCoprocessor = isMultitagInitCandidate(observation);
+    if (!isMultitagCoprocessor) {
+      return;
+    }
     MultitagInitializationState initState =
         multitagInitializationByCamera.computeIfAbsent(
             cameraName, unused -> new MultitagInitializationState());
-    if (!isMultitagCoprocessor) {
-      initState.reset();
-      refreshStableMultitagPoseCount();
-      return;
-    }
 
     double translationDelta = 0.0;
     double headingDeltaDeg = 0.0;
@@ -391,12 +389,6 @@ public class VisionSubsystem extends SubsystemBase {
     private Pose2d lastStablePose = null;
     private double lastStableTimestamp = Double.NEGATIVE_INFINITY;
     private int stablePoseCount = 0;
-
-    private void reset() {
-      lastStablePose = null;
-      lastStableTimestamp = Double.NEGATIVE_INFINITY;
-      stablePoseCount = 0;
-    }
   }
 
   /**
