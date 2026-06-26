@@ -27,12 +27,14 @@ import static frc.robot.util.constants.VisionConstants.SINGLE_TAG_LINEAR_STDDEV_
 
 import com.ctre.phoenix6.Utils;
 import dev.doglog.DogLog;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
@@ -65,6 +67,8 @@ import java.util.Optional;
  * </ul>
  */
 public class VisionSubsystem extends SubsystemBase {
+
+  private static final Translation3d TAG_NORMAL_VECTOR = new Translation3d(0.0, 0.0, 1.0);
 
   private final CommandSwerveDrivetrain swerve;
   private final VisionConsumer consumer;
@@ -494,19 +498,34 @@ public class VisionSubsystem extends SubsystemBase {
     if (firstOpt.isEmpty()) {
       return true; // unknown tag — treat as vulnerable
     }
-    Rotation3d referenceNormal = firstOpt.get().getRotation();
+    Rotation3d referenceRotation = firstOpt.get().getRotation();
     double thresholdRad = Math.toRadians(COPLANAR_ANGLE_THRESHOLD_DEG);
     for (int i = 1; i < tagIDs.length; i++) {
       var tagOpt = APTAG_FIELD_LAYOUT.getTagPose(tagIDs[i]);
       if (tagOpt.isEmpty()) {
         continue; // unknown tag — skip
       }
-      Rotation3d diff = tagOpt.get().getRotation().minus(referenceNormal);
-      if (Math.abs(diff.getAngle()) > thresholdRad) {
+      if (angleBetweenTagNormalsRadians(referenceRotation, tagOpt.get().getRotation())
+          > thresholdRad) {
         return false; // tags face different directions → not coplanar
       }
     }
     return true;
+  }
+
+  static double angleBetweenTagNormalsRadians(
+      Rotation3d firstTagRotation, Rotation3d secondTagRotation) {
+    Translation3d firstNormal = TAG_NORMAL_VECTOR.rotateBy(firstTagRotation);
+    Translation3d secondNormal = TAG_NORMAL_VECTOR.rotateBy(secondTagRotation);
+    double dotProduct =
+        firstNormal.getX() * secondNormal.getX()
+            + firstNormal.getY() * secondNormal.getY()
+            + firstNormal.getZ() * secondNormal.getZ();
+    double normalProduct = firstNormal.getNorm() * secondNormal.getNorm();
+    if (normalProduct <= 1e-9) {
+      return 0.0;
+    }
+    return Math.acos(MathUtil.clamp(dotProduct / normalProduct, -1.0, 1.0));
   }
 
   /** Logs a pose list as a struct array for AdvantageScope. */
@@ -540,11 +559,11 @@ public class VisionSubsystem extends SubsystemBase {
       avgDistances[i] = observations[i].averageTagDistance();
     }
     DogLog.log(camKey + "/RawObs/Count", count);
-    DogLog.log(camKey + "/RawObs/Poses", poses);
-    DogLog.log(camKey + "/RawObs/Timestamp", timestamps);
-    DogLog.log(camKey + "/RawObs/Ambiguity", ambiguities);
-    DogLog.log(camKey + "/RawObs/TagCount", tagCounts);
-    DogLog.log(camKey + "/RawObs/AvgDistance", avgDistances);
+    DogLog.log(camKey + "/RawObs/Poses", Arrays.copyOf(poses, count));
+    DogLog.log(camKey + "/RawObs/Timestamp", Arrays.copyOf(timestamps, count));
+    DogLog.log(camKey + "/RawObs/Ambiguity", Arrays.copyOf(ambiguities, count));
+    DogLog.log(camKey + "/RawObs/TagCount", Arrays.copyOf(tagCounts, count));
+    DogLog.log(camKey + "/RawObs/AvgDistance", Arrays.copyOf(avgDistances, count));
   }
 
   private static class RawObservationLogBuffers {

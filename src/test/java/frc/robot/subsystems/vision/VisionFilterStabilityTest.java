@@ -6,6 +6,8 @@ package frc.robot.subsystems.vision;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -18,6 +20,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import frc.robot.subsystems.vision.VisionIO.PoseObservation;
 import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
+import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
 import frc.robot.util.constants.VisionConstants;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -392,6 +395,40 @@ class VisionFilterStabilityTest {
         VisionConstants.APPLY_COPLANAR_PENALTY
             ? "Coplanar multi-tag std-dev must apply the single-tag distrust multiplier"
             : "Coplanar multi-tag std-dev must remain unpenalized when coplanar penalty is disabled");
+  }
+
+  @Test
+  void tagNormalComparisonIgnoresInPlaneRotation() {
+    Rotation3d reference = new Rotation3d();
+    Rotation3d spunAroundNormal = new Rotation3d(0.0, 0.0, Math.PI / 2.0);
+
+    assertEquals(
+        0.0,
+        VisionSubsystem.angleBetweenTagNormalsRadians(reference, spunAroundNormal),
+        1e-9,
+        "Coplanar tags can differ by in-plane rotation without changing their plane normal");
+  }
+
+  @Test
+  void visionInputsCopyFromDefensivelyCopiesMutableArrays() {
+    VisionIOInputs source = new VisionIOInputs();
+    PoseObservation originalObservation = singleTagPhotonVisionObs(4.0, 4.0, 0.0, 1.0);
+    PoseObservation replacementObservation = singleTagPhotonVisionObs(5.0, 5.0, 0.0, 2.0);
+    source.setPoseObservations(new PoseObservation[] {originalObservation});
+    source.setTagIds(new int[] {1, 2});
+
+    VisionIOInputs copied = new VisionIOInputs();
+    copied.copyFrom(source);
+
+    PoseObservation[] sourceObservations = source.getPoseObservations();
+    int[] sourceTagIds = source.getTagIds();
+    sourceObservations[0] = replacementObservation;
+    sourceTagIds[0] = 99;
+
+    assertNotSame(sourceObservations, copied.getPoseObservations());
+    assertNotSame(sourceTagIds, copied.getTagIds());
+    assertEquals(originalObservation, copied.getPoseObservations()[0]);
+    assertArrayEquals(new int[] {1, 2}, copied.getTagIds());
   }
 
   private static SwerveDriveKinematics dummyKinematics() {
