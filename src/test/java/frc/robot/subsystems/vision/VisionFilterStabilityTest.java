@@ -5,6 +5,7 @@
 package frc.robot.subsystems.vision;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -19,6 +20,8 @@ import frc.robot.subsystems.vision.VisionIO.PoseObservation;
 import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
 import frc.robot.util.constants.VisionConstants;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -268,6 +271,44 @@ class VisionFilterStabilityTest {
     stableCount = VisionSubsystem.nextStableMultitagPoseCount(stableCount, unstableStep);
 
     assertEquals(1, stableCount, "Unstable step should reset streak to 1 from the new baseline");
+  }
+
+  @Test
+  void multitagInitializationHandlesOutOfOrderCrossCameraTimestamps() throws Exception {
+    VisionSubsystem vision = new VisionSubsystem(null, (pose, timestamp, stdDevs) -> {});
+    Method trackMultitagInitialization =
+        VisionSubsystem.class.getDeclaredMethod(
+            "trackMultitagInitialization", PoseObservation.class, Pose2d.class, String.class);
+    trackMultitagInitialization.setAccessible(true);
+    Field initializationComplete =
+        VisionSubsystem.class.getDeclaredField("visionInitializationComplete");
+    initializationComplete.setAccessible(true);
+
+    assertFalse(
+        initializationComplete.getBoolean(vision),
+        "Vision initialization should start incomplete");
+
+    for (int i = 0; i < VisionSubsystem.requiredStableMultitagPosesForInitialization(); i++) {
+      PoseObservation newerFrontCameraObservation =
+          multitagCoprocessorObs(4.0 + (0.01 * i), 4.0, 0.0, 10.0 + (0.02 * i));
+      PoseObservation olderRearCameraObservation =
+          multitagCoprocessorObs(4.0 + (0.01 * i), 4.0, 0.0, 9.0 + (0.02 * i));
+
+      trackMultitagInitialization.invoke(
+          vision,
+          newerFrontCameraObservation,
+          newerFrontCameraObservation.pose().toPose2d(),
+          "front");
+      trackMultitagInitialization.invoke(
+          vision,
+          olderRearCameraObservation,
+          olderRearCameraObservation.pose().toPose2d(),
+          "rear");
+    }
+
+    assertTrue(
+        initializationComplete.getBoolean(vision),
+        "Stable MultiTag streak from one camera should survive older frames from another camera");
   }
 
   /**

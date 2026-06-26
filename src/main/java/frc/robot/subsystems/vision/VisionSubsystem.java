@@ -46,7 +46,9 @@ import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -81,8 +83,8 @@ public class VisionSubsystem extends SubsystemBase {
 
   private int[] lastAcceptedTagIDs = new int[0];
   private double lastAcceptedTimestamp = -1.0;
-  private Pose2d lastStableMultitagPose = null;
-  private double lastStableMultitagTimestamp = Double.NEGATIVE_INFINITY;
+  private final Map<String, MultitagInitializationState> multitagInitializationByCamera =
+      new HashMap<>();
   private int stableMultitagPoseCount = 0;
   private boolean visionInitializationComplete = false;
   private boolean hasAutoReseededThisDisabledCycle = false;
@@ -314,41 +316,52 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     boolean isMultitagCoprocessor = isMultitagInitCandidate(observation);
+    MultitagInitializationState initState =
+        multitagInitializationByCamera.computeIfAbsent(
+            cameraName, unused -> new MultitagInitializationState());
     if (!isMultitagCoprocessor) {
-      stableMultitagPoseCount = 0;
-      lastStableMultitagPose = null;
-      lastStableMultitagTimestamp = Double.NEGATIVE_INFINITY;
+      initState.reset();
+      refreshStableMultitagPoseCount();
       return;
     }
 
     double translationDelta = 0.0;
     double headingDeltaDeg = 0.0;
     boolean isStable = true;
-    if (lastStableMultitagPose != null) {
+    if (initState.lastStablePose != null) {
       translationDelta =
-          pose2d.getTranslation().getDistance(lastStableMultitagPose.getTranslation());
+          pose2d.getTranslation().getDistance(initState.lastStablePose.getTranslation());
       headingDeltaDeg =
-          Math.abs(pose2d.getRotation().minus(lastStableMultitagPose.getRotation()).getDegrees());
+          Math.abs(pose2d.getRotation().minus(initState.lastStablePose.getRotation()).getDegrees());
       isStable =
           isStableMultitagStep(
               observation.timestamp(),
-              lastStableMultitagTimestamp,
+              initState.lastStableTimestamp,
               translationDelta,
               headingDeltaDeg);
     }
 
-    stableMultitagPoseCount = isStable ? (stableMultitagPoseCount + 1) : 1;
-    lastStableMultitagPose = pose2d;
-    lastStableMultitagTimestamp = observation.timestamp();
+    initState.stablePoseCount = nextStableMultitagPoseCount(initState.stablePoseCount, isStable);
+    initState.lastStablePose = pose2d;
+    initState.lastStableTimestamp = observation.timestamp();
+    refreshStableMultitagPoseCount();
 
     DogLog.log("Vision/Initialization/Camera", cameraName);
     DogLog.log("Vision/Initialization/TranslationDeltaMeters", translationDelta);
     DogLog.log("Vision/Initialization/HeadingDeltaDegrees", headingDeltaDeg);
 
-    if (stableMultitagPoseCount >= MULTITAG_INIT_STABLE_POSES_REQUIRED) {
+    if (initState.stablePoseCount >= MULTITAG_INIT_STABLE_POSES_REQUIRED) {
       markVisionInitializationComplete();
       DogLog.log("Vision/Initialization/StableMultitagPoseTimestamp", observation.timestamp());
     }
+  }
+
+  private void refreshStableMultitagPoseCount() {
+    int maxStablePoseCount = 0;
+    for (MultitagInitializationState initState : multitagInitializationByCamera.values()) {
+      maxStablePoseCount = Math.max(maxStablePoseCount, initState.stablePoseCount);
+    }
+    stableMultitagPoseCount = maxStablePoseCount;
   }
 
   static boolean isMultitagInitCandidate(PoseObservation observation) {
@@ -372,6 +385,18 @@ public class VisionSubsystem extends SubsystemBase {
 
   static int requiredStableMultitagPosesForInitialization() {
     return MULTITAG_INIT_STABLE_POSES_REQUIRED;
+  }
+
+  private static class MultitagInitializationState {
+    private Pose2d lastStablePose = null;
+    private double lastStableTimestamp = Double.NEGATIVE_INFINITY;
+    private int stablePoseCount = 0;
+
+    private void reset() {
+      lastStablePose = null;
+      lastStableTimestamp = Double.NEGATIVE_INFINITY;
+      stablePoseCount = 0;
+    }
   }
 
   /**
