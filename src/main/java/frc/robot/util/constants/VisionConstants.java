@@ -20,7 +20,8 @@ import edu.wpi.first.math.util.Units;
  */
 public final class VisionConstants {
 
-  private VisionConstants() {}
+  private VisionConstants() {
+  }
 
   /* AprilTag pose-estimation cameras */
 
@@ -111,19 +112,34 @@ public final class VisionConstants {
   /** Limit how often disabled auto-reseed can reset pose. */
   public static final double DISABLED_AUTO_RESEED_MIN_INTERVAL_SECONDS = 0.5;
 
-  /** Re-seed again in disabled if odometry drifts too far from latest accepted vision. */
+  /**
+   * Re-seed again in disabled if odometry drifts too far from latest accepted
+   * vision.
+   */
   public static final double DISABLED_AUTO_RESEED_DELTA_METERS = 0.25;
 
-  /** Disabled auto-reseed only trusts multi-tag solutions to avoid gyro-seeded single-tag bias. */
+  /**
+   * Disabled auto-reseed only trusts multi-tag solutions to avoid gyro-seeded
+   * single-tag bias.
+   */
   public static final int DISABLED_AUTO_RESEED_MIN_TAG_COUNT = 2;
 
-  /** Stable MultiTagPnP observations required before vision init is considered complete. */
+  /**
+   * Stable MultiTagPnP observations required before vision init is considered
+   * complete.
+   */
   public static final int MULTITAG_INIT_STABLE_POSES_REQUIRED = 5;
 
-  /** Maximum translation delta between consecutive MultiTagPnP observations to stay stable. */
+  /**
+   * Maximum translation delta between consecutive MultiTagPnP observations to
+   * stay stable.
+   */
   public static final double MULTITAG_INIT_MAX_TRANSLATION_DELTA_METERS = 0.20;
 
-  /** Maximum heading delta between consecutive MultiTagPnP observations to stay stable. */
+  /**
+   * Maximum heading delta between consecutive MultiTagPnP observations to stay
+   * stable.
+   */
   public static final double MULTITAG_INIT_MAX_HEADING_DELTA_DEGREES = 10.0;
 
   /* Standard-deviation model */
@@ -132,7 +148,7 @@ public final class VisionConstants {
    * Baseline translation std-dev at 1 m / 1 tag, scaled by dist^2 / tagCount in
    * VisionSubsystem.
    */
-  public static double LINEAR_STDDEV_BASELINE = 0.02;
+  public static final double LINEAR_STDDEV_BASELINE = 0.02;
 
   /**
    * Heading std-dev fed to the pose estimator; set huge so vision never moves
@@ -182,7 +198,7 @@ public final class VisionConstants {
    * Per-camera translation standard-deviation multipliers ordered like
    * APTAG_CAMERA_NAMES.
    */
-  public static double[] CAMERA_STDDEV_FACTORS = new double[] { 1.0, 1.0, 1.0, 1.0 };
+  public static final double[] CAMERA_STDDEV_FACTORS = new double[] { 1.0, 1.0, 1.0, 1.0 };
 
   /* Coplanar tag handling */
 
