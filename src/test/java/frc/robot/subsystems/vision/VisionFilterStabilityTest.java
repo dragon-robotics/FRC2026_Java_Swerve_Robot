@@ -311,6 +311,34 @@ class VisionFilterStabilityTest {
         "Stable MultiTag streak from one camera should survive older frames from another camera");
   }
 
+  @Test
+  void multitagInitializationIgnoresNonCandidateObservations() throws Exception {
+    VisionSubsystem vision = new VisionSubsystem(null, (pose, timestamp, stdDevs) -> {});
+    Method trackMultitagInitialization =
+        VisionSubsystem.class.getDeclaredMethod(
+            "trackMultitagInitialization", PoseObservation.class, Pose2d.class, String.class);
+    trackMultitagInitialization.setAccessible(true);
+    Field initializationComplete =
+        VisionSubsystem.class.getDeclaredField("visionInitializationComplete");
+    initializationComplete.setAccessible(true);
+
+    for (int i = 0; i < VisionSubsystem.requiredStableMultitagPosesForInitialization(); i++) {
+      PoseObservation multitagObservation =
+          multitagCoprocessorObs(4.0 + (0.01 * i), 4.0, 0.0, 20.0 + (0.02 * i));
+      PoseObservation singleTagObservation =
+          singleTagPhotonVisionObs(4.0 + (0.01 * i), 4.0, 0.0, 20.01 + (0.02 * i));
+
+      trackMultitagInitialization.invoke(
+          vision, multitagObservation, multitagObservation.pose().toPose2d(), "front");
+      trackMultitagInitialization.invoke(
+          vision, singleTagObservation, singleTagObservation.pose().toPose2d(), "front");
+    }
+
+    assertTrue(
+        initializationComplete.getBoolean(vision),
+        "Single-tag/fallback observations should not reset stable MultiTag initialization");
+  }
+
   /**
    * Pins the translation distrust multiplier behavior:
    *
@@ -404,5 +432,17 @@ class VisionFilterStabilityTest {
         2.0,
         PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR,
         new int[] {1, 2});
+  }
+
+  private static PoseObservation singleTagPhotonVisionObs(
+      double x, double y, double headingRad, double timestamp) {
+    return new PoseObservation(
+        timestamp,
+        new Pose3d(x, y, 0.0, new Rotation3d(0.0, 0.0, headingRad)),
+        0.05,
+        1,
+        2.0,
+        PoseObservationType.PHOTONVISION,
+        new int[] {1});
   }
 }
