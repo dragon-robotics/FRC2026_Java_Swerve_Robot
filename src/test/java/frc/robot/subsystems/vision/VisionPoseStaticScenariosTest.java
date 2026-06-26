@@ -48,10 +48,9 @@ import org.junit.jupiter.api.Test;
  *       to pull the estimator far from truth).
  * </ul>
  *
- * <p><b>Important simulation caveat:</b> the PhotonVision sim generates detections from {@code
- * swerveSubsystem.getState().Pose}, so vision and odometry are coupled. However, the sim still
- * applies realistic camera calibration noise, which is sufficient to trigger the coplanar
- * mirror-flip occasionally and reproduce the real-world jitter.
+ * <p>The PhotonVision sim receives each scenario's ground-truth pose directly, so accepted vision
+ * poses are checked against an independent reference instead of the drivetrain estimator pose they
+ * are meant to validate.
  *
  * <p>Tagged {@code sim} and guarded with JUnit {@link Assumptions}: skipped rather than failed when
  * HAL/simulation is unavailable.
@@ -208,6 +207,7 @@ class VisionPoseStaticScenariosTest {
     // Cancel any residual commands; reset drivetrain pose to scenario start.
     CommandScheduler.getInstance().cancelAll();
     container.swerveSubsystem.resetPose(s.pose());
+    container.setVisionSimulationPoseSupplier(s::pose);
 
     List<String> csv = new ArrayList<>();
     csv.add(

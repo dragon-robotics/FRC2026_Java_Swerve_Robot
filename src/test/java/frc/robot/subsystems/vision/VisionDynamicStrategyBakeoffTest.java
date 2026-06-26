@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -438,6 +439,9 @@ class VisionDynamicStrategyBakeoffTest {
         () -> {
           CommandScheduler.getInstance().cancelAll();
           container.swerveSubsystem.resetPose(scenario.startPose());
+          AtomicReference<Pose2d> simulatedVisionTruth =
+              new AtomicReference<>(scenario.startPose());
+          container.setVisionSimulationPoseSupplier(simulatedVisionTruth::get);
 
           List<String> csv = new ArrayList<>();
           csv.add(
@@ -455,6 +459,7 @@ class VisionDynamicStrategyBakeoffTest {
 
           int totalCycles = WARMUP_CYCLES + MEASURE_CYCLES;
           for (int cycle = 0; cycle < totalCycles; cycle++) {
+            simulatedVisionTruth.set(truthState.pose());
             CommandScheduler.getInstance().run();
 
             MotionStep motionStep = advanceGroundTruth(scenario, truthState);
@@ -470,6 +475,7 @@ class VisionDynamicStrategyBakeoffTest {
             SimHooks.stepTiming(DT);
 
             truthState = motionStep.nextTruth();
+            simulatedVisionTruth.set(truthState.pose());
             Pose2d odom = container.swerveSubsystem.getState().Pose;
             Optional<VisionSubsystem.AcceptedObservationSnapshot> vis =
                 container.visionSubsystem.getLatestAcceptedObservationSnapshot();
