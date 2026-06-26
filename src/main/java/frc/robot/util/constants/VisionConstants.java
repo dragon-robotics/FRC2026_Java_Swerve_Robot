@@ -219,7 +219,7 @@ public final class VisionConstants {
    * coplanar sets.
    */
   public static final boolean APPLY_COPLANAR_PENALTY = Boolean
-      .parseBoolean(System.getProperty("vision.applyCoplanarPenalty", "false"));
+      .parseBoolean(System.getProperty("vision.applyCoplanarPenalty", "true"));
 
   /**
    * Static PhotonPoseEstimator strategy chain used only when dynamic strategy

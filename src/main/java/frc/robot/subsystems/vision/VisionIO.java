@@ -2,6 +2,7 @@ package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import java.util.Arrays;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,8 +32,8 @@ public interface VisionIO {
       this.cameraName = other.cameraName;
       this.connected = other.connected;
       this.latestTargetObservation = other.latestTargetObservation;
-      this.poseObservations = other.poseObservations;
-      this.tagIds = other.tagIds;
+      this.poseObservations = Arrays.copyOf(other.poseObservations, other.poseObservations.length);
+      this.tagIds = Arrays.copyOf(other.tagIds, other.tagIds.length);
     }
   }
 
