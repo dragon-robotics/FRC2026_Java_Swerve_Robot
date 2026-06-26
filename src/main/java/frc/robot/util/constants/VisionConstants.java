@@ -104,6 +104,13 @@ public final class VisionConstants {
    */
   public static final double MAX_POSE_DELTA_METERS = 2.5;
 
+  /**
+   * Same-loop vision observations within this XY distance (meters) are treated as
+   * agreeing on the
+   * robot pose for multi-camera consensus.
+   */
+  public static final double VISION_CONSENSUS_RADIUS_METERS = 0.45;
+
   /* VisionSubsystem state/reseed behavior */
 
   /** Snapshots older than this are treated as stale by the dashboard accessor. */
