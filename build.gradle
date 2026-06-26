@@ -90,6 +90,10 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    // WPILib/PathPlanner simulation tests carry process-global state such as
+    // AutoBuilder configuration. Fork each test class so filtered integration
+    // runs like `--tests frc.robot.subsystems.vision.*` match visionStabilityTest.
+    forkEvery = 1
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
     def strategyOrder = System.getProperty('vision.photon.strategyOrder')
     if (strategyOrder != null) {
