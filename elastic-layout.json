@@ -157,7 +157,7 @@
             "height": 128.0,
             "type": "Large Text Display",
             "properties": {
-              "topic": "/Robot/Intake/Intake State",
+              "topic": "/Robot/Intake/CurrentState",
               "period": 0.06,
               "data_type": "string"
             }
@@ -392,7 +392,7 @@
             "height": 128.0,
             "type": "Large Text Display",
             "properties": {
-              "topic": "/Robot/Intake/Intake State",
+              "topic": "/Robot/Intake/CurrentState",
               "period": 0.06,
               "data_type": "string"
             }
@@ -627,7 +627,7 @@
             "height": 128.0,
             "type": "Large Text Display",
             "properties": {
-              "topic": "/Robot/Intake/Intake State",
+              "topic": "/Robot/Intake/CurrentState",
               "period": 0.06,
               "data_type": "string"
             }
@@ -862,7 +862,7 @@
             "height": 128.0,
             "type": "Large Text Display",
             "properties": {
-              "topic": "/Robot/Intake/Intake State",
+              "topic": "/Robot/Intake/CurrentState",
               "period": 0.06,
               "data_type": "string"
             }

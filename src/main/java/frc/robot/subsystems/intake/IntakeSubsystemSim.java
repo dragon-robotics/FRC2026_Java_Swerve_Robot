@@ -157,7 +157,7 @@ public class IntakeSubsystemSim extends IntakeSubsystem {
     handleStateTransition();
 
     // Add telemetry data
-    DogLog.log("Intake/Intake State", currIntakeState.toString());
+    DogLog.forceNt.log("Intake/CurrentState", currIntakeState.toString());
     DogLog.log(
         "Intake/Intake Arm Angle (deg)", String.valueOf(Units.radiansToDegrees(currentAngleRad)));
     DogLog.log(

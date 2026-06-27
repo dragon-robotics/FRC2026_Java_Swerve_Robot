@@ -810,12 +810,20 @@ public class Superstructure extends SubsystemBase {
     ShiftInfo officialShift = HubShiftUtil.getOfficialShiftInfo();
     ShiftInfo shiftedShift = HubShiftUtil.getShiftedShiftInfo();
 
-    logShiftInfo("HubShift/Official", officialShift);
-    logShiftInfo("HubShift/Shifted", shiftedShift);
+    logShiftInfo("HubShift/Official", officialShift, true);
+    logShiftInfo("HubShift/Shifted", shiftedShift, false);
     DogLog.log("HubShift/FirstActiveAlliance", HubShiftUtil.getFirstActiveAlliance().name());
   }
 
-  private static void logShiftInfo(String prefix, ShiftInfo shiftInfo) {
+  private static void logShiftInfo(String prefix, ShiftInfo shiftInfo, boolean publishToNt) {
+    if (publishToNt) {
+      DogLog.forceNt.log(prefix + "/CurrentShift", shiftInfo.currentShift().name());
+      DogLog.forceNt.log(prefix + "/Active", shiftInfo.active());
+      DogLog.log(prefix + "/ElapsedTime", shiftInfo.elapsedTime());
+      DogLog.forceNt.log(prefix + "/RemainingTime", shiftInfo.remainingTime());
+      return;
+    }
+
     DogLog.log(prefix + "/CurrentShift", shiftInfo.currentShift().name());
     DogLog.log(prefix + "/Active", shiftInfo.active());
     DogLog.log(prefix + "/ElapsedTime", shiftInfo.elapsedTime());
@@ -823,12 +831,14 @@ public class Superstructure extends SubsystemBase {
   }
 
   private void logSuperstructureTelemetry() {
-    DogLog.log("Superstructure/CurrentState", state.toString());
-    DogLog.log("Superstructure/IsAlignedToTarget", alignedToTarget);
-    DogLog.log(
+    DogLog.forceNt.log("Superstructure/CurrentState", state.toString());
+    DogLog.forceNt.log("Superstructure/IsAlignedToTarget", alignedToTarget);
+    DogLog.forceNt.log(
         "Superstructure/ShootMode/DefaultShootWithAim",
         shootMode == ShootMode.DEFAULT_SHOOT_WITH_AIM);
-    DogLog.log("Superstructure/ShootMode/ManualBumperUp", shootMode == ShootMode.MANUAL_BUMPER_UP);
-    DogLog.log("Superstructure/ShootMode/ManualTrench", shootMode == ShootMode.MANUAL_TRENCH);
+    DogLog.forceNt.log(
+        "Superstructure/ShootMode/ManualBumperUp", shootMode == ShootMode.MANUAL_BUMPER_UP);
+    DogLog.forceNt.log(
+        "Superstructure/ShootMode/ManualTrench", shootMode == ShootMode.MANUAL_TRENCH);
   }
 }
