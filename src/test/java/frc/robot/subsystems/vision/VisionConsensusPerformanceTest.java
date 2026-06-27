@@ -119,7 +119,8 @@ class VisionConsensusPerformanceTest {
 
     Optional<VisionSubsystem.ConsensusCandidate> selected =
         VisionSubsystem.selectConsensusCandidate(candidateBuffer);
-    selected.ifPresent(candidate -> consume(candidate.visionPose(), candidate.standardDeviations()));
+    selected.ifPresent(
+        candidate -> consume(candidate.visionPose(), candidate.standardDeviations()));
     return selected.isPresent() ? 1 : 0;
   }
 
@@ -176,8 +177,8 @@ class VisionConsensusPerformanceTest {
     blackhole += pose.getX() * 1e-9 + pose.getY() * 1e-9 + stdDevs.get(0, 0) * 1e-6;
   }
 
-  private void writeCsv(
-      BenchmarkResult current, BenchmarkResult consensus, double overheadRatio) throws IOException {
+  private void writeCsv(BenchmarkResult current, BenchmarkResult consensus, double overheadRatio)
+      throws IOException {
     Path dir = Path.of("build", "vision-stability");
     Files.createDirectories(dir);
     Files.write(

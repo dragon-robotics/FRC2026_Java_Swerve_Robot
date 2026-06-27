@@ -48,6 +48,7 @@ public class VisionIOPhotonVision implements VisionIO {
   // Kept as a quick throttle knob if processing every unread frame gets too expensive.
   @SuppressWarnings("unused")
   private static final int MAX_RESULTS_PER_UPDATE = 2;
+
   private static final String STRATEGY_MODE_PROPERTY = "vision.photon.strategyMode";
   private static final String TAG_DISTANCE_CONFIDENCE_MODE_PROPERTY =
       "vision.tagDistanceConfidenceMode";
@@ -282,10 +283,7 @@ public class VisionIOPhotonVision implements VisionIO {
       int visibleTargetCount, double linearSpeedMetersPerSecond, double angularRateRadPerSec) {
     boolean coplanarTargetSet = visibleTargetCount <= 1;
     return hybridStrategyOrderForTest(
-        visibleTargetCount,
-        coplanarTargetSet,
-        linearSpeedMetersPerSecond,
-        angularRateRadPerSec);
+        visibleTargetCount, coplanarTargetSet, linearSpeedMetersPerSecond, angularRateRadPerSec);
   }
 
   static PoseStrategy[] hybridStrategyOrderForTest(
@@ -493,10 +491,7 @@ public class VisionIOPhotonVision implements VisionIO {
 
     double averageTagDistanceMeters =
         confidenceDistance(
-            TAG_DISTANCE_CONFIDENCE_MODE,
-            totalDistanceAll,
-            distanceSampleCountAll,
-            maxDistanceAll);
+            TAG_DISTANCE_CONFIDENCE_MODE, totalDistanceAll, distanceSampleCountAll, maxDistanceAll);
 
     poseObservations.add(
         new PoseObservation(
@@ -514,8 +509,7 @@ public class VisionIOPhotonVision implements VisionIO {
       double totalDistanceAll,
       int distanceSampleCountAll,
       double maxDistanceAll) {
-    return confidenceDistance(
-        mode, totalDistanceAll, distanceSampleCountAll, maxDistanceAll);
+    return confidenceDistance(mode, totalDistanceAll, distanceSampleCountAll, maxDistanceAll);
   }
 
   private static double confidenceDistance(
@@ -537,7 +531,8 @@ public class VisionIOPhotonVision implements VisionIO {
   private static TagDistanceConfidenceMode configuredTagDistanceConfidenceMode() {
     String raw =
         System.getProperty(
-            TAG_DISTANCE_CONFIDENCE_MODE_PROPERTY, TagDistanceConfidenceMode.ALL_TAG_AVERAGE.name());
+            TAG_DISTANCE_CONFIDENCE_MODE_PROPERTY,
+            TagDistanceConfidenceMode.ALL_TAG_AVERAGE.name());
     try {
       return TagDistanceConfidenceMode.valueOf(raw.trim().toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException ex) {

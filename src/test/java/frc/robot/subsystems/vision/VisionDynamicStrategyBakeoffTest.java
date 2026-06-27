@@ -270,8 +270,7 @@ class VisionDynamicStrategyBakeoffTest {
   void hybridOrderPrefersConstrainedForCoplanarMultiTag() {
     var order = VisionIOPhotonVision.hybridStrategyOrderForTest(2, true, 0.0, 0.0);
 
-    assertEquals(
-        org.photonvision.PhotonPoseEstimator.PoseStrategy.CONSTRAINED_SOLVEPNP, order[0]);
+    assertEquals(org.photonvision.PhotonPoseEstimator.PoseStrategy.CONSTRAINED_SOLVEPNP, order[0]);
   }
 
   @Test

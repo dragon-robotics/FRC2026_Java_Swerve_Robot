@@ -399,8 +399,8 @@ public class RobotContainer {
    * Overrides the field-relative robot pose used by simulated PhotonVision cameras.
    *
    * <p>Real robot code does not use this hook. Vision regression tests set it to their independent
-   * ground-truth pose so simulated detections are not sourced from the drivetrain estimator they are
-   * validating.
+   * ground-truth pose so simulated detections are not sourced from the drivetrain estimator they
+   * are validating.
    */
   public void setVisionSimulationPoseSupplier(Supplier<Pose2d> poseSupplier) {
     visionSimulationPoseSupplier = poseSupplier;

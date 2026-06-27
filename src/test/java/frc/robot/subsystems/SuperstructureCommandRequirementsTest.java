@@ -77,8 +77,7 @@ class SuperstructureCommandRequirementsTest {
     Assumptions.assumeTrue(halReady, "HAL/simulation unavailable in this environment");
     Assumptions.assumeTrue(container != null, "RobotContainer failed to initialize");
 
-    Command shootNoAimWithJuicer =
-        container.superstructureSubsystem.shootNoAimWithJuicerDelayCmd();
+    Command shootNoAimWithJuicer = container.superstructureSubsystem.shootNoAimWithJuicerDelayCmd();
 
     assertTrue(shootNoAimWithJuicer.getRequirements().contains(container.intakeSubsystem));
     assertTrue(shootNoAimWithJuicer.getRequirements().contains(container.hopperSubsystem));
