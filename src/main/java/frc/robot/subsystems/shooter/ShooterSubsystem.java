@@ -333,7 +333,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     handleStateTransition();
 
-    DogLog.log("Shooter/CurrentState", currShooterState.toString());
+    DogLog.forceNt.log("Shooter/CurrentState", currShooterState.toString());
     DogLog.log("Shooter/DesiredState", desiredShooterState.toString());
     DogLog.log("Shooter/SpeedRPM", getShooterSpeed());
     DogLog.log("Shooter/TargetRPM", targetRPM);

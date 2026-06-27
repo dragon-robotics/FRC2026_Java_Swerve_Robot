@@ -444,6 +444,6 @@ public class IntakeSubsystem extends SubsystemBase {
     intakeRollerFollowIO.updateInputs(intakeRollerFollowInputs);
     intakeArmIO.updateInputs(intakeArmInputs);
 
-    DogLog.log("Intake/CurrentState", currIntakeState.toString());
+    DogLog.forceNt.log("Intake/CurrentState", currIntakeState.toString());
   }
 }

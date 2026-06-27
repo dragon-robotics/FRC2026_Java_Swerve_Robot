@@ -137,6 +137,6 @@ public class HopperSubsystem extends SubsystemBase {
     leadRollerMotorIO.updateInputs(leadRollerMotorIOInputs);
     followRollerMotorIO.updateInputs(followRollerMotorIOInputs);
 
-    DogLog.log("Hopper/CurrentState", currHopperState.toString());
+    DogLog.forceNt.log("Hopper/CurrentState", currHopperState.toString());
   }
 }
