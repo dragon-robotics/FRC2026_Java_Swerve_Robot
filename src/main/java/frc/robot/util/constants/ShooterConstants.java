@@ -2,6 +2,7 @@ package frc.robot.util.constants;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -89,6 +90,7 @@ public final class ShooterConstants {
   public static final double SHOOTER_HOOD_G = 0.4;
   public static final double SHOOTER_HOOD_DEFAULT_SETTING = 0.0;
   public static final double SHOOTER_HOOD_READY_TOLERANCE_ROTATIONS = 0.125;
+  public static final double SHOOTER_HOOD_OFFSET_POS = 0.513672;
 
   /**
    * Shooter flywheel RPM and hood position in mechanism rotations for one target
@@ -259,6 +261,9 @@ public final class ShooterConstants {
           new MotorOutputConfigs()
               .withNeutralMode(NeutralModeValue.Brake)
               .withInverted(InvertedValue.Clockwise_Positive))
+      .withFeedback(
+          new FeedbackConfigs()
+              .withFeedbackRotorOffset(SHOOTER_HOOD_OFFSET_POS))
       .withSlot0(
           new Slot0Configs()
               .withKP(SHOOTER_HOOD_P)
