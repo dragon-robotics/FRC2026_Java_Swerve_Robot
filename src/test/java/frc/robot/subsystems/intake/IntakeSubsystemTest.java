@@ -132,8 +132,7 @@ class IntakeSubsystemTest {
 
     assertAll(
         () -> assertNotNull(rollerLead.lastTorqueCurrent),
-        () -> assertEquals(
-            80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertEquals(80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
         () -> assertNotNull(rollerLead.lastMaxAbsDutyCycle),
         () -> assertEquals(0.75, rollerLead.lastMaxAbsDutyCycle, 1e-9));
   }
@@ -150,8 +149,7 @@ class IntakeSubsystemTest {
 
     assertAll(
         () -> assertNotNull(rollerLead.lastTorqueCurrent),
-        () -> assertEquals(
-            -80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertEquals(-80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
         () -> assertNotNull(rollerLead.lastMaxAbsDutyCycle),
         () -> assertEquals(0.75, rollerLead.lastMaxAbsDutyCycle, 1e-9));
   }

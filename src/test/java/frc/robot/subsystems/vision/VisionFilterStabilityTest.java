@@ -4,9 +4,9 @@
 
 package frc.robot.subsystems.vision;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -288,8 +288,7 @@ class VisionFilterStabilityTest {
     initializationComplete.setAccessible(true);
 
     assertFalse(
-        initializationComplete.getBoolean(vision),
-        "Vision initialization should start incomplete");
+        initializationComplete.getBoolean(vision), "Vision initialization should start incomplete");
 
     for (int i = 0; i < VisionSubsystem.requiredStableMultitagPosesForInitialization(); i++) {
       PoseObservation newerFrontCameraObservation =
@@ -303,10 +302,7 @@ class VisionFilterStabilityTest {
           newerFrontCameraObservation.pose().toPose2d(),
           "front");
       trackMultitagInitialization.invoke(
-          vision,
-          olderRearCameraObservation,
-          olderRearCameraObservation.pose().toPose2d(),
-          "rear");
+          vision, olderRearCameraObservation, olderRearCameraObservation.pose().toPose2d(), "rear");
     }
 
     assertTrue(
@@ -447,8 +443,7 @@ class VisionFilterStabilityTest {
   void consensusChoosesAgreeingClusterOverFarOutlier() {
     VisionSubsystem.ConsensusCandidate nearFront =
         consensusCandidate("front", 4.00, 4.00, 2.0, 1.0);
-    VisionSubsystem.ConsensusCandidate nearLeft =
-        consensusCandidate("left", 4.10, 4.03, 2.0, 1.0);
+    VisionSubsystem.ConsensusCandidate nearLeft = consensusCandidate("left", 4.10, 4.03, 2.0, 1.0);
     VisionSubsystem.ConsensusCandidate farOutlier =
         consensusCandidate("rear", 5.40, 2.70, 2.0, 1.0);
 
@@ -463,10 +458,8 @@ class VisionFilterStabilityTest {
 
   @Test
   void consensusTieBreakerPrefersLowerStandardDeviation() {
-    VisionSubsystem.ConsensusCandidate lowStdDev =
-        consensusCandidate("front", 4.0, 4.0, 1.0, 1.0);
-    VisionSubsystem.ConsensusCandidate highStdDev =
-        consensusCandidate("rear", 5.0, 5.0, 4.0, 1.0);
+    VisionSubsystem.ConsensusCandidate lowStdDev = consensusCandidate("front", 4.0, 4.0, 1.0, 1.0);
+    VisionSubsystem.ConsensusCandidate highStdDev = consensusCandidate("rear", 5.0, 5.0, 4.0, 1.0);
 
     Optional<VisionSubsystem.ConsensusCandidate> selected =
         VisionSubsystem.selectConsensusCandidate(List.of(highStdDev, lowStdDev));

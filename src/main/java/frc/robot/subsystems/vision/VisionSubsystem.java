@@ -22,8 +22,8 @@ import static frc.robot.util.constants.VisionConstants.MAX_Z_ERROR;
 import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_MAX_HEADING_DELTA_DEGREES;
 import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_MAX_TRANSLATION_DELTA_METERS;
 import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_STABLE_POSES_REQUIRED;
-import static frc.robot.util.constants.VisionConstants.SNAPSHOT_MAX_AGE_SECONDS;
 import static frc.robot.util.constants.VisionConstants.SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER;
+import static frc.robot.util.constants.VisionConstants.SNAPSHOT_MAX_AGE_SECONDS;
 import static frc.robot.util.constants.VisionConstants.VISION_CONSENSUS_RADIUS_METERS;
 
 import com.ctre.phoenix6.Utils;
@@ -248,8 +248,7 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   private void processConsensusCandidates() {
-    Optional<ConsensusCandidate> selectedCandidate =
-        selectConsensusCandidate(consensusCandidates);
+    Optional<ConsensusCandidate> selectedCandidate = selectConsensusCandidate(consensusCandidates);
     if (selectedCandidate.isEmpty()) {
       DogLog.log("Vision/Consensus/SelectedCamera", "");
       DogLog.log("Vision/Consensus/CandidateCount", 0);
@@ -323,8 +322,7 @@ public class VisionSubsystem extends SubsystemBase {
     var drivetrainState = swerve.getState();
     double linearSpeedMetersPerSecond =
         Math.hypot(
-            drivetrainState.Speeds.vxMetersPerSecond,
-            drivetrainState.Speeds.vyMetersPerSecond);
+            drivetrainState.Speeds.vxMetersPerSecond, drivetrainState.Speeds.vyMetersPerSecond);
     double angularSpeedRadiansPerSecond = drivetrainState.Speeds.omegaRadiansPerSecond;
     DogLog.log("Vision/RobotLinearSpeedMetersPerSecond", linearSpeedMetersPerSecond);
     DogLog.log("Vision/RobotAngularSpeedRadiansPerSecond", angularSpeedRadiansPerSecond);
