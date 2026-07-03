@@ -84,6 +84,8 @@ public class ShooterSubsystem extends SubsystemBase {
     this.currShooterState = ShooterState.STOP;
     this.targetRPM = SHOOTER_RPM;
     this.hoodAngle = SHOOTER_HOOD_DEFAULT_SETTING;
+
+    this.shooterHoodIO.resetMotorPosition(SHOOTER_HOOD_DEFAULT_SETTING);
   }
 
   /** Returns the current state being executed by the shooter state machine. */

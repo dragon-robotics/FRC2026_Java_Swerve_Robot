@@ -33,6 +33,11 @@ public interface MotorIO {
     throw new UnsupportedOperationException("setMotorPosition is not implemented");
   }
 
+  /** Resets the motor controller's reported sensor position. */
+  default void resetMotorPosition(double position) {
+    throw new UnsupportedOperationException("resetMotorPosition is not implemented");
+  }
+
   /**
    * Commands motor position with a controller slot.
    *

@@ -189,6 +189,11 @@ public class TalonFXMotorIO implements TorqueCurrentMotorIO {
   }
 
   @Override
+  public void resetMotorPosition(double position) {
+    motor.setPosition(position);
+  }
+
+  @Override
   public void setMotorPosition(double setpoint, int slotID) {
     motor.setControl(positionVoltageRequest.withPosition(setpoint).withSlot(slotID));
   }
