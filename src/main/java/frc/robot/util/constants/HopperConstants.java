@@ -1,5 +1,9 @@
 package frc.robot.util.constants;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
@@ -7,21 +11,14 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volts;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 
 /**
- * Hopper roller hardware IDs, motor-controller configuration, and indexing
- * voltages.
+ * Hopper roller hardware IDs, motor-controller configuration, and indexing voltages.
  *
- * <p>
- * The hopper uses a lead/follower roller pair. Positive voltage indexes fuel
- * toward the shooter;
+ * <p>The hopper uses a lead/follower roller pair. Positive voltage indexes fuel toward the shooter;
  * negative voltage indexes fuel back toward the intake.
  */
 public final class HopperConstants {
@@ -39,56 +36,59 @@ public final class HopperConstants {
   public static final Time HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.2);
   public static final Voltage HOPPER_ROLLER_MAX_VOLTAGE = Volts.of(12.0);
   public static final Voltage HOPPER_INDEX_TO_SHOOTER_VOLTAGE = HOPPER_ROLLER_MAX_VOLTAGE;
-  public static final Voltage HOPPER_INDEX_TO_INTAKE_VOLTAGE = HOPPER_ROLLER_MAX_VOLTAGE.unaryMinus();
+  public static final Voltage HOPPER_INDEX_TO_INTAKE_VOLTAGE =
+      HOPPER_ROLLER_MAX_VOLTAGE.unaryMinus();
   public static final Voltage HOPPER_STOP_VOLTAGE = Volts.of(0.0);
   public static final Time HOPPER_ROLLER_RAMP_RATE = Seconds.of(0.5);
   public static final double HOPPER_ROLLER_DUTY_CYCLE = 1.0;
 
   /* Motor controller configs */
 
-  public static final TalonFXConfiguration HOPPER_ROLLER_LEAD_TALONFX_CONFIG = new TalonFXConfiguration()
-      .withCurrentLimits(
-          new CurrentLimitsConfigs()
-              .withStatorCurrentLimitEnable(true)
-              .withStatorCurrentLimit(HOPPER_ROLLER_STATOR_CURRENT_LIMIT)
-              .withSupplyCurrentLimitEnable(true)
-              .withSupplyCurrentLimit(HOPPER_ROLLER_SUPPLY_CURRENT_LIMIT)
-              .withSupplyCurrentLowerLimit(HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_LIMIT)
-              .withSupplyCurrentLowerTime(HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_TIME))
-      .withVoltage(
-          new VoltageConfigs()
-              .withPeakForwardVoltage(HOPPER_ROLLER_MAX_VOLTAGE)
-              .withPeakReverseVoltage(HOPPER_ROLLER_MAX_VOLTAGE.unaryMinus()))
-      .withOpenLoopRamps(
-          new OpenLoopRampsConfigs()
-              .withDutyCycleOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
-              .withTorqueOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
-              .withVoltageOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE))
-      .withMotorOutput(
-          new MotorOutputConfigs()
-              .withNeutralMode(NeutralModeValue.Coast)
-              .withInverted(InvertedValue.CounterClockwise_Positive));
+  public static final TalonFXConfiguration HOPPER_ROLLER_LEAD_TALONFX_CONFIG =
+      new TalonFXConfiguration()
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(HOPPER_ROLLER_STATOR_CURRENT_LIMIT)
+                  .withSupplyCurrentLimitEnable(true)
+                  .withSupplyCurrentLimit(HOPPER_ROLLER_SUPPLY_CURRENT_LIMIT)
+                  .withSupplyCurrentLowerLimit(HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_LIMIT)
+                  .withSupplyCurrentLowerTime(HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_TIME))
+          .withVoltage(
+              new VoltageConfigs()
+                  .withPeakForwardVoltage(HOPPER_ROLLER_MAX_VOLTAGE)
+                  .withPeakReverseVoltage(HOPPER_ROLLER_MAX_VOLTAGE.unaryMinus()))
+          .withOpenLoopRamps(
+              new OpenLoopRampsConfigs()
+                  .withDutyCycleOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
+                  .withTorqueOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
+                  .withVoltageOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.CounterClockwise_Positive));
 
-  public static final TalonFXConfiguration HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG = new TalonFXConfiguration()
-      .withCurrentLimits(
-          new CurrentLimitsConfigs()
-              .withStatorCurrentLimitEnable(true)
-              .withStatorCurrentLimit(HOPPER_ROLLER_STATOR_CURRENT_LIMIT)
-              .withSupplyCurrentLimitEnable(true)
-              .withSupplyCurrentLimit(HOPPER_ROLLER_SUPPLY_CURRENT_LIMIT)
-              .withSupplyCurrentLowerLimit(HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_LIMIT)
-              .withSupplyCurrentLowerTime(HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_TIME))
-      .withVoltage(
-          new VoltageConfigs()
-              .withPeakForwardVoltage(HOPPER_ROLLER_MAX_VOLTAGE)
-              .withPeakReverseVoltage(HOPPER_ROLLER_MAX_VOLTAGE.unaryMinus()))
-      .withOpenLoopRamps(
-          new OpenLoopRampsConfigs()
-              .withDutyCycleOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
-              .withTorqueOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
-              .withVoltageOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE))
-      .withMotorOutput(
-          new MotorOutputConfigs()
-              .withNeutralMode(NeutralModeValue.Coast)
-              .withInverted(InvertedValue.Clockwise_Positive));
+  public static final TalonFXConfiguration HOPPER_ROLLER_FOLLOW_TALONFX_CONFIG =
+      new TalonFXConfiguration()
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(HOPPER_ROLLER_STATOR_CURRENT_LIMIT)
+                  .withSupplyCurrentLimitEnable(true)
+                  .withSupplyCurrentLimit(HOPPER_ROLLER_SUPPLY_CURRENT_LIMIT)
+                  .withSupplyCurrentLowerLimit(HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_LIMIT)
+                  .withSupplyCurrentLowerTime(HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_TIME))
+          .withVoltage(
+              new VoltageConfigs()
+                  .withPeakForwardVoltage(HOPPER_ROLLER_MAX_VOLTAGE)
+                  .withPeakReverseVoltage(HOPPER_ROLLER_MAX_VOLTAGE.unaryMinus()))
+          .withOpenLoopRamps(
+              new OpenLoopRampsConfigs()
+                  .withDutyCycleOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
+                  .withTorqueOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE)
+                  .withVoltageOpenLoopRampPeriod(HOPPER_ROLLER_RAMP_RATE))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withNeutralMode(NeutralModeValue.Coast)
+                  .withInverted(InvertedValue.Clockwise_Positive));
 }
