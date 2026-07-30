@@ -1,16 +1,12 @@
 package frc.robot.util.constants;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volts;
-
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -27,8 +23,12 @@ import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
@@ -55,9 +55,11 @@ public final class ShooterConstants {
   /* Flywheel */
 
   public static final Voltage SHOOTER_VOLTAGE = Volts.of(12.0);
-  public static final Current SHOOTER_STATOR_CURRENT_LIMIT = Amps.of(60.0);
+  public static final Current SHOOTER_STATOR_CURRENT_LIMIT = Amps.of(100);
   public static final Current SHOOTER_SUPPLY_CURRENT_LIMIT = Amps.of(40.0);
   public static final Current SHOOTER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(20.0);
+  public static final Current SHOOTER_FORWARD_TORQUE_CURRENT_LIMIT = Amps.of(120);
+  public static final Current SHOOTER_REVERSE_TORQUE_CURRENT_LIMIT = Amps.of(-40);
   public static final Time SHOOTER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.25);
   public static final double SHOOTER_P = 8.0;
   public static final double SHOOTER_S = 4.325;
@@ -73,7 +75,7 @@ public final class ShooterConstants {
   public static final Voltage SHOOTER_KICKER_VOLTAGE = Volts.of(12.0);
   public static final Current SHOOTER_KICKER_STATOR_CURRENT_LIMIT = Amps.of(80.0);
   public static final Current SHOOTER_KICKER_SUPPLY_CURRENT_LIMIT = Amps.of(40.0);
-  public static final Current SHOOTER_KICKER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(30.0);
+  public static final Current SHOOTER_KICKER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(20.0);
   public static final Time SHOOTER_KICKER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.25);
   public static final double SHOOTER_KICKER_DUTY_CYCLE = 1.0;
   public static final Voltage SHOOTER_KICKER_PREP_VOLTAGE = Volts.of(6.0);
@@ -163,7 +165,11 @@ public final class ShooterConstants {
               .withKD(0.0)
               .withKS(SHOOTER_S)
               .withKV(SHOOTER_V)
-              .withKA(0.0));
+              .withKA(0.0))
+      .withTorqueCurrent(
+          new TorqueCurrentConfigs()
+              .withPeakForwardTorqueCurrent(SHOOTER_FORWARD_TORQUE_CURRENT_LIMIT)
+              .withPeakReverseTorqueCurrent(SHOOTER_REVERSE_TORQUE_CURRENT_LIMIT));
 
   public static final SparkBaseConfig SHOOTER_LEAD_SPARKMAX_CONFIG = new SparkMaxConfig()
       .apply(
@@ -197,7 +203,11 @@ public final class ShooterConstants {
           new VoltageConfigs()
               .withPeakForwardVoltage(SHOOTER_VOLTAGE)
               .withPeakReverseVoltage(SHOOTER_VOLTAGE.unaryMinus()))
-      .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
+      .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast))
+      .withTorqueCurrent(
+          new TorqueCurrentConfigs()
+              .withPeakForwardTorqueCurrent(SHOOTER_FORWARD_TORQUE_CURRENT_LIMIT)
+              .withPeakReverseTorqueCurrent(SHOOTER_REVERSE_TORQUE_CURRENT_LIMIT));
 
   public static final SparkBaseConfig SHOOTER_FOLLOW_SPARKMAX_CONFIG = new SparkMaxConfig()
       .apply(
