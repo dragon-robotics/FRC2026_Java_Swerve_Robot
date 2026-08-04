@@ -66,15 +66,16 @@ public final class IntakeConstants {
   public static final double INTAKE_MAX_ANGLE_RADIANS = Units.degreesToRadians(90);
   public static final double INTAKE_STARTING_ANGLE_RADIANS = INTAKE_MIN_ANGLE_RADIANS;
 
-  public static final Voltage INTAKE_ARM_MAX_VOLTAGE = Volts.of(10);
+  public static final Voltage INTAKE_ARM_MAX_VOLTAGE = Volts.of(12);
   public static final Current INTAKE_ARM_STATOR_CURRENT_LIMIT = Amps.of(50);
   public static final Current INTAKE_ARM_SUPPLY_CURRENT_LIMIT = Amps.of(30);
-  public static final Current INTAKE_ARM_DEPLOY_TENSION_CURRENT = Amps.of(-18.75);
-  public static final double INTAKE_ARM_SLOW_P = 8;
-  public static final double INTAKE_ARM_FAST_P = 14;
-  public static final double INTAKE_ARM_KV = 2.4;
-  public static final double INTAKE_ARM_KG = 0.5;
-  public static final double INTAKE_ARM_CANCODER_OFFSET = 0.9999999;
+  public static final Current INTAKE_ARM_DEPLOY_TENSION_CURRENT = Amps.of(-10);
+  public static final double INTAKE_ARM_SLOW_P = 10;
+  public static final double INTAKE_ARM_FAST_P = 18;
+  public static final double INTAKE_ARM_KS = 0.05;
+  public static final double INTAKE_ARM_KV = 1.5;
+  public static final double INTAKE_ARM_KG = 0.46;
+  public static final double INTAKE_ARM_CANCODER_OFFSET = 0.0;
 
   /** Arm stowed position in mechanism rotations. */
   public static final double INTAKE_ARM_STOWED_POSITION = 0.37;
@@ -103,12 +104,12 @@ public final class IntakeConstants {
   public static final Voltage INTAKE_ROLLER_VOLTAGE = Volts.of(12);
   public static final double INTAKE_ROLLER_RPM = 6000.0;
   public static final Current INTAKE_ROLLER_TORQUE_CURRENT = Amps.of(80);
-  public static final double INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE = 0.75;
+  public static final double INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE = 0.8;
   public static final double OUTTAKE_ROLLER_DUTY_CYCLE = -1.0;
   public static final Voltage OUTTAKE_ROLLER_VOLTAGE = Volts.of(-12);
   public static final double OUTTAKE_ROLLER_RPM = -6000.0;
   public static final Current OUTTAKE_ROLLER_TORQUE_CURRENT = Amps.of(-80);
-  public static final double OUTTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE = 0.75;
+  public static final double OUTTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE = 0.8;
 
   public static final Current INTAKE_ROLLER_STATOR_CURRENT_LIMIT = Amps.of(80);
   public static final Current INTAKE_ROLLER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
@@ -228,8 +229,8 @@ public final class IntakeConstants {
               .withMotionMagicExpo_kA(2.0))
       .withFeedback(
           new FeedbackConfigs()
-              .withFusedCANcoder(new CoreCANcoder(INTAKE_ARM_CANCODER_ID))
-              .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
+              .withFeedbackRemoteSensorID(INTAKE_ARM_CANCODER_ID)
+              .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
               .withSensorToMechanismRatio(1)
               .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
               .withFeedbackRotorOffset(0));
