@@ -55,8 +55,8 @@ public final class ShooterConstants {
   /* Flywheel */
 
   public static final Voltage SHOOTER_VOLTAGE = Volts.of(12.0);
-  public static final Current SHOOTER_STATOR_CURRENT_LIMIT = Amps.of(100);
-  public static final Current SHOOTER_SUPPLY_CURRENT_LIMIT = Amps.of(40.0);
+  public static final Current SHOOTER_STATOR_CURRENT_LIMIT = Amps.of(75);
+  public static final Current SHOOTER_SUPPLY_CURRENT_LIMIT = Amps.of(30.0);
   public static final Current SHOOTER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(20.0);
   public static final Current SHOOTER_FORWARD_TORQUE_CURRENT_LIMIT = Amps.of(120);
   public static final Current SHOOTER_REVERSE_TORQUE_CURRENT_LIMIT = Amps.of(-40);
