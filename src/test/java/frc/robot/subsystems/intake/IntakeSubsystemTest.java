@@ -138,6 +138,76 @@ class IntakeSubsystemTest {
   }
 
   @Test
+  void runIntakeCommandsBothRollersWithOpposedTorqueCurrent() {
+    FakeTorqueCurrentMotorIO rollerLead = new FakeTorqueCurrentMotorIO();
+    FakeTorqueCurrentMotorIO rollerFollow = new FakeTorqueCurrentMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runIntake();
+
+    assertAll(
+        () -> assertNotNull(rollerLead.lastTorqueCurrent),
+        () -> assertNotNull(rollerFollow.lastTorqueCurrent),
+        () -> assertEquals(80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertEquals(-80.0, rollerFollow.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertEquals(0.8, rollerLead.lastMaxAbsDutyCycle, 1e-9),
+        () -> assertEquals(0.8, rollerFollow.lastMaxAbsDutyCycle, 1e-9));
+  }
+
+  @Test
+  void rollerVoltageCommandsBothMotorsWithOpposedPolarity() {
+    FakeMotorIO rollerLead = new FakeMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runIntakeRollerVoltage(Volts.of(6.0));
+
+    assertAll(
+        () -> assertNotNull(rollerLead.lastVoltage),
+        () -> assertNotNull(rollerFollow.lastVoltage),
+        () -> assertEquals(6.0, rollerLead.lastVoltage.in(Volts), 1e-9),
+        () -> assertEquals(-6.0, rollerFollow.lastVoltage.in(Volts), 1e-9));
+  }
+
+  @Test
+  void rollerPercentageCommandsBothMotorsWithOpposedPolarity() {
+    FakeMotorIO rollerLead = new FakeMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runIntakeRollerPercentage(0.25);
+
+    assertAll(
+        () -> assertNotNull(rollerLead.lastPercentage),
+        () -> assertNotNull(rollerFollow.lastPercentage),
+        () -> assertEquals(0.25, rollerLead.lastPercentage, 1e-9),
+        () -> assertEquals(-0.25, rollerFollow.lastPercentage, 1e-9));
+  }
+
+  @Test
+  void rollerRpmCommandsBothMotorsWithOpposedPolarity() {
+    FakeMotorIO rollerLead = new FakeMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runIntakeRollerRPM(1_500.0);
+
+    assertAll(
+        () -> assertNotNull(rollerLead.lastRpm),
+        () -> assertNotNull(rollerFollow.lastRpm),
+        () -> assertEquals(1_500.0, rollerLead.lastRpm, 1e-9),
+        () -> assertEquals(-1_500.0, rollerFollow.lastRpm, 1e-9));
+  }
+
+  @Test
   void runOuttakeCommandsRollerTorqueCurrentWithDutyCycleCap() {
     FakeTorqueCurrentMotorIO rollerLead = new FakeTorqueCurrentMotorIO();
     FakeMotorIO rollerFollow = new FakeMotorIO();
@@ -214,14 +284,66 @@ class IntakeSubsystemTest {
     assertEquals(0.0, rollerLead.lastVoltage.in(Volts), 1e-9);
   }
 
+  @Test
+  void zeroTorqueCurrentFallbackStopsBothRollers() {
+    FakeMotorIO rollerLead = new FakeMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runIntakeRollerTorqueCurrentFOC(Amps.of(0.0), 0.8);
+
+    assertAll(
+        () -> assertNotNull(rollerLead.lastVoltage),
+        () -> assertNotNull(rollerFollow.lastVoltage),
+        () -> assertEquals(0.0, rollerLead.lastVoltage.in(Volts), 1e-9),
+        () -> assertEquals(0.0, rollerFollow.lastVoltage.in(Volts), 1e-9));
+  }
+
+  @Test
+  void torqueCurrentFallbackCommandsBothRollersWithOpposedPolarity() {
+    FakeMotorIO rollerLead = new FakeMotorIO();
+    FakeMotorIO rollerFollow = new FakeMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, rollerFollow, arm);
+
+    intake.runIntakeRollerTorqueCurrentFOC(Amps.of(80.0), 0.5);
+
+    assertAll(
+        () -> assertNotNull(rollerLead.lastVoltage),
+        () -> assertNotNull(rollerFollow.lastVoltage),
+        () -> assertEquals(6.0, rollerLead.lastVoltage.in(Volts), 1e-9),
+        () -> assertEquals(-6.0, rollerFollow.lastVoltage.in(Volts), 1e-9));
+
+    intake.runIntakeRollerTorqueCurrentFOC(Amps.of(-80.0), 0.5);
+
+    assertAll(
+        () -> assertEquals(-6.0, rollerLead.lastVoltage.in(Volts), 1e-9),
+        () -> assertEquals(6.0, rollerFollow.lastVoltage.in(Volts), 1e-9));
+  }
+
   private static class FakeMotorIO implements MotorIO {
     protected double position;
     protected Double lastPositionSetpoint;
     protected Voltage lastVoltage;
+    protected Double lastPercentage;
+    protected Double lastRpm;
 
     @Override
     public void setMotorVoltage(Voltage voltage) {
       lastVoltage = voltage;
+    }
+
+    @Override
+    public void setMotorPercentage(double percentage) {
+      lastPercentage = percentage;
+    }
+
+    @Override
+    public void setMotorRPM(double rpm) {
+      lastRpm = rpm;
     }
 
     @Override
