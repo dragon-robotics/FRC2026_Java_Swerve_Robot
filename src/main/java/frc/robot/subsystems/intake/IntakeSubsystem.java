@@ -76,8 +76,8 @@ public class IntakeSubsystem extends SubsystemBase {
   /**
    * Creates a new intake subsystem.
    *
-   * @param intakeRollerLeadIO lead roller motor IO; this motor receives roller commands
-   * @param intakeRollerFollowIO follower roller motor IO; updated for telemetry
+   * @param intakeRollerLeadIO lead roller motor IO
+   * @param intakeRollerFollowIO counter-rotating roller motor IO
    * @param intakeArmIO arm motor IO; controls deploy, stow, and juicer positions
    */
   public IntakeSubsystem(
@@ -95,30 +95,47 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /* Setters */
 
-  /** Directly commands the lead intake roller velocity in RPM. */
+  /** Directly commands both intake roller velocities with opposed polarity. */
   public void runIntakeRollerRPM(double rpm) {
     intakeRollerLeadIO.setMotorRPM(rpm);
+    intakeRollerFollowIO.setMotorRPM(-rpm);
   }
 
-  /** Directly commands the lead intake roller voltage. */
+  /** Directly commands both intake roller voltages with opposed polarity. */
   public void runIntakeRollerVoltage(Voltage voltage) {
     intakeRollerLeadIO.setMotorVoltage(voltage);
+    intakeRollerFollowIO.setMotorVoltage(voltage.times(-1.0));
   }
 
-  /** Directly commands the lead intake roller percent output from -1.0 to 1.0. */
+  /** Directly commands both intake roller percent outputs with opposed polarity. */
   public void runIntakeRollerPercentage(double percentage) {
     intakeRollerLeadIO.setMotorPercentage(percentage);
+    intakeRollerFollowIO.setMotorPercentage(-percentage);
   }
 
-  /** Directly commands the lead intake roller torque current with a duty-cycle cap. */
+  /**
+   * Directly commands both intake roller torque currents with opposed polarity and a duty-cycle cap.
+   */
   public void runIntakeRollerTorqueCurrentFOC(Current torqueCurrent, double maxAbsDutyCycle) {
     double cappedMaxAbsDutyCycle = MathUtil.clamp(maxAbsDutyCycle, 0.0, 1.0);
-    if (intakeRollerLeadIO instanceof TorqueCurrentMotorIO torqueCurrentRollerIO) {
+    runRollerTorqueCurrent(
+        intakeRollerLeadIO, torqueCurrent, cappedMaxAbsDutyCycle);
+    runRollerTorqueCurrent(
+        intakeRollerFollowIO, torqueCurrent.times(-1.0), cappedMaxAbsDutyCycle);
+  }
+
+  private void runRollerTorqueCurrent(
+      MotorIO rollerIO, Current torqueCurrent, double cappedMaxAbsDutyCycle) {
+    if (rollerIO instanceof TorqueCurrentMotorIO torqueCurrentRollerIO) {
       torqueCurrentRollerIO.setMotorTorqueCurrent(torqueCurrent, cappedMaxAbsDutyCycle);
     } else {
+      if (torqueCurrent.in(Amps) == 0.0) {
+        rollerIO.setMotorVoltage(Volts.of(0.0));
+        return;
+      }
       Voltage fallbackVoltage =
           torqueCurrent.in(Amps) > 0 ? INTAKE_ROLLER_VOLTAGE : OUTTAKE_ROLLER_VOLTAGE;
-      runIntakeRollerVoltage(fallbackVoltage.times(cappedMaxAbsDutyCycle));
+      rollerIO.setMotorVoltage(fallbackVoltage.times(cappedMaxAbsDutyCycle));
     }
   }
 

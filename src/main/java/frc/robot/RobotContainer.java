@@ -232,8 +232,7 @@ public class RobotContainer {
         new TalonFXMotorIO(
             INTAKE_ROLLER_FOLLOW_MOTOR_ID,
             INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG,
-            "Intake Roller Follow",
-            new Follower(INTAKE_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
+            "Intake Roller Follow"),
         new TalonFXMotorIO(INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
     HopperSubsystem hopper = new HopperSubsystem(
         new TalonFXMotorIO(
@@ -270,8 +269,7 @@ public class RobotContainer {
             INTAKE_ROLLER_FOLLOW_MOTOR_ID,
             INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG,
             "KrakenX60",
-            "Intake Roller Follow",
-            new Follower(INTAKE_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
+            "Intake Roller Follow"),
         new TalonFXMotorIOSim(
             INTAKE_ARM_MOTOR_ID,
             INTAKE_ARM_TALONFX_CONFIG,
@@ -322,8 +320,7 @@ public class RobotContainer {
         new TalonFXMotorIOTunable(
             INTAKE_ROLLER_FOLLOW_MOTOR_ID,
             INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG,
-            "Intake Roller Follow",
-            new Follower(INTAKE_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
+            "Intake Roller Follow"),
         new TalonFXMotorIOTunable(
             INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
     HopperSubsystem hopper = new HopperSubsystem(
