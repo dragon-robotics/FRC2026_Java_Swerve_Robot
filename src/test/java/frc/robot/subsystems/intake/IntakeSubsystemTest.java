@@ -8,6 +8,8 @@ import static frc.robot.subsystems.intake.IntakeSubsystem.IntakeState.JUICER;
 import static frc.robot.subsystems.intake.IntakeSubsystem.IntakeState.OUTTAKE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOYED_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_LEAD_TALONFX_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,6 +24,13 @@ import frc.robot.io.TorqueCurrentMotorIO;
 import org.junit.jupiter.api.Test;
 
 class IntakeSubsystemTest {
+
+  @Test
+  void counterRotatingRollersUseMatchingControllerInversion() {
+    assertEquals(
+        INTAKE_ROLLER_LEAD_TALONFX_CONFIG.MotorOutput.Inverted,
+        INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG.MotorOutput.Inverted);
+  }
 
   @Test
   void intakeRequestAppliesTensionOnlyAfterArmReachesDeployedPosition() {
