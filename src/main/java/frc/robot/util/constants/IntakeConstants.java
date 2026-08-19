@@ -168,7 +168,10 @@ public final class IntakeConstants {
           new VoltageConfigs()
               .withPeakForwardVoltage(INTAKE_ROLLER_VOLTAGE)
               .withPeakReverseVoltage(OUTTAKE_ROLLER_VOLTAGE))
-      .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
+      .withMotorOutput(
+          new MotorOutputConfigs()
+              .withNeutralMode(NeutralModeValue.Coast)
+              .withInverted(InvertedValue.Clockwise_Positive));
 
   public static final SparkBaseConfig INTAKE_ROLLER_FOLLOW_SPARKMAX_CONFIG = new SparkMaxConfig()
       .apply(
