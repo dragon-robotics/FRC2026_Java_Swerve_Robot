@@ -239,6 +239,11 @@ public class ShooterSubsystem extends SubsystemBase {
     return targetRPM;
   }
 
+  /** Returns the selected hood target in mechanism rotations. */
+  public double getTargetHoodAngle() {
+    return hoodAngle;
+  }
+
   /* State Management */
 
   /**
