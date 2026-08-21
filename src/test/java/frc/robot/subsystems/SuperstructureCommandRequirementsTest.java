@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -70,6 +72,25 @@ class SuperstructureCommandRequirementsTest {
     Command shootWithAim = container.superstructureSubsystem.setStateCmd(SuperState.SHOOT_WITH_AIM);
 
     assertTrue(shootWithAim.getRequirements().contains(container.swerveSubsystem));
+  }
+
+  @Test
+  void defaultShootModeCommandsManualBumperUpSetpoint() {
+    Assumptions.assumeTrue(halReady, "HAL/simulation unavailable in this environment");
+    Assumptions.assumeTrue(container != null, "RobotContainer failed to initialize");
+
+    container.shooterSubsystem.setSetpoint(0.0, 1.0);
+    Command defaultShoot = container.superstructureSubsystem.selectedShootModeCmd();
+
+    CommandScheduler scheduler = CommandScheduler.getInstance();
+    scheduler.schedule(defaultShoot);
+    scheduler.run();
+
+    assertAll(
+        () -> assertEquals(2500.0, container.shooterSubsystem.getTargetRPM(), 1e-9),
+        () -> assertEquals(0.0, container.shooterSubsystem.getTargetHoodAngle(), 1e-9));
+
+    scheduler.cancel(defaultShoot);
   }
 
   @Test

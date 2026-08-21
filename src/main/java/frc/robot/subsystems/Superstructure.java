@@ -92,7 +92,7 @@ public class Superstructure extends SubsystemBase {
   private boolean alignedToTarget = false;
   private boolean allianceConfirmed = false;
   private FieldZones currentZone;
-  private ShootMode shootMode = ShootMode.DEFAULT_SHOOT_WITH_AIM;
+  private ShootMode shootMode = ShootMode.MANUAL_BUMPER_UP;
 
   /* Manual shot setpoints */
   private static final double MANUAL_BUMPER_UP_RPM = 2500.0;

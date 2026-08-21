@@ -29,6 +29,8 @@ import java.util.function.Supplier;
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class DefaultDriveCmd extends Command {
 
+  private static final double DEMO_JOYSTICK_SCALE = 0.5;
+
   private static class Speeds {
     double translation;
     double strafe;
@@ -169,6 +171,10 @@ public class DefaultDriveCmd extends Command {
       strafe *= 0.45;
       rotation *= 0.45;
     }
+
+    translation *= DEMO_JOYSTICK_SCALE;
+    strafe *= DEMO_JOYSTICK_SCALE;
+    rotation *= DEMO_JOYSTICK_SCALE;
 
     Speeds speeds = new Speeds();
     speeds.translation = translation * maxSpeed;
