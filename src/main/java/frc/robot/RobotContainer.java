@@ -470,7 +470,7 @@ public class RobotContainer {
     operatorController
         .start()
         .and(operatorController.back())
-        .onTrue(superstructureSubsystem.forceReseedFromVisionCmd());
+        .onTrue(superstructureSubsystem.restartOdometryInitializationFromVisionCmd());
 
     /* Operator mainly controls the Juicer mode */
     operatorController

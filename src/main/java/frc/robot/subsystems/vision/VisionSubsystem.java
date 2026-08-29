@@ -93,6 +93,7 @@ public class VisionSubsystem extends SubsystemBase {
       new HashMap<>();
   private int stableMultitagPoseCount = 0;
   private boolean visionInitializationComplete = false;
+  private boolean odometryReinitializationRequested = false;
   private boolean hasAutoReseededThisDisabledCycle = false;
   private double lastDisabledAutoReseedTime = Double.NEGATIVE_INFINITY;
 
@@ -215,6 +216,14 @@ public class VisionSubsystem extends SubsystemBase {
       return Optional.empty();
     }
 
+    boolean bypassesInnovationDuringReinitialization =
+        bypassesInnovationDuringOdometryReinitialization(
+            odometryReinitializationRequested, observation);
+    if (odometryReinitializationRequested && !bypassesInnovationDuringReinitialization) {
+      rejectObservation(cameraLogKey, observation, "ODOMETRY_REINITIALIZATION_NEEDS_MULTITAG");
+      return Optional.empty();
+    }
+
     if (!swerve.isPitchRollStableForVision(MAX_ABS_TILT_DEGREES_FOR_VISION)) {
       rejectObservation(cameraLogKey, observation, "TILT_UNSTABLE");
       DogLog.log(cameraLogKey + "/PitchDeg", swerve.getPitchDegrees());
@@ -228,11 +237,15 @@ public class VisionSubsystem extends SubsystemBase {
     double innovationMeters =
         visionPose.getTranslation().getDistance(referencePose.getTranslation());
     boolean disabled = DriverStation.isDisabled();
-    if (innovationMeters > MAX_POSE_DELTA_METERS && !disabled) {
+    if (innovationMeters > MAX_POSE_DELTA_METERS
+        && !disabled
+        && !bypassesInnovationDuringReinitialization) {
       rejectObservation(cameraLogKey, observation, "POSE_DELTA=" + innovationMeters);
       return Optional.empty();
     }
-    if (innovationMeters > MAX_POSE_DELTA_METERS) {
+    if (innovationMeters > MAX_POSE_DELTA_METERS && bypassesInnovationDuringReinitialization) {
+      DogLog.log(cameraLogKey + "/InnovationBypassedForOdometryReinitialization", innovationMeters);
+    } else if (innovationMeters > MAX_POSE_DELTA_METERS) {
       DogLog.log(cameraLogKey + "/InnovationBypassedInDisabled", innovationMeters);
     }
 
@@ -248,7 +261,10 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   private void processConsensusCandidates() {
-    Optional<ConsensusCandidate> selectedCandidate = selectConsensusCandidate(consensusCandidates);
+    Optional<ConsensusCandidate> selectedCandidate =
+        odometryReinitializationRequested
+            ? selectOdometryReinitializationCandidate(consensusCandidates)
+            : selectConsensusCandidate(consensusCandidates);
     if (selectedCandidate.isEmpty()) {
       DogLog.log("Vision/Consensus/SelectedCamera", "");
       DogLog.log("Vision/Consensus/CandidateCount", 0);
@@ -279,6 +295,22 @@ public class VisionSubsystem extends SubsystemBase {
   private void acceptConsensusCandidate(ConsensusCandidate candidate) {
     PoseObservation observation = candidate.observation();
     acceptedPoses.add(observation.pose());
+
+    if (odometryReinitializationRequested) {
+      trackMultitagInitialization(observation, candidate.visionPose(), candidate.cameraName());
+      updateLatestAcceptedSnapshot(observation, candidate.visionPose(), candidate.cameraName());
+
+      if (visionInitializationComplete) {
+        swerve.resetPose(candidate.visionPose());
+        odometryReinitializationRequested = false;
+        hasAutoReseededThisDisabledCycle = true;
+        lastDisabledAutoReseedTime = Timer.getFPGATimestamp();
+        DogLog.log("Vision/OdometryReinitialization/Pose", candidate.visionPose());
+        DogLog.log("Vision/OdometryReinitialization/Timestamp", observation.timestamp());
+      }
+      return;
+    }
+
     consumer.accept(
         candidate.visionPose(),
         Utils.fpgaToCurrentTime(observation.timestamp()),
@@ -330,6 +362,7 @@ public class VisionSubsystem extends SubsystemBase {
         "Vision/RobotAngularSpeedDegreesPerSecond", Math.toDegrees(angularSpeedRadiansPerSecond));
     DogLog.log("Vision/Initialization/StableMultitagPoseCount", stableMultitagPoseCount);
     DogLog.log("Vision/Initialization/Complete", visionInitializationComplete);
+    DogLog.log("Vision/OdometryReinitialization/Requested", odometryReinitializationRequested);
   }
 
   /**
@@ -337,6 +370,10 @@ public class VisionSubsystem extends SubsystemBase {
    * helps pre-match localization without requiring manual reseed.
    */
   private void maybeAutoReseedWhileDisabled() {
+    if (odometryReinitializationRequested) {
+      return;
+    }
+
     boolean disabled = DriverStation.isDisabled();
     if (!disabled) {
       hasAutoReseededThisDisabledCycle = false;
@@ -445,6 +482,11 @@ public class VisionSubsystem extends SubsystemBase {
         && observation.tagCount() >= DISABLED_AUTO_RESEED_MIN_TAG_COUNT;
   }
 
+  static boolean bypassesInnovationDuringOdometryReinitialization(
+      boolean odometryReinitializationRequested, PoseObservation observation) {
+    return odometryReinitializationRequested && isMultitagInitCandidate(observation);
+  }
+
   static boolean isStableMultitagStep(
       double timestamp,
       double previousTimestamp,
@@ -485,6 +527,34 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     return Optional.of(bestCandidate);
+  }
+
+  /**
+   * Preserves the normal consensus-selected camera, then advances initialization with that camera's
+   * newest in-cluster pose. This prevents a lower-uncertainty historical frame from becoming the
+   * odometry reset pose when a newer trusted frame is available.
+   */
+  static Optional<ConsensusCandidate> selectOdometryReinitializationCandidate(
+      List<ConsensusCandidate> candidates) {
+    Optional<ConsensusCandidate> consensusCandidate = selectConsensusCandidate(candidates);
+    if (consensusCandidate.isEmpty()) {
+      return Optional.empty();
+    }
+
+    ConsensusCandidate selectedCameraCandidate = consensusCandidate.get();
+    ConsensusCandidate newestCandidate = selectedCameraCandidate;
+    for (ConsensusCandidate candidate : candidates) {
+      boolean belongsToSelectedConsensusCamera =
+          candidate.cameraName().equals(selectedCameraCandidate.cameraName());
+      boolean belongsToSelectedConsensusCluster =
+          candidate.distanceMeters(selectedCameraCandidate) <= VISION_CONSENSUS_RADIUS_METERS;
+      if (belongsToSelectedConsensusCamera
+          && belongsToSelectedConsensusCluster
+          && candidate.observation().timestamp() > newestCandidate.observation().timestamp()) {
+        newestCandidate = candidate;
+      }
+    }
+    return Optional.of(newestCandidate);
   }
 
   private static int consensusClusterSize(
@@ -722,19 +792,28 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Operator-triggered recovery: snaps the drivetrain pose to the most recent accepted vision pose.
-   * Note: the subsystem may also auto-reseed while disabled for pre-match localization.
+   * Restarts vision-based odometry initialization without immediately changing the drivetrain pose.
    *
-   * @return true if a recent accepted pose was available
+   * <p>While active, only stable multi-tag coprocessor poses are accepted. After the normal
+   * multi-tag stability requirement is met, odometry is reset to that final vision pose and normal
+   * vision fusion resumes.
    */
-  public boolean forceReseedFromVision() {
-    Optional<AcceptedObservationSnapshot> snapshot = getLatestAcceptedObservationSnapshot();
-    if (snapshot.isEmpty()) {
-      return false;
+  public void restartOdometryInitializationFromVision() {
+    multitagInitializationByCamera.clear();
+    stableMultitagPoseCount = 0;
+    visionInitializationComplete = false;
+    odometryReinitializationRequested = true;
+    lastAcceptedPose = null;
+    lastAcceptedTagIDs = new int[0];
+    lastAcceptedTimestamp = -1.0;
+
+    for (VisionIO visionIo : io) {
+      if (visionIo instanceof VisionIOPhotonVision photonVisionIo) {
+        photonVisionIo.restartVisionInitialization();
+      }
     }
-    swerve.resetPose(snapshot.get().pose());
-    DogLog.log("Vision/ForceReseed", snapshot.get().pose());
-    return true;
+
+    DogLog.log("Vision/OdometryReinitialization/Requested", true);
   }
 
   /** Feeds the drivetrain heading to PhotonVision for single-tag constrained solving. */

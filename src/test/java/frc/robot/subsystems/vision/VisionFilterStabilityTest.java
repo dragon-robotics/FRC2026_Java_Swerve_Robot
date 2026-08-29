@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
@@ -216,6 +217,57 @@ class VisionFilterStabilityTest {
         VisionSubsystem.requiredStableMultitagPosesForInitialization(),
         stableCount,
         "Exactly 5 stable MultiTagPnP observations should complete initialization");
+  }
+
+  @Test
+  void odometryReinitializationBypassesInnovationOnlyForTrustedMultitag() {
+    PoseObservation trustedMultitag = multitagCoprocessorObs(7.0, 4.0, 0.0, 1.0);
+    PoseObservation singleTag = singleTagPhotonVisionObs(7.0, 4.0, 0.0, 1.0);
+
+    assertTrue(
+        VisionSubsystem.bypassesInnovationDuringOdometryReinitialization(true, trustedMultitag),
+        "A requested reinitialization must admit a trusted MultiTag coprocessor pose");
+    assertFalse(
+        VisionSubsystem.bypassesInnovationDuringOdometryReinitialization(true, singleTag),
+        "A requested reinitialization must not admit a single-tag pose");
+    assertFalse(
+        VisionSubsystem.bypassesInnovationDuringOdometryReinitialization(false, trustedMultitag),
+        "Normal vision fusion must retain the innovation gate");
+  }
+
+  @Test
+  void restartingOdometryInitializationClearsTheCompletedMultitagState() throws Exception {
+    VisionSubsystem vision = new VisionSubsystem(null, (pose, timestamp, stdDevs) -> {});
+    Method trackMultitagInitialization =
+        VisionSubsystem.class.getDeclaredMethod(
+            "trackMultitagInitialization", PoseObservation.class, Pose2d.class, String.class);
+    trackMultitagInitialization.setAccessible(true);
+    Field initializationComplete =
+        VisionSubsystem.class.getDeclaredField("visionInitializationComplete");
+    initializationComplete.setAccessible(true);
+    Field stablePoseCount = VisionSubsystem.class.getDeclaredField("stableMultitagPoseCount");
+    stablePoseCount.setAccessible(true);
+    Field initializationByCamera =
+        VisionSubsystem.class.getDeclaredField("multitagInitializationByCamera");
+    initializationByCamera.setAccessible(true);
+    Field odometryReinitializationRequested =
+        VisionSubsystem.class.getDeclaredField("odometryReinitializationRequested");
+    odometryReinitializationRequested.setAccessible(true);
+
+    for (int i = 0; i < VisionSubsystem.requiredStableMultitagPosesForInitialization(); i++) {
+      PoseObservation observation =
+          multitagCoprocessorObs(4.0 + (0.01 * i), 4.0, 0.0, 2.0 + (0.02 * i));
+      trackMultitagInitialization.invoke(
+          vision, observation, observation.pose().toPose2d(), "front");
+    }
+    assertTrue(initializationComplete.getBoolean(vision));
+
+    vision.restartOdometryInitializationFromVision();
+
+    assertFalse(initializationComplete.getBoolean(vision));
+    assertEquals(0, stablePoseCount.getInt(vision));
+    assertTrue(((Map<?, ?>) initializationByCamera.get(vision)).isEmpty());
+    assertTrue(odometryReinitializationRequested.getBoolean(vision));
   }
 
   @Test
@@ -469,6 +521,27 @@ class VisionFilterStabilityTest {
         lowStdDev,
         selected.get(),
         "When cluster size is tied, consensus should keep the most trusted observation");
+  }
+
+  @Test
+  void odometryReinitializationUsesNewestFrameFromSelectedConsensusCamera() {
+    VisionSubsystem.ConsensusCandidate olderMoreTrustedFrame =
+        consensusCandidate("front", 4.0, 4.0, 1.0, 1.0);
+    VisionSubsystem.ConsensusCandidate newerLessTrustedFrame =
+        consensusCandidate("front", 4.1, 4.0, 4.0, 1.1);
+
+    assertEquals(
+        olderMoreTrustedFrame,
+        VisionSubsystem.selectConsensusCandidate(
+                List.of(olderMoreTrustedFrame, newerLessTrustedFrame))
+            .orElseThrow(),
+        "Baseline consensus selection should expose the stale-frame case");
+    assertEquals(
+        newerLessTrustedFrame,
+        VisionSubsystem.selectOdometryReinitializationCandidate(
+                List.of(olderMoreTrustedFrame, newerLessTrustedFrame))
+            .orElseThrow(),
+        "Reinitialization should use the newest in-cluster frame from the selected camera");
   }
 
   private static SwerveDriveKinematics dummyKinematics() {

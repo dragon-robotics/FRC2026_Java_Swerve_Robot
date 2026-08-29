@@ -124,6 +124,11 @@ public class VisionIOPhotonVision implements VisionIO {
     preferMultitagUntilInitialized = false;
   }
 
+  /** Restores multi-tag-first strategy selection for an explicit odometry reinitialization. */
+  public void restartVisionInitialization() {
+    preferMultitagUntilInitialized = true;
+  }
+
   @Override
   public void updateInputs(VisionIOInputs inputs) {
     inputs.setConnected(camera.isConnected());

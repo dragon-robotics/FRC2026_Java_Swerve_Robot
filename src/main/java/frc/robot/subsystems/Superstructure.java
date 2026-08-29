@@ -461,16 +461,12 @@ public class Superstructure extends SubsystemBase {
     return swerve.runOnce(swerve::seedFieldCentric);
   }
 
-  /**
-   * Operator-triggered vision reseed command. Unconditionally snaps swerve odometry to the best
-   * available multi-tag vision fix regardless of drift magnitude. Fires once on button press
-   * (InstantCommand). No-op if no vision fix is available.
-   */
-  public Command forceReseedFromVisionCmd() {
+  /** Restarts vision-based odometry initialization after the operator explicitly requests it. */
+  public Command restartOdometryInitializationFromVisionCmd() {
     return new InstantCommand(
         () -> {
           if (vision != null) {
-            vision.forceReseedFromVision();
+            vision.restartOdometryInitializationFromVision();
           }
         });
   }
