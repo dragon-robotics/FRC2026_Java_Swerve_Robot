@@ -114,14 +114,13 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /**
-   * Directly commands both intake roller torque currents with opposed polarity and a duty-cycle cap.
+   * Directly commands both intake roller torque currents with opposed polarity and a duty-cycle
+   * cap.
    */
   public void runIntakeRollerTorqueCurrentFOC(Current torqueCurrent, double maxAbsDutyCycle) {
     double cappedMaxAbsDutyCycle = MathUtil.clamp(maxAbsDutyCycle, 0.0, 1.0);
-    runRollerTorqueCurrent(
-        intakeRollerLeadIO, torqueCurrent, cappedMaxAbsDutyCycle);
-    runRollerTorqueCurrent(
-        intakeRollerFollowIO, torqueCurrent.times(-1.0), cappedMaxAbsDutyCycle);
+    runRollerTorqueCurrent(intakeRollerLeadIO, torqueCurrent, cappedMaxAbsDutyCycle);
+    runRollerTorqueCurrent(intakeRollerFollowIO, torqueCurrent.times(-1.0), cappedMaxAbsDutyCycle);
   }
 
   private void runRollerTorqueCurrent(
