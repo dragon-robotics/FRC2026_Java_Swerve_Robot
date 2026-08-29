@@ -54,7 +54,7 @@ class IntakeSubsystemTest {
     intake.periodic();
 
     assertNotNull(arm.lastTorqueCurrent);
-    assertEquals(-20.0, arm.lastTorqueCurrent.in(edu.wpi.first.units.Units.Amps), 1e-9);
+    assertEquals(-5.0, arm.lastTorqueCurrent.in(edu.wpi.first.units.Units.Amps), 1e-9);
   }
 
   @Test
@@ -143,7 +143,7 @@ class IntakeSubsystemTest {
         () -> assertNotNull(rollerLead.lastTorqueCurrent),
         () -> assertEquals(80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
         () -> assertNotNull(rollerLead.lastMaxAbsDutyCycle),
-        () -> assertEquals(0.75, rollerLead.lastMaxAbsDutyCycle, 1e-9));
+        () -> assertEquals(0.8, rollerLead.lastMaxAbsDutyCycle, 1e-9));
   }
 
   @Test
@@ -230,7 +230,7 @@ class IntakeSubsystemTest {
         () -> assertNotNull(rollerLead.lastTorqueCurrent),
         () -> assertEquals(-80.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
         () -> assertNotNull(rollerLead.lastMaxAbsDutyCycle),
-        () -> assertEquals(0.75, rollerLead.lastMaxAbsDutyCycle, 1e-9));
+        () -> assertEquals(0.8, rollerLead.lastMaxAbsDutyCycle, 1e-9));
   }
 
   @Test
@@ -260,7 +260,7 @@ class IntakeSubsystemTest {
 
     assertAll(
         () -> assertNotNull(rollerLead.lastVoltage),
-        () -> assertEquals(9.0, rollerLead.lastVoltage.in(Volts), 1e-9));
+        () -> assertEquals(9.6, rollerLead.lastVoltage.in(Volts), 1e-9));
   }
 
   @Test
@@ -275,7 +275,7 @@ class IntakeSubsystemTest {
 
     assertAll(
         () -> assertNotNull(rollerLead.lastVoltage),
-        () -> assertEquals(-9.0, rollerLead.lastVoltage.in(Volts), 1e-9));
+        () -> assertEquals(-9.6, rollerLead.lastVoltage.in(Volts), 1e-9));
   }
 
   @Test
