@@ -56,8 +56,8 @@ public final class ShooterConstants {
 
   public static final Voltage SHOOTER_VOLTAGE = Volts.of(12.0);
   public static final Current SHOOTER_STATOR_CURRENT_LIMIT = Amps.of(80);
-  public static final Current SHOOTER_SUPPLY_CURRENT_LIMIT = Amps.of(30.0);
-  public static final Current SHOOTER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(20.0);
+  public static final Current SHOOTER_SUPPLY_CURRENT_LIMIT = Amps.of(35);
+  public static final Current SHOOTER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(30.0);
   public static final Current SHOOTER_FORWARD_TORQUE_CURRENT_LIMIT = Amps.of(120);
   public static final Current SHOOTER_REVERSE_TORQUE_CURRENT_LIMIT = Amps.of(-40);
   public static final Time SHOOTER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.25);
@@ -112,13 +112,13 @@ public final class ShooterConstants {
 
   static {
     // Distances are authored in feet for tuning readability, then stored as meters.
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(5), 2400.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(6), 2475.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(7), 2525.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(8), 2675.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(9), 2750.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(10), 2850.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(11), 2900.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(5), 2450.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(6), 2525.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(7), 2600.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(8), 2725.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(9), 2800.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(10), 2900.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(11), 2950.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(12), 3000.0);
 
     // Hood positions are mechanism rotations.
