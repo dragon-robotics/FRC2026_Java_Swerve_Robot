@@ -170,7 +170,17 @@ tasks.withType(JavaCompile) {
 
 def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
 def venvPython = isWindows ? file('.venv/Scripts/python.exe') : file('.venv/bin/python3')
-def pythonExecutable = System.getenv('PYTHON') ?: (venvPython.exists() ? venvPython.absolutePath : (isWindows ? 'python' : 'python3'))
+def pyenvVersionsDir = isWindows ? file("${System.getProperty('user.home')}/.pyenv/pyenv-win/versions") : null
+def pyenvPython = pyenvVersionsDir?.exists()
+    ? pyenvVersionsDir.listFiles()
+        .findAll { it.isDirectory() && new File(it, 'python.exe').exists() }
+        .sort { a, b -> b.name <=> a.name }
+        .collect { new File(it, 'python.exe') }
+        .find()
+    : null
+def pythonExecutable = System.getenv('PYTHON')
+    ?: (venvPython.exists() ? venvPython.absolutePath
+        : (pyenvPython?.absolutePath ?: (isWindows ? 'python' : 'python3')))
 def mirrorScriptPath = 'scripts/mirror_pathplanner_autos.py'
 def pathplannerAutosDir = file('src/main/deploy/pathplanner/autos')
 def pathplannerPathsDir = file('src/main/deploy/pathplanner/paths')
