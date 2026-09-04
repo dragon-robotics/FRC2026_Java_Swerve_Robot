@@ -163,14 +163,12 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Runs the roller inward at the configured intake torque current. */
   public void runIntake() {
-    // runIntakeRollerTorqueCurrentFOC();
-    runIntakeRollerVoltage(Volts.of(11));
+    runIntakeRollerTorqueCurrentFOC();
   }
 
   /** Runs the roller outward at the configured outtake torque current. */
   public void runOuttake() {
-    // runOuttakeRollerTorqueCurrentFOC();
-    runIntakeRollerVoltage(Volts.of(-10));
+    runOuttakeRollerTorqueCurrentFOC();
   }
 
   /** Stops the intake roller with 0 volts. */

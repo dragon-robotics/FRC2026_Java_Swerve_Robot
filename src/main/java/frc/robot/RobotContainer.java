@@ -270,7 +270,8 @@ public class RobotContainer {
             INTAKE_ROLLER_FOLLOW_MOTOR_ID,
             INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG,
             "KrakenX60",
-            "Intake Roller Follow"),
+            "Intake Roller Follow",
+            new Follower(INTAKE_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
         new TalonFXMotorIOSim(
             INTAKE_ARM_MOTOR_ID,
             INTAKE_ARM_TALONFX_CONFIG,
@@ -321,7 +322,8 @@ public class RobotContainer {
         new TalonFXMotorIOTunable(
             INTAKE_ROLLER_FOLLOW_MOTOR_ID,
             INTAKE_ROLLER_FOLLOW_TALONFX_CONFIG,
-            "Intake Roller Follow"),
+            "Intake Roller Follow",
+            new Follower(INTAKE_ROLLER_LEAD_MOTOR_ID, MotorAlignmentValue.Opposed)),
         new TalonFXMotorIOTunable(
             INTAKE_ARM_MOTOR_ID, INTAKE_ARM_TALONFX_CONFIG, "Intake Arm"));
     HopperSubsystem hopper = new HopperSubsystem(
