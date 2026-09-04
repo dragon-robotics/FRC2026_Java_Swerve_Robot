@@ -94,6 +94,7 @@ public class VisionSubsystem extends SubsystemBase {
   private int stableMultitagPoseCount = 0;
   private boolean visionInitializationComplete = false;
   private boolean hasAutoReseededThisDisabledCycle = false;
+  private boolean hasEnteredEnabledModeSinceStartup = false;
   private double lastDisabledAutoReseedTime = Double.NEGATIVE_INFINITY;
 
   /**
@@ -337,11 +338,21 @@ public class VisionSubsystem extends SubsystemBase {
    * helps pre-match localization without requiring manual reseed.
    */
   private void maybeAutoReseedWhileDisabled() {
+    boolean autoReseedAllowed = shouldAutoReseedForRobotState(DriverStation.isEnabled());
     boolean disabled = DriverStation.isDisabled();
+    DogLog.log("Vision/DisabledAutoReseed/Allowed", autoReseedAllowed);
+    DogLog.log(
+        "Vision/DisabledAutoReseed/HasEnteredEnabledMode", hasEnteredEnabledModeSinceStartup);
     if (!disabled) {
+      DogLog.log("Vision/DisabledAutoReseed/SuppressedReason", "ROBOT_ENABLED");
       hasAutoReseededThisDisabledCycle = false;
       return;
     }
+    if (!autoReseedAllowed) {
+      DogLog.log("Vision/DisabledAutoReseed/SuppressedReason", "ENABLED_MODE_ALREADY_ENTERED");
+      return;
+    }
+    DogLog.log("Vision/DisabledAutoReseed/SuppressedReason", "");
 
     Optional<AcceptedObservationSnapshot> snapshot = getLatestAcceptedObservationSnapshot();
     if (snapshot.isEmpty()) {
@@ -373,6 +384,19 @@ public class VisionSubsystem extends SubsystemBase {
       DogLog.log("Vision/DisabledAutoReseed/DeltaMeters", poseDeltaMeters);
       DogLog.log("Vision/DisabledAutoReseed/Timestamp", snapshot.get().timestamp());
     }
+  }
+
+  /**
+   * Records whether this program run has ever seen the robot enabled and reports whether an
+   * automatic disabled vision reseed is currently permitted. A Driver Station disconnect cannot
+   * reopen reseeding, while a program restart creates a fresh subsystem and permits startup
+   * localization again.
+   */
+  boolean shouldAutoReseedForRobotState(boolean robotEnabled) {
+    if (robotEnabled) {
+      hasEnteredEnabledModeSinceStartup = true;
+    }
+    return !robotEnabled && !hasEnteredEnabledModeSinceStartup;
   }
 
   private void markVisionInitializationComplete() {
