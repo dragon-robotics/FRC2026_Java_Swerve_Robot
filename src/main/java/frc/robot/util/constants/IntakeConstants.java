@@ -14,7 +14,6 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.VoltageConfigs;
-import com.ctre.phoenix6.hardware.core.CoreCANcoder;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -61,20 +60,21 @@ public final class IntakeConstants {
   public static final int INTAKE_ARM_SLOW_PID_SLOT = 1;
   public static final double INTAKE_ARM_LENGTH_METERS = Units.inchesToMeters(13.370);
   public static final double INTAKE_ARM_MASS_KG = Units.lbsToKilograms(10);
-  public static final double INTAKE_ARM_GEAR_RATIO = 36;
+  public static final double INTAKE_ARM_GEAR_RATIO = 40;
   public static final double INTAKE_MIN_ANGLE_RADIANS = Units.degreesToRadians(0);
   public static final double INTAKE_MAX_ANGLE_RADIANS = Units.degreesToRadians(90);
   public static final double INTAKE_STARTING_ANGLE_RADIANS = INTAKE_MIN_ANGLE_RADIANS;
 
-  public static final Voltage INTAKE_ARM_MAX_VOLTAGE = Volts.of(10);
+  public static final Voltage INTAKE_ARM_MAX_VOLTAGE = Volts.of(12);
   public static final Current INTAKE_ARM_STATOR_CURRENT_LIMIT = Amps.of(50);
   public static final Current INTAKE_ARM_SUPPLY_CURRENT_LIMIT = Amps.of(30);
-  public static final Current INTAKE_ARM_DEPLOY_TENSION_CURRENT = Amps.of(-18.75);
-  public static final double INTAKE_ARM_SLOW_P = 8;
-  public static final double INTAKE_ARM_FAST_P = 14;
-  public static final double INTAKE_ARM_KV = 2.4;
-  public static final double INTAKE_ARM_KG = 0.5;
-  public static final double INTAKE_ARM_CANCODER_OFFSET = 0.881064453125;
+  public static final Current INTAKE_ARM_DEPLOY_TENSION_CURRENT = Amps.of(-10);
+  public static final double INTAKE_ARM_SLOW_P = 10;
+  public static final double INTAKE_ARM_FAST_P = 18;
+  public static final double INTAKE_ARM_KS = 0.05;
+  public static final double INTAKE_ARM_KV = 1.5;
+  public static final double INTAKE_ARM_KG = 0.46;
+  public static final double INTAKE_ARM_CANCODER_OFFSET = 0.0;
 
   /** Arm stowed position in mechanism rotations. */
   public static final double INTAKE_ARM_STOWED_POSITION = 0.37;
@@ -89,7 +89,7 @@ public final class IntakeConstants {
   public static final double INTAKE_ARM_JUICER_PRE_POSITION = 0.15;
 
   /** Final juicer squeeze position in mechanism rotations. */
-  public static final double INTAKE_ARM_JUICER_FINAL_POSITION = 0.25;
+  public static final double INTAKE_ARM_JUICER_FINAL_POSITION = 0.31;
 
   /** Deployed arm position in mechanism rotations. */
   public static final double INTAKE_ARM_DEPLOYED_POSITION = 0.0;
@@ -102,15 +102,15 @@ public final class IntakeConstants {
   public static final double INTAKE_ROLLER_DUTY_CYCLE = 1.0;
   public static final Voltage INTAKE_ROLLER_VOLTAGE = Volts.of(12);
   public static final double INTAKE_ROLLER_RPM = 6000.0;
-  public static final Current INTAKE_ROLLER_TORQUE_CURRENT = Amps.of(80);
-  public static final double INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE = 0.75;
+  public static final Current INTAKE_ROLLER_TORQUE_CURRENT = Amps.of(90);
+  public static final double INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE = 0.8;
   public static final double OUTTAKE_ROLLER_DUTY_CYCLE = -1.0;
   public static final Voltage OUTTAKE_ROLLER_VOLTAGE = Volts.of(-12);
   public static final double OUTTAKE_ROLLER_RPM = -6000.0;
   public static final Current OUTTAKE_ROLLER_TORQUE_CURRENT = Amps.of(-80);
-  public static final double OUTTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE = 0.75;
+  public static final double OUTTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE = 0.8;
 
-  public static final Current INTAKE_ROLLER_STATOR_CURRENT_LIMIT = Amps.of(80);
+  public static final Current INTAKE_ROLLER_STATOR_CURRENT_LIMIT = Amps.of(100);
   public static final Current INTAKE_ROLLER_SUPPLY_CURRENT_LIMIT = Amps.of(40);
   public static final Current INTAKE_ROLLER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(30);
   public static final Time INTAKE_ROLLER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.2);
@@ -167,7 +167,10 @@ public final class IntakeConstants {
           new VoltageConfigs()
               .withPeakForwardVoltage(INTAKE_ROLLER_VOLTAGE)
               .withPeakReverseVoltage(OUTTAKE_ROLLER_VOLTAGE))
-      .withMotorOutput(new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Coast));
+      .withMotorOutput(
+          new MotorOutputConfigs()
+              .withNeutralMode(NeutralModeValue.Coast)
+              .withInverted(InvertedValue.Clockwise_Positive));
 
   public static final SparkBaseConfig INTAKE_ROLLER_FOLLOW_SPARKMAX_CONFIG = new SparkMaxConfig()
       .apply(
@@ -193,7 +196,7 @@ public final class IntakeConstants {
       .withMotorOutput(
           new MotorOutputConfigs()
               .withNeutralMode(NeutralModeValue.Brake)
-              .withInverted(InvertedValue.Clockwise_Positive))
+              .withInverted(InvertedValue.CounterClockwise_Positive))
       // Fast deploy profile overcomes the constant-force spring of the extending
       // hopper.
       .withSlot0(
@@ -228,8 +231,8 @@ public final class IntakeConstants {
               .withMotionMagicExpo_kA(2.0))
       .withFeedback(
           new FeedbackConfigs()
-              .withFusedCANcoder(new CoreCANcoder(INTAKE_ARM_CANCODER_ID))
-              .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
+              .withFeedbackRemoteSensorID(INTAKE_ARM_CANCODER_ID)
+              .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
               .withSensorToMechanismRatio(1)
               .withRotorToSensorRatio(INTAKE_ARM_GEAR_RATIO)
               .withFeedbackRotorOffset(0));

@@ -30,7 +30,7 @@ public final class HopperConstants {
 
   /* Roller limits and commands */
 
-  public static final Current HOPPER_ROLLER_STATOR_CURRENT_LIMIT = Amps.of(50.0);
+  public static final Current HOPPER_ROLLER_STATOR_CURRENT_LIMIT = Amps.of(80.0);
   public static final Current HOPPER_ROLLER_SUPPLY_CURRENT_LIMIT = Amps.of(40.0);
   public static final Current HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(20.0);
   public static final Time HOPPER_ROLLER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.2);
@@ -39,7 +39,7 @@ public final class HopperConstants {
   public static final Voltage HOPPER_INDEX_TO_INTAKE_VOLTAGE =
       HOPPER_ROLLER_MAX_VOLTAGE.unaryMinus();
   public static final Voltage HOPPER_STOP_VOLTAGE = Volts.of(0.0);
-  public static final Time HOPPER_ROLLER_RAMP_RATE = Seconds.of(0.5);
+  public static final Time HOPPER_ROLLER_RAMP_RATE = Seconds.of(0.4);
   public static final double HOPPER_ROLLER_DUTY_CYCLE = 1.0;
 
   /* Motor controller configs */
