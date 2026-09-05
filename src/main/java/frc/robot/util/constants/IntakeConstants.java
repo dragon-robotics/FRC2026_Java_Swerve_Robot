@@ -71,7 +71,6 @@ public final class IntakeConstants {
   public static final Current INTAKE_ARM_DEPLOY_TENSION_CURRENT = Amps.of(-10);
   public static final double INTAKE_ARM_SLOW_P = 10;
   public static final double INTAKE_ARM_FAST_P = 18;
-  public static final double INTAKE_ARM_KS = 0.05;
   public static final double INTAKE_ARM_KV = 1.5;
   public static final double INTAKE_ARM_KG = 0.46;
   public static final double INTAKE_ARM_CANCODER_OFFSET = 0.0;
