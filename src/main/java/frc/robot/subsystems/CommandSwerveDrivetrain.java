@@ -2,9 +2,17 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.util.constants.SwerveConstants.AUTO_DRIVE_STATOR_CURRENT_ENABLE;
+import static frc.robot.util.constants.SwerveConstants.DRIVE_SUPPLY_CURRENT_ENABLE;
+import static frc.robot.util.constants.SwerveConstants.DRIVE_SUPPLY_CURRENT_LIMIT;
+import static frc.robot.util.constants.SwerveConstants.DRIVE_SUPPLY_CURRENT_LOWER_LIMIT;
+import static frc.robot.util.constants.SwerveConstants.DRIVE_SUPPLY_CURRENT_LOWER_TIME;
+import static frc.robot.util.constants.SwerveConstants.TELEOP_DRIVE_STATOR_CURRENT_ENABLE;
+import static frc.robot.util.constants.SwerveConstants.TELEOP_DRIVE_STATOR_CURRENT_LIMIT;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -133,6 +141,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   public CommandSwerveDrivetrain(
       SwerveDrivetrainConstants drivetrainConstants, SwerveModuleConstants<?, ?, ?>... modules) {
     super(drivetrainConstants, modules);
+    configureAutoDriveCurrentLimits();
     if (Utils.isSimulation()) {
       startSimThread();
     }
@@ -155,6 +164,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       double odometryUpdateFrequency,
       SwerveModuleConstants<?, ?, ?>... modules) {
     super(drivetrainConstants, odometryUpdateFrequency, modules);
+    configureAutoDriveCurrentLimits();
     if (Utils.isSimulation()) {
       startSimThread();
     }
@@ -188,6 +198,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         odometryStandardDeviation,
         visionStandardDeviation,
         modules);
+    configureAutoDriveCurrentLimits();
     if (Utils.isSimulation()) {
       startSimThread();
     }
@@ -222,6 +233,43 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     } catch (Exception ex) {
       DriverStation.reportError(
           "Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
+    }
+  }
+
+  /** Re-applies the unlimited auto drive stator configuration after Phoenix Swerve construction. */
+  public void configureAutoDriveCurrentLimits() {
+    applyDriveCurrentLimits(createAutoDriveCurrentLimits());
+  }
+
+  /** Applies the declared 80 A drive stator limit for teleoperated operation. */
+  public void configureTeleopDriveCurrentLimit() {
+    applyDriveCurrentLimits(createTeleopDriveCurrentLimits());
+  }
+
+  static CurrentLimitsConfigs createAutoDriveCurrentLimits() {
+    return addDriveSupplyCurrentLimits(
+        new CurrentLimitsConfigs().withStatorCurrentLimitEnable(AUTO_DRIVE_STATOR_CURRENT_ENABLE));
+  }
+
+  static CurrentLimitsConfigs createTeleopDriveCurrentLimits() {
+    return addDriveSupplyCurrentLimits(
+        new CurrentLimitsConfigs()
+            .withStatorCurrentLimitEnable(TELEOP_DRIVE_STATOR_CURRENT_ENABLE)
+            .withStatorCurrentLimit(TELEOP_DRIVE_STATOR_CURRENT_LIMIT));
+  }
+
+  private static CurrentLimitsConfigs addDriveSupplyCurrentLimits(
+      CurrentLimitsConfigs currentLimits) {
+    return currentLimits
+        .withSupplyCurrentLimitEnable(DRIVE_SUPPLY_CURRENT_ENABLE)
+        .withSupplyCurrentLimit(DRIVE_SUPPLY_CURRENT_LIMIT)
+        .withSupplyCurrentLowerLimit(DRIVE_SUPPLY_CURRENT_LOWER_LIMIT)
+        .withSupplyCurrentLowerTime(DRIVE_SUPPLY_CURRENT_LOWER_TIME);
+  }
+
+  private void applyDriveCurrentLimits(CurrentLimitsConfigs currentLimits) {
+    for (var module : getModules()) {
+      module.getDriveMotor().getConfigurator().apply(currentLimits);
     }
   }
 

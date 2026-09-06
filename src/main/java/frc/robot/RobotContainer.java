@@ -410,6 +410,10 @@ public class RobotContainer {
     final var idle = new SwerveRequest.Idle();
     RobotModeTriggers.disabled()
         .whileTrue(swerveSubsystem.applyRequest(() -> idle).ignoringDisable(true));
+    RobotModeTriggers.autonomous()
+        .onTrue(Commands.runOnce(swerveSubsystem::configureAutoDriveCurrentLimits));
+    RobotModeTriggers.teleop()
+        .onTrue(Commands.runOnce(swerveSubsystem::configureTeleopDriveCurrentLimit));
 
     /* Default Commands */
     // Note that X is defined as forward according to WPILib convention,
