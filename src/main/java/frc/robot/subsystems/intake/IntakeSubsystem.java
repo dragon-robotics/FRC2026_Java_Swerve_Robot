@@ -412,7 +412,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   private void runDeployingRoller() {
     if (DriverStation.isAutonomous()) {
-      runIntakeRollerVoltage(OUTTAKE_ROLLER_VOLTAGE.times(0.5));
+      runIntakeRollerVoltage(OUTTAKE_ROLLER_VOLTAGE.times(0.25));
     } else {
       stopIntake();
     }
