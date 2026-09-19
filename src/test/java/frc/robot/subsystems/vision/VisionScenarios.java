@@ -56,7 +56,7 @@ final class VisionScenarios {
 
   /** Average tag distance beyond the max — tripped by the distance gate. */
   static PoseObservation tooFar(double x, double y, double timestamp) {
-    return obs(timestamp, pose(x, y, 0.0, 0.0), 0.10, 2, 7.0, new int[] {1, 2});
+    return obs(timestamp, pose(x, y, 0.0, 0.0), 0.10, 2, 8.0, new int[] {1, 2});
   }
 
   private static Pose3d pose(double x, double y, double z, double yawRad) {

@@ -89,7 +89,7 @@ class VisionConsensusPerformanceTest {
       }
 
       Matrix<N3, N1> stdDevs =
-          VisionSubsystem.standardDeviations(observation, i % CAMERA_COUNT, false);
+          VisionSubsystem.standardDeviations(observation, i / OBSERVATIONS_PER_CAMERA, false);
       consume(observation.pose().toPose2d(), stdDevs);
       accepted++;
     }
@@ -105,16 +105,17 @@ class VisionConsensusPerformanceTest {
       }
 
       Matrix<N3, N1> stdDevs =
-          VisionSubsystem.standardDeviations(observation, i % CAMERA_COUNT, false);
+          VisionSubsystem.standardDeviations(observation, i / OBSERVATIONS_PER_CAMERA, false);
       candidateBuffer.add(
           new VisionSubsystem.ConsensusCandidate(
-              i % CAMERA_COUNT,
-              "camera" + (i % CAMERA_COUNT),
-              "Vision/camera" + (i % CAMERA_COUNT),
+              i / OBSERVATIONS_PER_CAMERA,
+              "camera" + (i / OBSERVATIONS_PER_CAMERA),
+              "Vision/camera" + (i / OBSERVATIONS_PER_CAMERA),
               observation,
               observation.pose().toPose2d(),
               stdDevs,
-              0.0));
+              0.0,
+              observation.pose().toPose2d().getTranslation()));
     }
 
     Optional<VisionSubsystem.ConsensusCandidate> selected =

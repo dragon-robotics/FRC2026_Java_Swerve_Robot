@@ -10,8 +10,10 @@ import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -456,10 +458,20 @@ class VisionDynamicStrategyBakeoffTest {
           double sumVisionDeviation = 0.0;
           Set<String> acceptedTagSignatures = new LinkedHashSet<>();
 
+          var truthHistory = TimeInterpolatableBuffer.<Pose2d>createBuffer(1.5);
+          double lastFreshTimestamp = Double.NEGATIVE_INFINITY;
+          int freshCorrections = 0;
+          double maxCaptureAlignedError = 0.0;
+          double maxCaptureAge = 0.0;
+          List<Long> schedulerTimes = new ArrayList<>();
           int totalCycles = WARMUP_CYCLES + MEASURE_CYCLES;
           for (int cycle = 0; cycle < totalCycles; cycle++) {
             simulatedVisionTruth.set(truthState.pose());
+            truthHistory.addSample(Timer.getFPGATimestamp(), truthState.pose());
+            long schedulerStart = System.nanoTime();
             CommandScheduler.getInstance().run();
+            long schedulerNs = System.nanoTime() - schedulerStart;
+            if (cycle >= WARMUP_CYCLES) schedulerTimes.add(schedulerNs);
 
             MotionStep motionStep = advanceGroundTruth(scenario, truthState);
             ChassisSpeeds robotRelativeSpeeds =
@@ -475,6 +487,7 @@ class VisionDynamicStrategyBakeoffTest {
 
             truthState = motionStep.nextTruth();
             simulatedVisionTruth.set(truthState.pose());
+            truthHistory.addSample(Timer.getFPGATimestamp(), truthState.pose());
             Pose2d odom = container.swerveSubsystem.getState().Pose;
             Optional<VisionSubsystem.AcceptedObservationSnapshot> vis =
                 container.visionSubsystem.getLatestAcceptedObservationSnapshot();
@@ -485,6 +498,22 @@ class VisionDynamicStrategyBakeoffTest {
             String visionTagIds = vis.map(v -> formatTagIds(v.tagIDs())).orElse("-");
 
             double visionDeviation = Double.NaN;
+            if (vis.isPresent() && vis.get().timestamp() > lastFreshTimestamp) {
+              lastFreshTimestamp = vis.get().timestamp();
+              var captureTruth = truthHistory.getSample(lastFreshTimestamp);
+              if (measuring && captureTruth.isPresent()) {
+                freshCorrections++;
+                maxCaptureAlignedError =
+                    Math.max(
+                        maxCaptureAlignedError,
+                        vis.get()
+                            .pose()
+                            .getTranslation()
+                            .getDistance(captureTruth.get().getTranslation()));
+                maxCaptureAge =
+                    Math.max(maxCaptureAge, Timer.getFPGATimestamp() - lastFreshTimestamp);
+              }
+            }
             if (vis.isPresent()) {
               visionDeviation =
                   vis.get().pose().getTranslation().getDistance(truthState.pose().getTranslation());
@@ -531,6 +560,22 @@ class VisionDynamicStrategyBakeoffTest {
           writeCsv(
               "dynamic-" + scenario.name() + "-" + strategy.name().toLowerCase() + ".csv", csv);
 
+          schedulerTimes.sort(Long::compare);
+          System.out.printf(
+              java.util.Locale.US,
+              "[VisionFresh]|%s|%s fresh=%d/%d captureErrorMax=%.4f m ageMax=%.1f ms schedulerP50=%.3f ms schedulerP95=%.3f ms schedulerMax=%.3f ms%n",
+              scenario.name(),
+              strategy.name(),
+              freshCorrections,
+              MEASURE_CYCLES,
+              maxCaptureAlignedError,
+              maxCaptureAge * 1000,
+              schedulerTimes.get(schedulerTimes.size() / 2) / 1e6,
+              schedulerTimes.get((int) (schedulerTimes.size() * .95)) / 1e6,
+              schedulerTimes.get(schedulerTimes.size() - 1) / 1e6);
+          // Preserve legacy snapshot-availability metrics for baseline comparison; fresh counts
+          // above
+          // count only new capture timestamps and compare against capture-time ground truth.
           double visionCoverageRatio = visionAcceptedCycles / (double) MEASURE_CYCLES;
           double meanVisionDeviation =
               visionAcceptedCycles == 0

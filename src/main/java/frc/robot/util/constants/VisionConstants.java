@@ -111,6 +111,14 @@ public final class VisionConstants {
    */
   public static final double VISION_CONSENSUS_RADIUS_METERS = 0.45;
 
+  /** Experimental frame freshness bounds; old queued frames never reach pose solving. */
+  public static final double MAX_OBSERVATION_AGE_SECONDS = 0.25;
+  public static final double MAX_OBSERVATION_FUTURE_SECONDS = 0.02;
+
+  /** While enabled, large corrections require independent camera agreement. */
+  public static final double SINGLE_CAMERA_MAX_DELTA_METERS = 0.75;
+  public static final double SINGLE_CAMERA_STDDEV_MULTIPLIER = 2.0;
+
   /* VisionSubsystem state/reseed behavior */
 
   /** Snapshots older than this are treated as stale by the dashboard accessor. */
@@ -211,7 +219,7 @@ public final class VisionConstants {
 
   /**
    * Tags are considered coplanar (same Hub face) when the angle between their
-   * outward Z-axis
+   * outward X-axis
    * normals is within this many degrees. Coplanar multi-tag observations have the
    * same rotational
    * ambiguity as single-tag and receive the single-tag std-dev penalty.

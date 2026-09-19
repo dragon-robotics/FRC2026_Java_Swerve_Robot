@@ -16,6 +16,8 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N8;
+import edu.wpi.first.wpilibj.Timer;
+import frc.robot.util.constants.VisionConstants;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,9 +47,7 @@ public class VisionIOPhotonVision implements VisionIO {
   private static final TargetObservation NO_TARGET =
       new TargetObservation(new Rotation2d(), new Rotation2d());
 
-  // Kept as a quick throttle knob if processing every unread frame gets too expensive.
-  @SuppressWarnings("unused")
-  private static final int MAX_RESULTS_PER_UPDATE = 2;
+  private double lastProcessedTimestamp = Double.NEGATIVE_INFINITY;
 
   private static final String STRATEGY_MODE_PROPERTY = "vision.photon.strategyMode";
   private static final String TAG_DISTANCE_CONFIDENCE_MODE_PROPERTY =
@@ -132,23 +132,58 @@ public class VisionIOPhotonVision implements VisionIO {
     poseObservations.clear();
     tagIdCount = 0;
 
-    var allResults = camera.getAllUnreadResults();
-    if (allResults.isEmpty()) {
-      inputs.setPoseObservations(EMPTY_POSE_OBSERVATIONS);
-      inputs.setTagIds(EMPTY_TAG_IDS);
-      inputs.setLatestTargetObservation(NO_TARGET);
-      return;
-    }
+    processUnreadResults(camera.getAllUnreadResults(), inputs, Timer.getFPGATimestamp());
+  }
 
-    for (int resultIndex = 0; resultIndex < allResults.size(); resultIndex++) {
-      processResult(allResults.get(resultIndex), inputs);
+  /** Drain the queue, but solve at most one fresh frame. No wait or older-frame retry. */
+  void processUnreadResults(
+      List<PhotonPipelineResult> allResults, VisionIOInputs inputs, double now) {
+    poseObservations.clear();
+    tagIdCount = 0;
+    inputs.setLatestTargetObservation(NO_TARGET);
+    Optional<PhotonPipelineResult> newest =
+        newestFreshResult(allResults, lastProcessedTimestamp, now);
+    long start = System.nanoTime();
+    if (newest.isPresent()) {
+      lastProcessedTimestamp = newest.get().getTimestampSeconds();
+      processResult(newest.get(), inputs);
     }
+    String key = "Vision/" + camera.getName();
+    DogLog.log(key + "/Frames/Received", allResults.size());
+    DogLog.log(key + "/Frames/Processed", newest.isPresent() ? 1 : 0);
+    DogLog.log(key + "/Frames/Discarded", allResults.size() - (newest.isPresent() ? 1 : 0));
+    DogLog.log(key + "/Frames/ProcessingMs", (System.nanoTime() - start) / 1e6);
+    DogLog.log(
+        key + "/Frames/SelectedAgeSeconds",
+        newest.isPresent() ? now - newest.get().getTimestampSeconds() : -1.0);
 
     inputs.setPoseObservations(
         poseObservations.isEmpty()
             ? EMPTY_POSE_OBSERVATIONS
             : poseObservations.toArray(EMPTY_POSE_OBSERVATIONS));
     inputs.setTagIds(tagIdCount == 0 ? EMPTY_TAG_IDS : Arrays.copyOf(tagIdBuffer, tagIdCount));
+  }
+
+  static boolean isFreshTimestamp(double timestamp, double now) {
+    return Double.isFinite(timestamp)
+        && timestamp >= 0.0
+        && Double.isFinite(now)
+        && now - timestamp <= VisionConstants.MAX_OBSERVATION_AGE_SECONDS
+        && timestamp - now <= VisionConstants.MAX_OBSERVATION_FUTURE_SECONDS;
+  }
+
+  static Optional<PhotonPipelineResult> newestFreshResult(
+      List<PhotonPipelineResult> results, double lastTimestamp, double now) {
+    PhotonPipelineResult newest = null;
+    for (PhotonPipelineResult result : results) {
+      double timestamp = result.getTimestampSeconds();
+      if (timestamp > lastTimestamp
+          && isFreshTimestamp(timestamp, now)
+          && (newest == null || timestamp > newest.getTimestampSeconds())) {
+        newest = result;
+      }
+    }
+    return Optional.ofNullable(newest);
   }
 
   private void processResult(PhotonPipelineResult result, VisionIOInputs inputs) {
@@ -176,6 +211,7 @@ public class VisionIOPhotonVision implements VisionIO {
   private Optional<EstimatedRobotPose> estimateWithConfiguredStrategies(
       PhotonPipelineResult result) {
     for (PoseStrategy strategy : resolveStrategyOrder(result)) {
+      long solveStart = System.nanoTime();
       Optional<EstimatedRobotPose> estimate;
       switch (strategy) {
         case MULTI_TAG_PNP_ON_COPROCESSOR:
@@ -194,7 +230,18 @@ public class VisionIOPhotonVision implements VisionIO {
           estimate = Optional.empty();
           break;
       }
+      DogLog.log(
+          "Vision/" + camera.getName() + "/SolverMs/" + strategy.name(),
+          (System.nanoTime() - solveStart) / 1e6);
       if (estimate.isPresent()) {
+        EstimatedRobotPose raw = estimate.get();
+        estimate =
+            Optional.of(
+                new EstimatedRobotPose(
+                    raw.estimatedPose,
+                    raw.timestampSeconds,
+                    targetsUsedByStrategy(result, strategy),
+                    raw.strategy));
         DogLog.log("Vision/ActivePoseStrategy", strategy.name());
         DogLog.log("Vision/" + camera.getName() + "/ActivePoseStrategy", strategy.name());
         int[] observedTagIds = toObservedTagIds(estimate.get().targetsUsed);
@@ -205,6 +252,42 @@ public class VisionIOPhotonVision implements VisionIO {
     }
     DogLog.log("Vision/ActivePoseStrategy", "NONE");
     return Optional.empty();
+  }
+
+  /** PhotonLib 2026.3.4 returns all visible targets even for its single-target solvers. */
+  static List<PhotonTrackedTarget> targetsUsedByStrategy(
+      PhotonPipelineResult result, PoseStrategy strategy) {
+    if (strategy == PoseStrategy.PNP_DISTANCE_TRIG_SOLVE) {
+      return result.hasTargets() ? List.of(result.getBestTarget()) : List.of();
+    }
+    if (strategy == PoseStrategy.LOWEST_AMBIGUITY) {
+      PhotonTrackedTarget chosen = null;
+      double lowest = 10.0;
+      for (PhotonTrackedTarget target : result.getTargets()) {
+        double ambiguity = target.getPoseAmbiguity();
+        if (ambiguity != -1 && ambiguity < lowest) {
+          lowest = ambiguity;
+          chosen = target;
+        }
+      }
+      return chosen == null ? List.of() : List.of(chosen);
+    }
+    List<PhotonTrackedTarget> used = new ArrayList<>();
+    for (PhotonTrackedTarget target : result.getTargets()) {
+      int id = target.getFiducialId();
+      boolean included =
+          strategy != PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
+              || result
+                  .getMultiTagResult()
+                  .map(m -> m.fiducialIDsUsed.contains((short) id))
+                  .orElse(false);
+      if (included
+          && APTAG_FIELD_LAYOUT.getTagPose(id).isPresent()
+          && used.stream().noneMatch(t -> t.getFiducialId() == id)) {
+        used.add(target);
+      }
+    }
+    return used;
   }
 
   private static int[] toObservedTagIds(List<PhotonTrackedTarget> targets) {

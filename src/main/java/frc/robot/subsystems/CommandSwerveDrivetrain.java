@@ -24,6 +24,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -35,6 +36,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.util.constants.VisionConstants;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -49,6 +51,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   private static final double kSimLoopPeriod = 0.004; // 4 ms
   private Notifier m_simNotifier = null;
   private double m_lastSimTime;
+  private double m_poseHistoryStartTime = Utils.getCurrentTimeSeconds();
+  private boolean m_waitingForPoseHistory = true;
 
   /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
   private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -384,14 +388,58 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   }
 
   /**
-   * Return the pose at a given timestamp, if the buffer is not empty.
+   * Return a recent capture-time pose without clamping across startup, pose resets, or the latest
+   * odometry update. The application's vision age limit is shorter than the native history window.
    *
-   * @param timestampSeconds The timestamp of the pose in seconds.
-   * @return The pose at the given timestamp (or Optional.empty() if the buffer is empty).
+   * @param timestampSeconds FPGA capture timestamp in seconds.
+   * @return A historical pose, or empty when the timestamp is outside the usable vision window.
    */
   @Override
-  public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
-    return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
+  public synchronized Optional<Pose2d> samplePoseAt(double timestampSeconds) {
+    double nativeTimestamp = Utils.fpgaToCurrentTime(timestampSeconds);
+    double latestTimestamp = getState().Timestamp;
+    if (m_waitingForPoseHistory) {
+      if (latestTimestamp <= m_poseHistoryStartTime) return Optional.empty();
+      // The first observed native sample supplies a conservative lower bound after a reset.
+      m_poseHistoryStartTime = latestTimestamp;
+      m_waitingForPoseHistory = false;
+    }
+    if (!Double.isFinite(nativeTimestamp)
+        || nativeTimestamp < m_poseHistoryStartTime
+        || nativeTimestamp > latestTimestamp
+        || Utils.getCurrentTimeSeconds() - nativeTimestamp
+            > VisionConstants.MAX_OBSERVATION_AGE_SECONDS) {
+      return Optional.empty();
+    }
+    return super.samplePoseAt(nativeTimestamp);
+  }
+
+  @Override
+  public synchronized void resetPose(Pose2d pose) {
+    super.resetPose(pose);
+    m_poseHistoryStartTime = Utils.getCurrentTimeSeconds();
+    m_waitingForPoseHistory = true;
+  }
+
+  @Override
+  public synchronized void resetTranslation(Translation2d translation) {
+    super.resetTranslation(translation);
+    m_poseHistoryStartTime = Utils.getCurrentTimeSeconds();
+    m_waitingForPoseHistory = true;
+  }
+
+  @Override
+  public synchronized void resetRotation(Rotation2d rotation) {
+    super.resetRotation(rotation);
+    m_poseHistoryStartTime = Utils.getCurrentTimeSeconds();
+    m_waitingForPoseHistory = true;
+  }
+
+  @Override
+  public synchronized void seedFieldCentric(Rotation2d rotation) {
+    super.seedFieldCentric(rotation);
+    m_poseHistoryStartTime = Utils.getCurrentTimeSeconds();
+    m_waitingForPoseHistory = true;
   }
 
   /** Returns absolute chassis pitch angle in degrees from the Pigeon2 IMU. */

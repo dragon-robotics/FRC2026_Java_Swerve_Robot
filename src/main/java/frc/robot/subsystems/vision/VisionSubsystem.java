@@ -35,6 +35,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -47,6 +48,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.vision.VisionIO.PoseObservation;
 import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
+import frc.robot.util.constants.VisionConstants;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -69,7 +71,7 @@ import java.util.Optional;
  */
 public class VisionSubsystem extends SubsystemBase {
 
-  private static final Translation3d TAG_NORMAL_VECTOR = new Translation3d(0.0, 0.0, 1.0);
+  private static final Translation3d TAG_NORMAL_VECTOR = new Translation3d(1.0, 0.0, 0.0);
 
   private final CommandSwerveDrivetrain swerve;
   private final VisionConsumer consumer;
@@ -147,9 +149,9 @@ public class VisionSubsystem extends SubsystemBase {
   /**
    * Passing observation ready for same-loop consensus.
    *
-   * <p>The selector compares field-relative XY pose in meters. The selected candidate keeps its
-   * original timestamp and std-devs so CTRE receives one real camera measurement, not a synthetic
-   * averaged pose.
+   * <p>The selector compares XY residuals against capture-time odometry. The selected candidate
+   * keeps its original timestamp and std-devs so CTRE receives one real camera measurement, not a
+   * synthetic averaged pose.
    */
   record ConsensusCandidate(
       int cameraIndex,
@@ -158,13 +160,16 @@ public class VisionSubsystem extends SubsystemBase {
       PoseObservation observation,
       Pose2d visionPose,
       Matrix<N3, N1> standardDeviations,
-      double innovationMeters) {
+      double innovationMeters,
+      Translation2d odometryResidual) {
     double linearStdDevMeters() {
       return standardDeviations.get(0, 0);
     }
 
     double distanceMeters(ConsensusCandidate other) {
-      return visionPose.getTranslation().getDistance(other.visionPose().getTranslation());
+      // Subtracting capture-time odometry aligns translation to a common time.
+      // Camera yaw is intentionally excluded; normal vision fusion ignores yaw too.
+      return odometryResidual.getDistance(other.odometryResidual());
     }
   }
 
@@ -224,8 +229,16 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     Pose2d visionPose = observation.pose().toPose2d();
-    Pose2d referencePose =
-        swerve.samplePoseAt(observation.timestamp()).orElse(swerve.getState().Pose);
+    if (!VisionIOPhotonVision.isFreshTimestamp(observation.timestamp(), Timer.getFPGATimestamp())) {
+      rejectObservation(cameraLogKey, observation, "STALE_OR_FUTURE_TIMESTAMP");
+      return Optional.empty();
+    }
+    Optional<Pose2d> historicalPose = swerve.samplePoseAt(observation.timestamp());
+    if (historicalPose.isEmpty()) {
+      rejectObservation(cameraLogKey, observation, "NO_ODOMETRY_HISTORY");
+      return Optional.empty();
+    }
+    Pose2d referencePose = historicalPose.get();
     double innovationMeters =
         visionPose.getTranslation().getDistance(referencePose.getTranslation());
     boolean disabled = DriverStation.isDisabled();
@@ -245,48 +258,56 @@ public class VisionSubsystem extends SubsystemBase {
             observation,
             visionPose,
             standardDeviations(observation, cameraIndex),
-            innovationMeters));
+            innovationMeters,
+            visionPose.getTranslation().minus(referencePose.getTranslation())));
   }
 
   private void processConsensusCandidates() {
-    Optional<ConsensusCandidate> selectedCandidate = selectConsensusCandidate(consensusCandidates);
-    if (selectedCandidate.isEmpty()) {
-      DogLog.log("Vision/Consensus/SelectedCamera", "");
-      DogLog.log("Vision/Consensus/CandidateCount", 0);
-      DogLog.log("Vision/Consensus/SelectedClusterSize", 0);
+    ConsensusDecision decision = evaluateConsensus(consensusCandidates, DriverStation.isDisabled());
+    DogLog.log("Vision/Consensus/CandidateCount", consensusCandidates.size());
+    DogLog.log("Vision/Consensus/CameraCount", decision.cameraCount());
+    DogLog.log("Vision/Consensus/SelectedClusterSize", decision.support());
+    DogLog.log("Vision/Consensus/Decision", decision.reason());
+    DogLog.log(
+        "Vision/Consensus/SelectedCamera",
+        decision.selected().map(ConsensusCandidate::cameraName).orElse(""));
+    if (decision.selected().isEmpty()) {
+      for (ConsensusCandidate candidate : consensusCandidates) {
+        rejectConsensusCandidate(candidate, decision.reason());
+      }
       DogLog.log("Vision/Consensus/SelectedStdDevMeters", 0.0);
       DogLog.log("Vision/Consensus/SelectedInnovationMeters", 0.0);
+      DogLog.log("Vision/Consensus/SelectedAgeSeconds", -1.0);
       return;
     }
-
-    ConsensusCandidate selected = selectedCandidate.get();
+    ConsensusCandidate selected = decision.selected().get();
     for (ConsensusCandidate candidate : consensusCandidates) {
-      if (candidate == selected) {
-        continue;
-      }
-      rejectConsensusCandidate(candidate, "CONSENSUS_NOT_SELECTED");
+      if (candidate != selected) rejectConsensusCandidate(candidate, "CONSENSUS_NOT_SELECTED");
     }
-
-    acceptConsensusCandidate(selected);
-    DogLog.log("Vision/Consensus/SelectedCamera", selected.cameraName());
-    DogLog.log("Vision/Consensus/CandidateCount", consensusCandidates.size());
-    DogLog.log(
-        "Vision/Consensus/SelectedClusterSize",
-        consensusClusterSize(selected, consensusCandidates));
-    DogLog.log("Vision/Consensus/SelectedStdDevMeters", selected.linearStdDevMeters());
+    Matrix<N3, N1> stdDevs = fusionStandardDeviations(selected, decision.support());
+    acceptedPoses.add(selected.observation().pose());
+    // Alignment is for selection only: preserve original capture pose and timestamp for CTRE.
+    consumer.accept(
+        selected.visionPose(),
+        Utils.fpgaToCurrentTime(selected.observation().timestamp()),
+        stdDevs);
+    trackMultitagInitialization(
+        selected.observation(), selected.visionPose(), selected.cameraName());
+    updateLatestAcceptedSnapshot(
+        selected.observation(), selected.visionPose(), selected.cameraName());
+    DogLog.log("Vision/Consensus/SelectedStdDevMeters", stdDevs.get(0, 0));
     DogLog.log("Vision/Consensus/SelectedInnovationMeters", selected.innovationMeters());
+    DogLog.log(
+        "Vision/Consensus/SelectedAgeSeconds",
+        Timer.getFPGATimestamp() - selected.observation().timestamp());
   }
 
-  private void acceptConsensusCandidate(ConsensusCandidate candidate) {
-    PoseObservation observation = candidate.observation();
-    acceptedPoses.add(observation.pose());
-    consumer.accept(
-        candidate.visionPose(),
-        Utils.fpgaToCurrentTime(observation.timestamp()),
-        candidate.standardDeviations());
-
-    trackMultitagInitialization(observation, candidate.visionPose(), candidate.cameraName());
-    updateLatestAcceptedSnapshot(observation, candidate.visionPose(), candidate.cameraName());
+  static Matrix<N3, N1> fusionStandardDeviations(ConsensusCandidate candidate, int support) {
+    double scale = support == 1 ? VisionConstants.SINGLE_CAMERA_STDDEV_MULTIPLIER : 1.0;
+    return VecBuilder.fill(
+        candidate.standardDeviations().get(0, 0) * scale,
+        candidate.standardDeviations().get(1, 0) * scale,
+        candidate.standardDeviations().get(2, 0));
   }
 
   private void rejectObservation(
@@ -487,51 +508,84 @@ public class VisionSubsystem extends SubsystemBase {
     return MULTITAG_INIT_STABLE_POSES_REQUIRED;
   }
 
+  record ConsensusDecision(
+      Optional<ConsensusCandidate> selected, int cameraCount, int support, String reason) {}
+
   static Optional<ConsensusCandidate> selectConsensusCandidate(
       List<ConsensusCandidate> candidates) {
-    if (candidates.isEmpty()) {
-      return Optional.empty();
-    }
+    return evaluateConsensus(candidates, false).selected();
+  }
 
-    ConsensusCandidate bestCandidate = candidates.get(0);
-    int bestClusterSize = -1;
-    double bestQuality = Double.POSITIVE_INFINITY;
-
+  /** At most four cameras: enumerate 15 possible groups, requiring pairwise agreement. */
+  static ConsensusDecision evaluateConsensus(
+      List<ConsensusCandidate> candidates, boolean allowLargeSingleCorrection) {
+    List<ConsensusCandidate> cameras = new ArrayList<>(4);
     for (ConsensusCandidate candidate : candidates) {
-      int clusterSize = consensusClusterSize(candidate, candidates);
-      double quality = consensusQuality(candidate, candidates);
-      if (clusterSize > bestClusterSize
-          || (clusterSize == bestClusterSize && quality < bestQuality)) {
-        bestCandidate = candidate;
-        bestClusterSize = clusterSize;
-        bestQuality = quality;
+      int existing = -1;
+      for (int i = 0; i < cameras.size(); i++) {
+        if (cameras.get(i).cameraIndex() == candidate.cameraIndex()) {
+          existing = i;
+          break;
+        }
+      }
+      if (existing < 0) cameras.add(candidate);
+      else if (candidate.observation().timestamp()
+          > cameras.get(existing).observation().timestamp()) cameras.set(existing, candidate);
+    }
+    int count = cameras.size();
+    if (count == 0 || count > 4)
+      return new ConsensusDecision(
+          Optional.empty(), count, 0, count == 0 ? "NO_CANDIDATES" : "TOO_MANY_CAMERAS");
+    if (count == 1) {
+      ConsensusCandidate only = cameras.get(0);
+      boolean allowed =
+          allowLargeSingleCorrection
+              || only.innovationMeters() <= VisionConstants.SINGLE_CAMERA_MAX_DELTA_METERS;
+      return new ConsensusDecision(
+          allowed ? Optional.of(only) : Optional.empty(),
+          1,
+          allowed ? 1 : 0,
+          allowed ? "SINGLE_CAMERA" : "LARGE_SINGLE_CAMERA_DELTA");
+    }
+    int bestMask = 0;
+    int bestSize = 0;
+    boolean tied = false;
+    for (int mask = 1; mask < (1 << count); mask++) {
+      int size = Integer.bitCount(mask);
+      if (size <= count / 2 || size < bestSize) continue;
+      boolean agrees = true;
+      for (int i = 0; i < count && agrees; i++) {
+        if ((mask & (1 << i)) == 0) continue;
+        for (int j = i + 1; j < count; j++) {
+          if ((mask & (1 << j)) != 0
+              && cameras.get(i).distanceMeters(cameras.get(j)) > VISION_CONSENSUS_RADIUS_METERS) {
+            agrees = false;
+            break;
+          }
+        }
+      }
+      if (!agrees) continue;
+      if (size > bestSize) {
+        bestMask = mask;
+        bestSize = size;
+        tied = false;
+      } else {
+        tied = true;
       }
     }
-
-    return Optional.of(bestCandidate);
-  }
-
-  private static int consensusClusterSize(
-      ConsensusCandidate candidate, List<ConsensusCandidate> candidates) {
-    int clusterSize = 0;
-    for (ConsensusCandidate other : candidates) {
-      if (candidate.distanceMeters(other) <= VISION_CONSENSUS_RADIUS_METERS) {
-        clusterSize++;
-      }
+    if (bestMask == 0 || tied)
+      return new ConsensusDecision(Optional.empty(), count, 0, "CAMERA_DISAGREEMENT");
+    ConsensusCandidate best = null;
+    for (int i = 0; i < count; i++) {
+      if ((bestMask & (1 << i)) == 0) continue;
+      ConsensusCandidate candidate = cameras.get(i);
+      if (best == null
+          || candidate.linearStdDevMeters() < best.linearStdDevMeters()
+          || (candidate.linearStdDevMeters() == best.linearStdDevMeters()
+              && candidate.observation().timestamp() > best.observation().timestamp()))
+        best = candidate;
     }
-    return clusterSize;
-  }
-
-  private static double consensusQuality(
-      ConsensusCandidate candidate, List<ConsensusCandidate> candidates) {
-    double quality = candidate.linearStdDevMeters();
-    for (ConsensusCandidate other : candidates) {
-      double distanceMeters = candidate.distanceMeters(other);
-      if (distanceMeters <= VISION_CONSENSUS_RADIUS_METERS) {
-        quality += distanceMeters + other.linearStdDevMeters();
-      }
-    }
-    return quality;
+    return new ConsensusDecision(Optional.of(best), count, bestSize, "CAMERA_AGREEMENT");
   }
 
   private static class MultitagInitializationState {
@@ -551,7 +605,16 @@ public class VisionSubsystem extends SubsystemBase {
    * drivetrain.
    */
   static Optional<String> rejectionReason(PoseObservation observation) {
-    if (observation.tagCount() == 0) {
+    if (!Double.isFinite(observation.timestamp())
+        || !Double.isFinite(observation.pose().getX())
+        || !Double.isFinite(observation.pose().getY())
+        || !Double.isFinite(observation.pose().getZ())
+        || !Double.isFinite(observation.pose().getRotation().getZ())
+        || !Double.isFinite(observation.ambiguity())
+        || !Double.isFinite(observation.averageTagDistance())) {
+      return Optional.of("NONFINITE_OBSERVATION");
+    }
+    if (observation.tagCount() <= 0) {
       return Optional.of("NO_TAGS");
     }
 
@@ -628,7 +691,7 @@ public class VisionSubsystem extends SubsystemBase {
    * planar geometry admits two mirror solutions. These observations must receive the single-tag
    * std-dev penalty even though {@code tagCount ≥ 2}.
    *
-   * <p>Detection: compare the outward Z-axis (normal) of each tag's field pose. Tags are coplanar
+   * <p>Detection: compare the outward X-axis (normal) of each tag's field pose. Tags are coplanar
    * when all normals are within {@link
    * frc.robot.util.constants.VisionConstants#COPLANAR_ANGLE_THRESHOLD_DEG} of the first tag's
    * normal.

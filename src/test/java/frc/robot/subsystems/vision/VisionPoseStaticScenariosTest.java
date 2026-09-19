@@ -221,6 +221,8 @@ class VisionPoseStaticScenariosTest {
     double maxVisionDeviation = 0.0;
     double sumVisionDeviation = 0.0;
     int visionCycles = 0;
+    double lastFreshTimestamp = Double.NEGATIVE_INFINITY;
+    var diagnostics = new java.util.TreeMap<String, Integer>();
     int totalCycles = WARMUP_CYCLES + MEASURE_CYCLES;
 
     for (int cycle = 0; cycle < totalCycles; cycle++) {
@@ -233,9 +235,11 @@ class VisionPoseStaticScenariosTest {
 
       double odomJump = odom.getTranslation().getDistance(prev.getTranslation());
       boolean measuring = cycle >= WARMUP_CYCLES;
+      if (measuring) recordDiagnostics(diagnostics);
 
       double visionDev = Double.NaN;
-      if (vis.isPresent()) {
+      if (vis.isPresent() && vis.get().timestamp() > lastFreshTimestamp) {
+        lastFreshTimestamp = vis.get().timestamp();
         visionDev = vis.get().pose().getTranslation().getDistance(s.pose().getTranslation());
         if (measuring) {
           visionCycles++;
@@ -267,6 +271,7 @@ class VisionPoseStaticScenariosTest {
     }
 
     writeCsv("static-" + s.name() + ".csv", csv);
+    System.out.println("[VisionStaticDiagnostics|" + s.name() + "] " + diagnostics);
 
     double meanVisionDev = visionCycles > 0 ? sumVisionDeviation / visionCycles : 0.0;
     System.out.printf(
@@ -297,6 +302,7 @@ class VisionPoseStaticScenariosTest {
                     + "See build/vision-stability/static-%s.csv",
                 s.name(), finalMaxOdomJump, MAX_JUMP_M, s.name()));
 
+    assertTrue(visionCycles > 0, "Expected fresh vision corrections for " + s.name());
     if (visionCycles > 0) {
       assertTrue(
           finalMaxVisionDeviation <= MAX_VISION_DEVIATION_M,
@@ -317,5 +323,32 @@ class VisionPoseStaticScenariosTest {
     Path dir = Path.of("build", "vision-stability");
     Files.createDirectories(dir);
     Files.write(dir.resolve(name), lines);
+  }
+
+  private static void recordDiagnostics(java.util.Map<String, Integer> counts) {
+    try {
+      var inputField = VisionSubsystem.class.getDeclaredField("inputs");
+      inputField.setAccessible(true);
+      for (var inputs : (VisionIO.VisionIOInputs[]) inputField.get(container.visionSubsystem)) {
+        for (var observation : inputs.getPoseObservations()) {
+          String reason =
+              VisionSubsystem.rejectionReason(observation)
+                  .orElse("PASSES_STATIC_GATES")
+                  .split("=")[0];
+          counts.merge(inputs.getCameraName() + "/" + reason, 1, Integer::sum);
+        }
+      }
+      var candidatesField = VisionSubsystem.class.getDeclaredField("consensusCandidates");
+      candidatesField.setAccessible(true);
+      @SuppressWarnings("unchecked")
+      var candidates =
+          (List<VisionSubsystem.ConsensusCandidate>) candidatesField.get(container.visionSubsystem);
+      counts.merge(
+          "consensus/" + VisionSubsystem.evaluateConsensus(candidates, false).reason(),
+          1,
+          Integer::sum);
+    } catch (ReflectiveOperationException e) {
+      throw new AssertionError(e);
+    }
   }
 }

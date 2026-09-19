@@ -396,7 +396,7 @@ class VisionFilterStabilityTest {
   @Test
   void tagNormalComparisonIgnoresInPlaneRotation() {
     Rotation3d reference = new Rotation3d();
-    Rotation3d spunAroundNormal = new Rotation3d(0.0, 0.0, Math.PI / 2.0);
+    Rotation3d spunAroundNormal = new Rotation3d(Math.PI / 2.0, 0.0, 0.0);
 
     assertEquals(
         0.0,
@@ -459,7 +459,7 @@ class VisionFilterStabilityTest {
   @Test
   void consensusTieBreakerPrefersLowerStandardDeviation() {
     VisionSubsystem.ConsensusCandidate lowStdDev = consensusCandidate("front", 4.0, 4.0, 1.0, 1.0);
-    VisionSubsystem.ConsensusCandidate highStdDev = consensusCandidate("rear", 5.0, 5.0, 4.0, 1.0);
+    VisionSubsystem.ConsensusCandidate highStdDev = consensusCandidate("rear", 4.1, 4.0, 4.0, 1.0);
 
     Optional<VisionSubsystem.ConsensusCandidate> selected =
         VisionSubsystem.selectConsensusCandidate(List.of(highStdDev, lowStdDev));
@@ -469,6 +469,50 @@ class VisionFilterStabilityTest {
         lowStdDev,
         selected.get(),
         "When cluster size is tied, consensus should keep the most trusted observation");
+  }
+
+  @Test
+  void queuedFramesCannotOutvoteIndependentCameras() {
+    var bad1 = consensusCandidate("front", 5.5, 4.0, 1.0, 1.0);
+    var bad2 = consensusCandidate("front", 5.5, 4.0, 1.0, 1.02);
+    var bad3 = consensusCandidate("front", 5.5, 4.0, 1.0, 1.04);
+    var good1 = consensusCandidate("left", 4.0, 4.0, 2.0, 1.04);
+    var good2 = consensusCandidate("rear", 4.05, 4.0, 2.0, 1.04);
+    var selected =
+        VisionSubsystem.selectConsensusCandidate(List.of(bad1, bad2, bad3, good1, good2));
+    assertTrue(selected.isPresent());
+    assertTrue(selected.get().visionPose().getX() < 4.1);
+  }
+
+  @Test
+  void disagreementDoesNotBecomeConfidenceContest() {
+    assertTrue(
+        VisionSubsystem.selectConsensusCandidate(
+                List.of(
+                    consensusCandidate("front", 4.0, 4.0, 1.0, 1.0),
+                    consensusCandidate("rear", 5.0, 4.0, 4.0, 1.0)))
+            .isEmpty());
+  }
+
+  @Test
+  void equallySupportedGroupsAndBridgeAreRejected() {
+    var a = consensusCandidate("front", 4.0, 4.0, 2.0, 1.0);
+    var b = consensusCandidate("left", 4.1, 4.0, 2.0, 1.0);
+    var c = consensusCandidate("rear", 5.0, 4.0, 2.0, 1.0);
+    var d = consensusCandidate("right", 5.1, 4.0, 2.0, 1.0);
+    assertTrue(VisionSubsystem.selectConsensusCandidate(List.of(a, b, c, d)).isEmpty());
+    var bridge = consensusCandidate("left", 4.4, 4.0, 2.0, 1.0);
+    var endpoint = consensusCandidate("rear", 4.8, 4.0, 2.0, 1.0);
+    assertTrue(VisionSubsystem.selectConsensusCandidate(List.of(a, bridge, endpoint)).isEmpty());
+  }
+
+  @Test
+  void perpendicularTagFacesHaveDifferentNormals() {
+    assertEquals(
+        Math.PI / 2.0,
+        VisionSubsystem.angleBetweenTagNormalsRadians(
+            new Rotation3d(), new Rotation3d(0.0, 0.0, Math.PI / 2.0)),
+        1e-9);
   }
 
   private static SwerveDriveKinematics dummyKinematics() {
@@ -535,12 +579,13 @@ class VisionFilterStabilityTest {
             PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR,
             new int[] {1, 2});
     return new VisionSubsystem.ConsensusCandidate(
-        0,
+        List.of("front", "left", "rear", "right").indexOf(cameraName),
         cameraName,
         "Vision/" + cameraName,
         observation,
         observation.pose().toPose2d(),
         VisionSubsystem.standardDeviations(observation, 0, false),
-        0.0);
+        0.0,
+        observation.pose().toPose2d().getTranslation());
   }
 }
