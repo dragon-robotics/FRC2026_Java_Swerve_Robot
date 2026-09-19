@@ -319,8 +319,8 @@ public class VisionIOPhotonVision implements VisionIO {
 
       return new PoseStrategy[] {
         PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
         PoseStrategy.CONSTRAINED_SOLVEPNP,
+        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
         PoseStrategy.LOWEST_AMBIGUITY
       };
     }
