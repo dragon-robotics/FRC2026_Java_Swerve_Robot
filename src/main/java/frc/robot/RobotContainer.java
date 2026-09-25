@@ -487,20 +487,21 @@ public class RobotContainer {
 
     /* Manual shooter setpoint toggles */
     operatorController
-        .x()
-        .and(operatorController.a())
+        .leftBumper()
+        .and(operatorController.rightBumper())
         .onTrue(superstructureSubsystem.toggleShootModeCmd(ShootMode.MANUAL_BUMPER_UP));
 
     operatorController
-        .a()
-        .and(operatorController.b())
+        .y()
+        .and(operatorController.a())
         .onTrue(superstructureSubsystem.toggleShootModeCmd(ShootMode.MANUAL_TRENCH));
 
-    operatorController
-        .rightBumper()
-        .whileTrue(
-            Commands.run(() -> shooterSubsystem.runKickerMotorPercentage(1), shooterSubsystem)
-                .withName("Kicker Full Power"));
+    // operatorController
+    // .rightBumper()
+    // .whileTrue(
+    // Commands.run(() -> shooterSubsystem.runKickerMotorPercentage(1),
+    // shooterSubsystem)
+    // .withName("Kicker Full Power"));
   }
 
   public Command getAutonomousCommand() {
