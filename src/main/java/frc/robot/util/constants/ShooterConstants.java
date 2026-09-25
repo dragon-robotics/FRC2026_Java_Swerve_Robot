@@ -113,9 +113,9 @@ public final class ShooterConstants {
   static {
     // Distances are authored in feet for tuning readability, then stored as meters.
     SHOOTER_RPM_MAP.put(Units.feetToMeters(5), 2450.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(6), 2525.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(7), 2600.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(8), 2725.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(6), 2550.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(7), 2625.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(8), 2750.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(9), 2800.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(10), 2900.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(11), 2950.0);
