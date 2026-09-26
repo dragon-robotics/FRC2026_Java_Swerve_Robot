@@ -76,6 +76,7 @@ public class VisionSubsystem extends SubsystemBase {
   private final List<Pose3d> rejectedPoses = new ArrayList<>(16);
   private final List<CameraObservation> pendingObservations = new ArrayList<>(16);
   private final RawObservationLogBuffers[] rawObservationLogBuffers;
+  private final CameraStrategySnapshot[] latestStrategies;
   private final double[] lastProcessedTimestamps;
   private final int[] cameraConfigIndexes;
   private final BiConsumer<String, String> diagnosticWriter;
@@ -108,7 +109,17 @@ public class VisionSubsystem extends SubsystemBase {
    * @param io camera IO implementations, one per physical or simulated camera
    */
   public VisionSubsystem(CommandSwerveDrivetrain swerve, VisionConsumer consumer, VisionIO... io) {
-    this(swerve, consumer, (key, value) -> DogLog.log(key, value), io);
+    this(
+        swerve,
+        consumer,
+        (key, value) -> {
+          if (key.endsWith("/CurrentStrategy") || key.endsWith("/StrategyStatus")) {
+            DogLog.forceNt.log(key, value);
+          } else {
+            DogLog.log(key, value);
+          }
+        },
+        io);
   }
 
   /** Allows the same complete diagnostic records to be consumed by offline verification. */
@@ -128,6 +139,7 @@ public class VisionSubsystem extends SubsystemBase {
     inputs = new VisionIOInputs[io.length];
     disconnectedAlerts = new Alert[io.length];
     rawObservationLogBuffers = new RawObservationLogBuffers[io.length];
+    latestStrategies = new CameraStrategySnapshot[io.length];
 
     for (int i = 0; i < io.length; i++) {
       inputs[i] = new VisionIOInputs();
@@ -170,6 +182,8 @@ public class VisionSubsystem extends SubsystemBase {
   private record CameraObservation(
       int cameraIndex, String cameraName, PoseObservation observation) {}
 
+  private record CameraStrategySnapshot(double timestamp, String solver, String status) {}
+
   /** Sets aiming state for diagnostics; uncertainty depends on observation quality. */
   public void setAiming(boolean aiming) {
     this.aiming = aiming;
@@ -194,6 +208,7 @@ public class VisionSubsystem extends SubsystemBase {
     for (CameraObservation item : pendingObservations) {
       processObservation(item.cameraIndex(), item.cameraName(), item.observation());
     }
+    logCurrentStrategies();
     logPeriodicSummary();
     maybeAutoReseedWhileDisabled();
 
@@ -206,12 +221,13 @@ public class VisionSubsystem extends SubsystemBase {
 
     String cameraName = inputs[cameraIndex].getCameraName();
     String cameraLogKey = "Vision/" + cameraName;
-    DogLog.log(cameraLogKey + "/Connected", inputs[cameraIndex].isConnected());
+    DogLog.forceNt.log(cameraLogKey + "/Connected", inputs[cameraIndex].isConnected());
     PoseObservation[] observations = inputs[cameraIndex].getPoseObservations();
 
     logRawObservations(cameraLogKey, observations, rawObservationLogBuffers[cameraIndex]);
     for (VisionIO.FrameDiagnostic frame : inputs[cameraIndex].getFrameDiagnostics()) {
       if (!"POSE_OBSERVATION".equals(frame.status())) {
+        updateCurrentStrategy(cameraIndex, frame.timestamp(), frame.solver(), frame.status());
         diagnosticWriter.accept(
             cameraLogKey + "/Frame",
             VisionDiagnostics.frame(++frameSequence, cameraName, frame, Timer.getFPGATimestamp()));
@@ -260,6 +276,8 @@ public class VisionSubsystem extends SubsystemBase {
       if (reason.isEmpty() && innovation > MAX_POSE_DELTA_METERS && !startup) reason = "POSE_DELTA";
     }
     boolean accepted = reason.isEmpty();
+    updateCurrentStrategy(
+        cameraIndex, observation.timestamp(), observation.solver(), accepted ? "ACCEPTED" : reason);
     if (accepted) {
       Pose2d pose = observation.pose().toPose2d();
       consumer.accept(pose, ctreTimestamp, sigma);
@@ -307,6 +325,46 @@ public class VisionSubsystem extends SubsystemBase {
                 initializationCamera,
                 aiming)
             .toJson());
+  }
+
+  private void updateCurrentStrategy(
+      int cameraIndex, double timestamp, String solver, String status) {
+    CameraStrategySnapshot previous = latestStrategies[cameraIndex];
+    // Failed frames are processed before pose observations. An older solved pose must not hide
+    // a newer no-target/no-pose frame. Invalid future timestamps must not pin the display forever.
+    if (previous != null
+        && previous.timestamp() <= Timer.getFPGATimestamp()
+        && timestamp < previous.timestamp()) {
+      return;
+    }
+    latestStrategies[cameraIndex] = new CameraStrategySnapshot(timestamp, solver, status);
+  }
+
+  private void logCurrentStrategies() {
+    double now = Timer.getFPGATimestamp();
+    for (int i = 0; i < inputs.length; i++) {
+      CameraStrategySnapshot snapshot = latestStrategies[i];
+      String solver = "NONE";
+      String status;
+      if (!inputs[i].isConnected()) {
+        latestStrategies[i] = null;
+        status = "DISCONNECTED";
+      } else if (snapshot == null) {
+        status = "NO_FRAMES";
+      } else if (!Double.isFinite(snapshot.timestamp())) {
+        status = "INVALID_TIMESTAMP";
+      } else if (snapshot.timestamp() > now) {
+        status = "FUTURE_TIMESTAMP";
+      } else if (now - snapshot.timestamp() > MAX_FRAME_AGE_SECONDS) {
+        status = "STALE_FRAME";
+      } else {
+        solver = snapshot.solver();
+        status = snapshot.status();
+      }
+      String cameraKey = "Vision/" + inputs[i].getCameraName();
+      diagnosticWriter.accept(cameraKey + "/CurrentStrategy", solver);
+      diagnosticWriter.accept(cameraKey + "/StrategyStatus", status);
+    }
   }
 
   private void rejectObservation(

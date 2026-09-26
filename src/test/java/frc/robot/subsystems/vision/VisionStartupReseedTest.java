@@ -14,11 +14,14 @@ import edu.wpi.first.wpilibj.simulation.SimHooks;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.vision.VisionIO.FrameDiagnostic;
 import frc.robot.subsystems.vision.VisionIO.PoseObservation;
 import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
 import frc.robot.util.constants.VisionConstants;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.junit.jupiter.api.AfterAll;
@@ -36,6 +39,7 @@ class VisionStartupReseedTest {
   private final TestCamera rear = new TestCamera("startup-rear");
   private final List<Pose2d> accepted = new ArrayList<>();
   private final List<String> diagnostics = new ArrayList<>();
+  private final Map<String, String> telemetry = new HashMap<>();
   private final List<double[]> measurements = new ArrayList<>();
   private boolean delayFifthObservation;
   private VisionSubsystem vision;
@@ -62,6 +66,7 @@ class VisionStartupReseedTest {
                   new double[] {timestamp, sigma.get(0, 0), sigma.get(1, 0), sigma.get(2, 0)});
             },
             (key, value) -> {
+              telemetry.put(key, value);
               if (key.endsWith("/Observation")) diagnostics.add(value);
               if (delayFifthObservation && accepted.size() == 5) {
                 delayFifthObservation = false;
@@ -83,6 +88,90 @@ class VisionStartupReseedTest {
   @AfterAll
   static void stopDrivetrain() {
     if (swerve != null) swerve.close();
+  }
+
+  @Test
+  void reportsActualStrategyAndAcceptanceIndependentlyForEachCamera() {
+    double capture = captureTime();
+    front.observation =
+        new PoseObservation(
+            capture,
+            new Pose3d(VISION_POSE),
+            .05,
+            2,
+            2,
+            PoseObservationType.PHOTONVISION,
+            new int[] {2, 3},
+            "CONSTRAINED_SOLVEPNP",
+            1);
+    rear.observation =
+        new PoseObservation(
+            capture,
+            new Pose3d(VISION_POSE),
+            .9,
+            1,
+            2,
+            PoseObservationType.PHOTONVISION,
+            new int[] {2},
+            "LOWEST_AMBIGUITY",
+            1);
+    vision.periodic();
+
+    assertEquals("CONSTRAINED_SOLVEPNP", telemetry.get("Vision/startup-front/CurrentStrategy"));
+    assertEquals("ACCEPTED", telemetry.get("Vision/startup-front/StrategyStatus"));
+    assertEquals("LOWEST_AMBIGUITY", telemetry.get("Vision/startup-rear/CurrentStrategy"));
+    assertEquals("AMBIGUITY=0.9", telemetry.get("Vision/startup-rear/StrategyStatus"));
+    assertEquals(1, accepted.size(), "Reporting a rejected solver must not submit its pose");
+  }
+
+  @Test
+  void newerNoTargetFrameClearsStrategyEvenWhenAnOlderPoseIsAccepted() {
+    double capture = captureTime();
+    front.observation =
+        new PoseObservation(
+            capture,
+            new Pose3d(VISION_POSE),
+            .05,
+            2,
+            2,
+            PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR,
+            new int[] {2, 3},
+            "MULTI_TAG_PNP_ON_COPROCESSOR",
+            1);
+    front.frames =
+        new FrameDiagnostic[] {
+          new FrameDiagnostic(capture + .001, 2, "NO_TARGETS", "NONE", new int[0])
+        };
+    vision.periodic();
+
+    assertEquals(1, accepted.size());
+    assertEquals("NONE", telemetry.get("Vision/startup-front/CurrentStrategy"));
+    assertEquals("NO_TARGETS", telemetry.get("Vision/startup-front/StrategyStatus"));
+  }
+
+  @Test
+  void strategyHoldsBetweenFramesButClearsOnStalenessAndDisconnection() {
+    publish(front, VISION_POSE, PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR, 2, 3);
+    String strategy = telemetry.get("Vision/startup-front/CurrentStrategy");
+    assertEquals("PHOTONVISION_MULTITAG_COPROCESSOR", strategy);
+    vision.periodic();
+    assertEquals(strategy, telemetry.get("Vision/startup-front/CurrentStrategy"));
+    assertEquals("ACCEPTED", telemetry.get("Vision/startup-front/StrategyStatus"));
+
+    Timer.delay(.55);
+    vision.periodic();
+    assertEquals("NONE", telemetry.get("Vision/startup-front/CurrentStrategy"));
+    assertEquals("STALE_FRAME", telemetry.get("Vision/startup-front/StrategyStatus"));
+
+    publish(front, VISION_POSE, PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR, 2, 3);
+    front.connected = false;
+    vision.periodic();
+    assertEquals("NONE", telemetry.get("Vision/startup-front/CurrentStrategy"));
+    assertEquals("DISCONNECTED", telemetry.get("Vision/startup-front/StrategyStatus"));
+    front.connected = true;
+    vision.periodic();
+    assertEquals("NONE", telemetry.get("Vision/startup-front/CurrentStrategy"));
+    assertEquals("NO_FRAMES", telemetry.get("Vision/startup-front/StrategyStatus"));
   }
 
   @Test
@@ -432,6 +521,8 @@ class VisionStartupReseedTest {
     private final String name;
     private PoseObservation observation;
     private PoseObservation[] batch;
+    private FrameDiagnostic[] frames = new FrameDiagnostic[0];
+    private boolean connected = true;
 
     TestCamera(String name) {
       this.name = name;
@@ -445,13 +536,15 @@ class VisionStartupReseedTest {
     @Override
     public void updateInputs(VisionIOInputs inputs) {
       inputs.setCameraName(name);
-      inputs.setConnected(true);
+      inputs.setConnected(connected);
+      inputs.setFrameDiagnostics(frames);
       inputs.setPoseObservations(
           batch != null
               ? batch
               : observation == null ? new PoseObservation[0] : new PoseObservation[] {observation});
       observation = null;
       batch = null;
+      frames = new FrameDiagnostic[0];
     }
   }
 }
