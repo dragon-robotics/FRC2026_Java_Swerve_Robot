@@ -27,7 +27,7 @@ final class VisionScenarios {
 
   /** Two tags, low ambiguity, ~2 m away, in bounds. Tight std-dev; always accepted. */
   static PoseObservation goodMultiTag(double x, double y, double headingRad, double timestamp) {
-    return obs(timestamp, pose(x, y, 0.0, headingRad), 0.08, 2, 2.0, new int[] {1, 2});
+    return obs(timestamp, pose(x, y, 0.0, headingRad), 0.08, 2, 2.0, new int[] {2, 3});
   }
 
   /**
@@ -46,17 +46,17 @@ final class VisionScenarios {
 
   /** Pose far outside the field — tripped by the field-bounds gate. */
   static PoseObservation outOfBounds(double timestamp) {
-    return obs(timestamp, pose(-3.0, -3.0, 0.0, 0.0), 0.10, 2, 2.0, new int[] {1, 2});
+    return obs(timestamp, pose(-3.0, -3.0, 0.0, 0.0), 0.10, 2, 2.0, new int[] {2, 3});
   }
 
   /** Unrealistic Z height — tripped by the Z gate. */
   static PoseObservation highZ(double x, double y, double timestamp) {
-    return obs(timestamp, pose(x, y, 1.5, 0.0), 0.10, 2, 2.0, new int[] {1, 2});
+    return obs(timestamp, pose(x, y, 1.5, 0.0), 0.10, 2, 2.0, new int[] {2, 3});
   }
 
   /** Average tag distance beyond the max — tripped by the distance gate. */
   static PoseObservation tooFar(double x, double y, double timestamp) {
-    return obs(timestamp, pose(x, y, 0.0, 0.0), 0.10, 2, 7.0, new int[] {1, 2});
+    return obs(timestamp, pose(x, y, 0.0, 0.0), 0.10, 2, 8.0, new int[] {2, 3});
   }
 
   private static Pose3d pose(double x, double y, double z, double yawRad) {

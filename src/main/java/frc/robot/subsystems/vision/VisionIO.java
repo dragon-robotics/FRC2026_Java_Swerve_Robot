@@ -25,6 +25,7 @@ public interface VisionIO {
         new TargetObservation(new Rotation2d(), new Rotation2d());
 
     @Getter @Setter private PoseObservation[] poseObservations = new PoseObservation[0];
+    @Getter @Setter private FrameDiagnostic[] frameDiagnostics = new FrameDiagnostic[0];
     @Getter @Setter private int[] tagIds = new int[0];
 
     /** Copies all fields from another input snapshot for thread-safe handoff. */
@@ -33,6 +34,7 @@ public interface VisionIO {
       this.connected = other.connected;
       this.latestTargetObservation = other.latestTargetObservation;
       this.poseObservations = Arrays.copyOf(other.poseObservations, other.poseObservations.length);
+      this.frameDiagnostics = Arrays.copyOf(other.frameDiagnostics, other.frameDiagnostics.length);
       this.tagIds = Arrays.copyOf(other.tagIds, other.tagIds.length);
     }
   }
@@ -50,6 +52,8 @@ public interface VisionIO {
    * @param averageTagDistance distance-confidence value in meters consumed by acceptance gating
    * @param type solver/source classification for downstream trust decisions
    * @param tagIDs fiducial IDs used by the accepted pose solver
+   * @param solver exact pose strategy selected for this observation
+   * @param frameSequenceId camera frame sequence, or -1 when unavailable
    */
   record PoseObservation(
       double timestamp,
@@ -58,7 +62,28 @@ public interface VisionIO {
       int tagCount,
       double averageTagDistance,
       PoseObservationType type,
-      int[] tagIDs) {}
+      int[] tagIDs,
+      String solver,
+      long frameSequenceId) {
+    /** Preserves compatibility for camera sources without frame metadata. */
+    public PoseObservation(
+        double timestamp,
+        Pose3d pose,
+        double ambiguity,
+        int tagCount,
+        double averageTagDistance,
+        PoseObservationType type,
+        int[] tagIDs) {
+      this(timestamp, pose, ambiguity, tagCount, averageTagDistance, type, tagIDs, type.name(), -1);
+    }
+  }
+
+  /**
+   * One IO decision for each unread frame, including frames that could not produce a pose. Visible
+   * IDs describe detections; {@link PoseObservation#tagIDs()} describes solve support.
+   */
+  record FrameDiagnostic(
+      double timestamp, long frameSequenceId, String status, String solver, int[] visibleTagIDs) {}
 
   /** Vision pose-estimation source used for filtering and standard-deviation selection. */
   enum PoseObservationType {

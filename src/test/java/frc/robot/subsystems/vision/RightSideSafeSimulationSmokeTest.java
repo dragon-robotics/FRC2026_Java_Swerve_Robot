@@ -22,41 +22,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * Best-effort full-sim integration test: runs the "Right Side Safe" PathPlanner auto in a headless
- * Phoenix6 + PhotonVision simulation and records the swerve odometry pose against the accepted
- * vision pose each cycle, asserting the fused odometry never teleports and that vision is accepted.
- *
- * <p><b>Important caveat:</b> in simulation the PhotonVision sim generates AprilTag detections FROM
- * the drivetrain's own simulated pose, so sim vision and odometry are self-consistent by
- * construction. This test therefore cannot reproduce the real flipped-tag teleport — that failure
- * mode is reproduced and regression-guarded deterministically by {@link VisionFilterStabilityTest}.
- * This test's value is confirming the named auto runs end-to-end and odometry stays continuous.
- *
- * <p>Tagged {@code sim} and guarded with JUnit assumptions: if the headless simulation cannot
- * initialize in this environment (native libraries, HAL), the test is skipped rather than failed.
- *
- * <p>Run with: {@code ./gradlew visionStabilityTest}
+ * Full-container auto smoke test: checks execution, finite poses and some accepted vision. Camera
+ * truth follows the estimator here, so jumps are diagnostics, not localization evidence. Use
+ * VisionStrategyReplayTest for independent solver truth and the static scenarios for CTRE.
  */
 @Tag("sim")
-class RightSideSafeOdometryTest {
+class RightSideSafeSimulationSmokeTest {
 
   private static final String AUTO_NAME = "Right Side Safe";
   private static final double DT = 0.02; // 50 Hz
   private static final int MAX_CYCLES = 1500; // up to 30 s of sim
   private static final int WARMUP_CYCLES = 15; // ignore startup resetOdom transient
   private static final double MAX_SINGLE_CYCLE_JUMP_M = 0.5;
-  // The auto chains several paths; PathPlanner can reset the pose at path boundaries, which
-  // legitimately appears as a few large single-cycle jumps. Tolerate a handful, but fail on
-  // continuous teleporting (the signature of a vision fault). Note: sim vision is self-referential,
-  // so the vision-fault teleport itself is guarded deterministically by VisionFilterStabilityTest.
-  private static final int MAX_LARGE_JUMPS = 5;
-
   private static boolean halReady = false;
 
   @BeforeAll
@@ -69,7 +51,7 @@ class RightSideSafeOdometryTest {
       DriverStationSim.setEnabled(true);
       DriverStationSim.notifyNewData();
     } catch (Throwable t) {
-      halReady = false;
+      throw new AssertionError("HAL initialization failed", t);
     }
   }
 
@@ -88,8 +70,8 @@ class RightSideSafeOdometryTest {
   }
 
   @Test
-  void rightSideSafeAutoKeepsOdometryContinuous() throws IOException {
-    Assumptions.assumeTrue(halReady, "HAL/simulation unavailable in this environment");
+  void rightSideSafeAutoCompletesWithFinitePosesAndVision() throws IOException {
+    assertTrue(halReady, "HAL/simulation unavailable in this environment");
 
     RobotContainer container;
     Command auto;
@@ -97,8 +79,7 @@ class RightSideSafeOdometryTest {
       container = new RobotContainer();
       auto = new PathPlannerAuto(AUTO_NAME);
     } catch (Throwable t) {
-      Assumptions.abort("Headless sim could not initialize RobotContainer/auto: " + t);
-      return; // unreachable; keeps the compiler happy about definite assignment
+      throw new AssertionError("RobotContainer/auto initialization failed", t);
     }
 
     auto.schedule();
@@ -114,11 +95,17 @@ class RightSideSafeOdometryTest {
 
     try {
       for (int cycle = 0; cycle < MAX_CYCLES && auto.isScheduled(); cycle++) {
+        DriverStationSim.notifyNewData();
         CommandScheduler.getInstance().run();
         SimHooks.stepTiming(DT);
         cyclesRun++;
 
         Pose2d odom = container.swerveSubsystem.getState().Pose;
+        assertTrue(
+            Double.isFinite(odom.getX())
+                && Double.isFinite(odom.getY())
+                && Double.isFinite(odom.getRotation().getRadians()),
+            "Pose must stay finite");
         Optional<VisionSubsystem.AcceptedObservationSnapshot> vision =
             container.visionSubsystem.getLatestAcceptedObservationSnapshot();
 
@@ -153,34 +140,22 @@ class RightSideSafeOdometryTest {
       }
     } catch (Throwable t) {
       writeCsv("right-side-safe.csv", csv);
-      Assumptions.abort("Headless sim threw while running the auto: " + t);
-      return;
+      throw new AssertionError("Auto simulation failed", t);
     }
 
     writeCsv("right-side-safe.csv", csv);
 
-    Assumptions.assumeTrue(cyclesRun > WARMUP_CYCLES, "Auto did not run long enough to evaluate");
+    assertTrue(cyclesRun > WARMUP_CYCLES, "Auto did not run long enough to evaluate");
 
     System.out.printf(
         "[RightSideSafe] cycles=%d visionAcceptedCycles=%d maxJump=%.3f m largeJumps=%d%n",
         cyclesRun, visionAcceptedCycles, maxJump, largeJumpCount);
 
     final int observedVisionCycles = visionAcceptedCycles;
-    final int observedLargeJumps = largeJumpCount;
     assertTrue(
         observedVisionCycles > 0,
         "Expected vision to be accepted at least once during the auto (sim vision never fired)");
-    // A few large jumps correspond to PathPlanner path-boundary resets; continuous teleporting
-    // (a vision fault) would produce many more. The vision-fault teleport itself is guarded
-    // deterministically by VisionFilterStabilityTest, since sim vision is self-referential.
-    assertTrue(
-        observedLargeJumps <= MAX_LARGE_JUMPS,
-        () ->
-            "Odometry teleported "
-                + observedLargeJumps
-                + " times (> "
-                + MAX_LARGE_JUMPS
-                + ") during the auto. See build/vision-stability/right-side-safe.csv");
+    assertTrue(!auto.isScheduled(), "Auto must complete within the simulation deadline");
   }
 
   private static void writeCsv(String name, List<String> lines) throws IOException {

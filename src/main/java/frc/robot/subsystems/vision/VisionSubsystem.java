@@ -5,10 +5,8 @@
 package frc.robot.subsystems.vision;
 
 import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
-import static frc.robot.util.constants.VisionConstants.AIM_LINEAR_STDDEV_MULTIPLIER;
-import static frc.robot.util.constants.VisionConstants.APPLY_COPLANAR_PENALTY;
+import static frc.robot.util.constants.VisionConstants.APTAG_CAMERA_NAMES;
 import static frc.robot.util.constants.VisionConstants.CAMERA_STDDEV_FACTORS;
-import static frc.robot.util.constants.VisionConstants.COPLANAR_ANGLE_THRESHOLD_DEG;
 import static frc.robot.util.constants.VisionConstants.DISABLED_AUTO_RESEED_DELTA_METERS;
 import static frc.robot.util.constants.VisionConstants.DISABLED_AUTO_RESEED_MIN_INTERVAL_SECONDS;
 import static frc.robot.util.constants.VisionConstants.DISABLED_AUTO_RESEED_MIN_TAG_COUNT;
@@ -17,25 +15,23 @@ import static frc.robot.util.constants.VisionConstants.LINEAR_STDDEV_BASELINE;
 import static frc.robot.util.constants.VisionConstants.MAX_ABS_TILT_DEGREES_FOR_VISION;
 import static frc.robot.util.constants.VisionConstants.MAX_AMBIGUITY;
 import static frc.robot.util.constants.VisionConstants.MAX_AVG_TAG_DISTANCE_METERS;
+import static frc.robot.util.constants.VisionConstants.MAX_FRAME_AGE_SECONDS;
 import static frc.robot.util.constants.VisionConstants.MAX_POSE_DELTA_METERS;
 import static frc.robot.util.constants.VisionConstants.MAX_Z_ERROR;
+import static frc.robot.util.constants.VisionConstants.MIN_TRANSLATION_STDDEV_METERS;
 import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_MAX_HEADING_DELTA_DEGREES;
 import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_MAX_TRANSLATION_DELTA_METERS;
 import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_STABLE_POSES_REQUIRED;
 import static frc.robot.util.constants.VisionConstants.SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER;
 import static frc.robot.util.constants.VisionConstants.SNAPSHOT_MAX_AGE_SECONDS;
-import static frc.robot.util.constants.VisionConstants.VISION_CONSENSUS_RADIUS_METERS;
 
 import com.ctre.phoenix6.Utils;
 import dev.doglog.DogLog;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Alert;
@@ -49,27 +45,27 @@ import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /**
  * Lean AprilTag pose-estimation subsystem.
  *
- * <p>Design (see {@code docs/superpowers/specs/2026-06-08-vision-rewrite-design.md}):
+ * <p>Design: {@code docs/superpowers/specs/2026-09-26-vision-ctre-fusion-design.md}.
  *
  * <ul>
  *   <li>Vision NEVER hard-resets the drivetrain pose during normal operation. It only feeds
  *       weighted measurements through {@link VisionConsumer}; the pose estimator blends them.
  *   <li>Vision heading is ignored (huge angular std-dev); the gyro is authoritative.
- *   <li>Translation trust scales with distance and tightens while aiming.
+ *   <li>Every accepted camera observation reaches CTRE with distance-scaled uncertainty.
  *   <li>Simple, readable rejection: tag count, Z, field bounds, single-tag ambiguity, max distance.
  * </ul>
  */
 public class VisionSubsystem extends SubsystemBase {
-
-  private static final Translation3d TAG_NORMAL_VECTOR = new Translation3d(0.0, 0.0, 1.0);
 
   private final CommandSwerveDrivetrain swerve;
   private final VisionConsumer consumer;
@@ -78,10 +74,15 @@ public class VisionSubsystem extends SubsystemBase {
   private final Alert[] disconnectedAlerts;
   private final List<Pose3d> acceptedPoses = new ArrayList<>(16);
   private final List<Pose3d> rejectedPoses = new ArrayList<>(16);
-  private final List<ConsensusCandidate> consensusCandidates = new ArrayList<>(16);
+  private final List<CameraObservation> pendingObservations = new ArrayList<>(16);
   private final RawObservationLogBuffers[] rawObservationLogBuffers;
+  private final double[] lastProcessedTimestamps;
+  private final int[] cameraConfigIndexes;
+  private final BiConsumer<String, String> diagnosticWriter;
+  private long observationSequence;
+  private long frameSequence;
 
-  /** True while the robot is actively aiming/aligning to score; tightens translation trust. */
+  /** Operator intent is logged; it does not change camera measurement quality. */
   private boolean aiming = false;
 
   /** Most recent accepted observation across all cameras (for the dashboard overlay). */
@@ -96,6 +97,8 @@ public class VisionSubsystem extends SubsystemBase {
   private boolean hasAutoReseededThisDisabledCycle = false;
   private boolean hasEnteredEnabledModeSinceStartup = false;
   private double lastDisabledAutoReseedTime = Double.NEGATIVE_INFINITY;
+  private String initializationCamera = "";
+  private AcceptedObservationSnapshot initializationSnapshot;
 
   /**
    * Creates the vision subsystem.
@@ -105,9 +108,22 @@ public class VisionSubsystem extends SubsystemBase {
    * @param io camera IO implementations, one per physical or simulated camera
    */
   public VisionSubsystem(CommandSwerveDrivetrain swerve, VisionConsumer consumer, VisionIO... io) {
+    this(swerve, consumer, (key, value) -> DogLog.log(key, value), io);
+  }
+
+  /** Allows the same complete diagnostic records to be consumed by offline verification. */
+  VisionSubsystem(
+      CommandSwerveDrivetrain swerve,
+      VisionConsumer consumer,
+      BiConsumer<String, String> diagnosticWriter,
+      VisionIO... io) {
     this.swerve = swerve;
     this.consumer = consumer;
     this.io = io;
+    this.diagnosticWriter = diagnosticWriter;
+    lastProcessedTimestamps = new double[io.length];
+    cameraConfigIndexes = new int[io.length];
+    Arrays.fill(lastProcessedTimestamps, Double.NEGATIVE_INFINITY);
 
     inputs = new VisionIOInputs[io.length];
     disconnectedAlerts = new Alert[io.length];
@@ -115,6 +131,10 @@ public class VisionSubsystem extends SubsystemBase {
 
     for (int i = 0; i < io.length; i++) {
       inputs[i] = new VisionIOInputs();
+      cameraConfigIndexes[i] = Arrays.asList(APTAG_CAMERA_NAMES).indexOf(io[i].getCameraName());
+      DogLog.log(
+          "Vision/" + io[i].getCameraName() + "/Configuration/StdDevFactor",
+          cameraStdDevFactor(cameraConfigIndexes[i]));
       rawObservationLogBuffers[i] = new RawObservationLogBuffers();
       disconnectedAlerts[i] =
           new Alert(
@@ -124,6 +144,9 @@ public class VisionSubsystem extends SubsystemBase {
         photonVisionIo.setHeadingProvider(new DrivetrainHeadingProvider());
       }
     }
+    DogLog.log(
+        "Vision/ActiveCameras",
+        Arrays.stream(io).map(VisionIO::getCameraName).toArray(String[]::new));
   }
 
   @FunctionalInterface
@@ -132,7 +155,7 @@ public class VisionSubsystem extends SubsystemBase {
      * Feeds a filtered vision measurement to the drivetrain pose estimator.
      *
      * @param visionRobotPoseMeters field-relative robot pose in meters
-     * @param timestampSeconds capture timestamp converted to current FPGA timebase
+     * @param timestampSeconds capture timestamp converted to CTRE's current-time epoch
      * @param visionMeasurementStdDevs x, y, and heading standard deviations
      */
     void accept(
@@ -144,31 +167,10 @@ public class VisionSubsystem extends SubsystemBase {
   /** Immutable snapshot of the latest accepted observation, consumed by the dashboard overlay. */
   public static record AcceptedObservationSnapshot(Pose2d pose, int[] tagIDs, double timestamp) {}
 
-  /**
-   * Passing observation ready for same-loop consensus.
-   *
-   * <p>The selector compares field-relative XY pose in meters. The selected candidate keeps its
-   * original timestamp and std-devs so CTRE receives one real camera measurement, not a synthetic
-   * averaged pose.
-   */
-  record ConsensusCandidate(
-      int cameraIndex,
-      String cameraName,
-      String cameraLogKey,
-      PoseObservation observation,
-      Pose2d visionPose,
-      Matrix<N3, N1> standardDeviations,
-      double innovationMeters) {
-    double linearStdDevMeters() {
-      return standardDeviations.get(0, 0);
-    }
+  private record CameraObservation(
+      int cameraIndex, String cameraName, PoseObservation observation) {}
 
-    double distanceMeters(ConsensusCandidate other) {
-      return visionPose.getTranslation().getDistance(other.visionPose().getTranslation());
-    }
-  }
-
-  /** Sets whether the robot is actively aiming/aligning (tightens vision translation trust). */
+  /** Sets aiming state for diagnostics; uncertainty depends on observation quality. */
   public void setAiming(boolean aiming) {
     this.aiming = aiming;
   }
@@ -179,13 +181,19 @@ public class VisionSubsystem extends SubsystemBase {
 
     acceptedPoses.clear();
     rejectedPoses.clear();
-    consensusCandidates.clear();
+    pendingObservations.clear();
+    shouldAutoReseedForRobotState(DriverStation.isEnabled());
 
     for (int cameraIndex = 0; cameraIndex < io.length; cameraIndex++) {
       processCamera(cameraIndex);
     }
 
-    processConsensusCandidates();
+    pendingObservations.sort(
+        Comparator.comparingDouble((CameraObservation item) -> item.observation().timestamp())
+            .thenComparingInt(CameraObservation::cameraIndex));
+    for (CameraObservation item : pendingObservations) {
+      processObservation(item.cameraIndex(), item.cameraName(), item.observation());
+    }
     logPeriodicSummary();
     maybeAutoReseedWhileDisabled();
 
@@ -198,105 +206,113 @@ public class VisionSubsystem extends SubsystemBase {
 
     String cameraName = inputs[cameraIndex].getCameraName();
     String cameraLogKey = "Vision/" + cameraName;
+    DogLog.log(cameraLogKey + "/Connected", inputs[cameraIndex].isConnected());
     PoseObservation[] observations = inputs[cameraIndex].getPoseObservations();
 
     logRawObservations(cameraLogKey, observations, rawObservationLogBuffers[cameraIndex]);
+    for (VisionIO.FrameDiagnostic frame : inputs[cameraIndex].getFrameDiagnostics()) {
+      if (!"POSE_OBSERVATION".equals(frame.status())) {
+        diagnosticWriter.accept(
+            cameraLogKey + "/Frame",
+            VisionDiagnostics.frame(++frameSequence, cameraName, frame, Timer.getFPGATimestamp()));
+      }
+    }
 
     for (PoseObservation observation : observations) {
-      processObservation(cameraIndex, cameraName, cameraLogKey, observation)
-          .ifPresent(consensusCandidates::add);
+      pendingObservations.add(new CameraObservation(cameraIndex, cameraName, observation));
     }
   }
 
-  private Optional<ConsensusCandidate> processObservation(
-      int cameraIndex, String cameraName, String cameraLogKey, PoseObservation observation) {
-    Optional<String> rejection = rejectionReason(observation);
-    if (rejection.isPresent()) {
-      rejectObservation(cameraLogKey, observation, rejection.get());
-      return Optional.empty();
+  private void processObservation(int cameraIndex, String cameraName, PoseObservation observation) {
+    double now = Timer.getFPGATimestamp();
+    double age = now - observation.timestamp();
+    double ctreTimestamp = Utils.fpgaToCurrentTime(observation.timestamp());
+    var before = swerve.getStateCopy();
+    Pose2d reference =
+        Double.isFinite(observation.timestamp())
+            ? swerve.samplePoseAt(observation.timestamp()).orElse(null)
+            : null;
+    double innovation =
+        reference == null
+            ? Double.NaN
+            : observation
+                .pose()
+                .toPose2d()
+                .getTranslation()
+                .getDistance(reference.getTranslation());
+    Matrix<N3, N1> sigma =
+        standardDeviations(observation, cameraConfigIndexes[cameraIndex], aiming);
+    boolean startup =
+        DriverStation.isDisabled()
+            && !hasEnteredEnabledModeSinceStartup
+            && !visionInitializationComplete;
+    String reason = rejectionReason(observation).orElse("");
+    if (!Double.isFinite(observation.timestamp())) reason = "INVALID_TIMESTAMP";
+    else if (age < 0.0) reason = "FUTURE_TIMESTAMP";
+    else if (age > MAX_FRAME_AGE_SECONDS) reason = "STALE_FRAME";
+    else if (observation.timestamp() <= lastProcessedTimestamps[cameraIndex])
+      reason = "DUPLICATE_OR_OUT_OF_ORDER";
+    else {
+      lastProcessedTimestamps[cameraIndex] = observation.timestamp();
+      if (reason.isEmpty() && reference == null) reason = "NO_ODOMETRY_HISTORY";
+      if (reason.isEmpty() && !swerve.isPitchRollStableForVision(MAX_ABS_TILT_DEGREES_FOR_VISION))
+        reason = "TILT_UNSTABLE";
+      if (reason.isEmpty() && innovation > MAX_POSE_DELTA_METERS && !startup) reason = "POSE_DELTA";
     }
-
-    if (!swerve.isPitchRollStableForVision(MAX_ABS_TILT_DEGREES_FOR_VISION)) {
-      rejectObservation(cameraLogKey, observation, "TILT_UNSTABLE");
-      DogLog.log(cameraLogKey + "/PitchDeg", swerve.getPitchDegrees());
-      DogLog.log(cameraLogKey + "/RollDeg", swerve.getRollDegrees());
-      return Optional.empty();
-    }
-
-    Pose2d visionPose = observation.pose().toPose2d();
-    Pose2d referencePose =
-        swerve.samplePoseAt(observation.timestamp()).orElse(swerve.getState().Pose);
-    double innovationMeters =
-        visionPose.getTranslation().getDistance(referencePose.getTranslation());
-    boolean disabled = DriverStation.isDisabled();
-    if (innovationMeters > MAX_POSE_DELTA_METERS && !disabled) {
-      rejectObservation(cameraLogKey, observation, "POSE_DELTA=" + innovationMeters);
-      return Optional.empty();
-    }
-    if (innovationMeters > MAX_POSE_DELTA_METERS) {
-      DogLog.log(cameraLogKey + "/InnovationBypassedInDisabled", innovationMeters);
-    }
-
-    return Optional.of(
-        new ConsensusCandidate(
-            cameraIndex,
-            cameraName,
-            cameraLogKey,
-            observation,
-            visionPose,
-            standardDeviations(observation, cameraIndex),
-            innovationMeters));
-  }
-
-  private void processConsensusCandidates() {
-    Optional<ConsensusCandidate> selectedCandidate = selectConsensusCandidate(consensusCandidates);
-    if (selectedCandidate.isEmpty()) {
-      DogLog.log("Vision/Consensus/SelectedCamera", "");
-      DogLog.log("Vision/Consensus/CandidateCount", 0);
-      DogLog.log("Vision/Consensus/SelectedClusterSize", 0);
-      DogLog.log("Vision/Consensus/SelectedStdDevMeters", 0.0);
-      DogLog.log("Vision/Consensus/SelectedInnovationMeters", 0.0);
-      return;
-    }
-
-    ConsensusCandidate selected = selectedCandidate.get();
-    for (ConsensusCandidate candidate : consensusCandidates) {
-      if (candidate == selected) {
-        continue;
+    boolean accepted = reason.isEmpty();
+    if (accepted) {
+      Pose2d pose = observation.pose().toPose2d();
+      consumer.accept(pose, ctreTimestamp, sigma);
+      acceptedPoses.add(observation.pose());
+      trackMultitagInitialization(observation, pose, cameraName);
+      updateLatestAcceptedSnapshot(observation, pose, cameraName);
+      if (hasAutoReseededThisDisabledCycle
+          && cameraName.equals(initializationCamera)
+          && isMultitagInitCandidate(observation)) {
+        initializationSnapshot =
+            new AcceptedObservationSnapshot(
+                pose,
+                Arrays.copyOf(observation.tagIDs(), observation.tagIDs().length),
+                observation.timestamp());
       }
-      rejectConsensusCandidate(candidate, "CONSENSUS_NOT_SELECTED");
+    } else {
+      rejectObservation("Vision/" + cameraName, observation, reason);
     }
-
-    acceptConsensusCandidate(selected);
-    DogLog.log("Vision/Consensus/SelectedCamera", selected.cameraName());
-    DogLog.log("Vision/Consensus/CandidateCount", consensusCandidates.size());
-    DogLog.log(
-        "Vision/Consensus/SelectedClusterSize",
-        consensusClusterSize(selected, consensusCandidates));
-    DogLog.log("Vision/Consensus/SelectedStdDevMeters", selected.linearStdDevMeters());
-    DogLog.log("Vision/Consensus/SelectedInnovationMeters", selected.innovationMeters());
-  }
-
-  private void acceptConsensusCandidate(ConsensusCandidate candidate) {
-    PoseObservation observation = candidate.observation();
-    acceptedPoses.add(observation.pose());
-    consumer.accept(
-        candidate.visionPose(),
-        Utils.fpgaToCurrentTime(observation.timestamp()),
-        candidate.standardDeviations());
-
-    trackMultitagInitialization(observation, candidate.visionPose(), candidate.cameraName());
-    updateLatestAcceptedSnapshot(observation, candidate.visionPose(), candidate.cameraName());
+    int cameraCount =
+        multitagInitializationByCamera.containsKey(cameraName)
+            ? multitagInitializationByCamera.get(cameraName).stablePoseCount
+            : 0;
+    diagnosticWriter.accept(
+        "Vision/" + cameraName + "/Observation",
+        new VisionDiagnostics.Observation(
+                ++observationSequence,
+                cameraName,
+                observation,
+                now,
+                ctreTimestamp,
+                reference,
+                innovation,
+                sigma,
+                accepted,
+                reason,
+                startup,
+                before.Pose,
+                swerve.getState().Pose,
+                before.Speeds,
+                swerve.getPitchDegrees(),
+                swerve.getRollDegrees(),
+                DriverStation.isEnabled(),
+                DriverStation.isAutonomous(),
+                cameraCount,
+                initializationCamera,
+                aiming)
+            .toJson());
   }
 
   private void rejectObservation(
       String cameraLogKey, PoseObservation observation, String rejectedReason) {
     rejectedPoses.add(observation.pose());
     DogLog.log(cameraLogKey + "/RejectedReason", rejectedReason);
-  }
-
-  private void rejectConsensusCandidate(ConsensusCandidate candidate, String rejectedReason) {
-    rejectObservation(candidate.cameraLogKey(), candidate.observation(), rejectedReason);
   }
 
   private void updateLatestAcceptedSnapshot(
@@ -334,8 +350,8 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * While disabled, initialize (or refresh) odometry from the latest accepted vision pose. This
-   * helps pre-match localization without requiring manual reseed.
+   * While disabled, initialize (or refresh) odometry from the latest accepted vision pose after one
+   * camera has supplied five stable accepted coprocessor MultiTag poses.
    */
   private void maybeAutoReseedWhileDisabled() {
     boolean autoReseedAllowed = shouldAutoReseedForRobotState(DriverStation.isEnabled());
@@ -352,10 +368,32 @@ public class VisionSubsystem extends SubsystemBase {
       DogLog.log("Vision/DisabledAutoReseed/SuppressedReason", "ENABLED_MODE_ALREADY_ENTERED");
       return;
     }
+    if (stableMultitagPoseCount < MULTITAG_INIT_STABLE_POSES_REQUIRED) {
+      DogLog.log("Vision/DisabledAutoReseed/SuppressedReason", "WAITING_FOR_STABLE_MULTITAG");
+      return;
+    }
     DogLog.log("Vision/DisabledAutoReseed/SuppressedReason", "");
 
-    Optional<AcceptedObservationSnapshot> snapshot = getLatestAcceptedObservationSnapshot();
+    Optional<AcceptedObservationSnapshot> snapshot =
+        Optional.ofNullable(initializationSnapshot)
+            .filter(
+                value -> Timer.getFPGATimestamp() - value.timestamp() <= SNAPSHOT_MAX_AGE_SECONDS);
     if (snapshot.isEmpty()) {
+      if (!hasAutoReseededThisDisabledCycle && initializationSnapshot != null) {
+        // Qualification expired before the initial reset. Require a new five-pose streak rather
+        // than letting a later unqualified frame replace it or permanently blocking startup.
+        initializationSnapshot = null;
+        initializationCamera = "";
+        multitagInitializationByCamera.clear();
+        stableMultitagPoseCount = 0;
+        visionInitializationComplete = false;
+        for (VisionIO visionIo : io) {
+          if (visionIo instanceof VisionIOPhotonVision photonVisionIo) {
+            photonVisionIo.restartVisionInitialization();
+          }
+        }
+        DogLog.log("Vision/DisabledAutoReseed/SuppressedReason", "STARTUP_SNAPSHOT_EXPIRED");
+      }
       return;
     }
 
@@ -376,10 +414,9 @@ public class VisionSubsystem extends SubsystemBase {
     boolean drifted = poseDeltaMeters > DISABLED_AUTO_RESEED_DELTA_METERS;
 
     if ((needsInitialReseed || drifted) && intervalElapsed) {
-      swerve.resetPose(visionPose);
+      swerve.resetPose(visionPose, "VISION_STARTUP:" + initializationCamera);
       hasAutoReseededThisDisabledCycle = true;
       lastDisabledAutoReseedTime = now;
-      markVisionInitializationComplete();
       DogLog.log("Vision/DisabledAutoReseed/Pose", visionPose);
       DogLog.log("Vision/DisabledAutoReseed/DeltaMeters", poseDeltaMeters);
       DogLog.log("Vision/DisabledAutoReseed/Timestamp", snapshot.get().timestamp());
@@ -451,6 +488,12 @@ public class VisionSubsystem extends SubsystemBase {
     DogLog.log("Vision/Initialization/HeadingDeltaDegrees", headingDeltaDeg);
 
     if (initState.stablePoseCount >= MULTITAG_INIT_STABLE_POSES_REQUIRED) {
+      initializationCamera = cameraName;
+      initializationSnapshot =
+          new AcceptedObservationSnapshot(
+              pose2d,
+              Arrays.copyOf(observation.tagIDs(), observation.tagIDs().length),
+              observation.timestamp());
       markVisionInitializationComplete();
       DogLog.log("Vision/Initialization/StableMultitagPoseTimestamp", observation.timestamp());
     }
@@ -487,53 +530,6 @@ public class VisionSubsystem extends SubsystemBase {
     return MULTITAG_INIT_STABLE_POSES_REQUIRED;
   }
 
-  static Optional<ConsensusCandidate> selectConsensusCandidate(
-      List<ConsensusCandidate> candidates) {
-    if (candidates.isEmpty()) {
-      return Optional.empty();
-    }
-
-    ConsensusCandidate bestCandidate = candidates.get(0);
-    int bestClusterSize = -1;
-    double bestQuality = Double.POSITIVE_INFINITY;
-
-    for (ConsensusCandidate candidate : candidates) {
-      int clusterSize = consensusClusterSize(candidate, candidates);
-      double quality = consensusQuality(candidate, candidates);
-      if (clusterSize > bestClusterSize
-          || (clusterSize == bestClusterSize && quality < bestQuality)) {
-        bestCandidate = candidate;
-        bestClusterSize = clusterSize;
-        bestQuality = quality;
-      }
-    }
-
-    return Optional.of(bestCandidate);
-  }
-
-  private static int consensusClusterSize(
-      ConsensusCandidate candidate, List<ConsensusCandidate> candidates) {
-    int clusterSize = 0;
-    for (ConsensusCandidate other : candidates) {
-      if (candidate.distanceMeters(other) <= VISION_CONSENSUS_RADIUS_METERS) {
-        clusterSize++;
-      }
-    }
-    return clusterSize;
-  }
-
-  private static double consensusQuality(
-      ConsensusCandidate candidate, List<ConsensusCandidate> candidates) {
-    double quality = candidate.linearStdDevMeters();
-    for (ConsensusCandidate other : candidates) {
-      double distanceMeters = candidate.distanceMeters(other);
-      if (distanceMeters <= VISION_CONSENSUS_RADIUS_METERS) {
-        quality += distanceMeters + other.linearStdDevMeters();
-      }
-    }
-    return quality;
-  }
-
   private static class MultitagInitializationState {
     private Pose2d lastStablePose = null;
     private double lastStableTimestamp = Double.NEGATIVE_INFINITY;
@@ -551,11 +547,28 @@ public class VisionSubsystem extends SubsystemBase {
    * drivetrain.
    */
   static Optional<String> rejectionReason(PoseObservation observation) {
-    if (observation.tagCount() == 0) {
+    if (observation.tagCount() <= 0) {
       return Optional.of("NO_TAGS");
     }
 
     Pose3d pose = observation.pose();
+    if (!Double.isFinite(pose.getX())
+        || !Double.isFinite(pose.getY())
+        || !Double.isFinite(pose.getZ())
+        || !Double.isFinite(pose.getRotation().getX())
+        || !Double.isFinite(pose.getRotation().getY())
+        || !Double.isFinite(pose.getRotation().getZ())
+        || !Double.isFinite(observation.averageTagDistance())
+        || observation.averageTagDistance() <= 0.0
+        || !Double.isFinite(observation.ambiguity())) {
+      return Optional.of("NONFINITE_OR_INVALID_MEASUREMENT");
+    }
+    if (observation.tagIDs().length != observation.tagCount()
+        || Arrays.stream(observation.tagIDs()).distinct().count() != observation.tagCount()
+        || Arrays.stream(observation.tagIDs())
+            .anyMatch(id -> APTAG_FIELD_LAYOUT.getTagPose(id).isEmpty())) {
+      return Optional.of("INVALID_TAG_IDS");
+    }
     if (Math.abs(pose.getZ()) > MAX_Z_ERROR) {
       return Optional.of("Z=" + pose.getZ());
     }
@@ -568,7 +581,8 @@ public class VisionSubsystem extends SubsystemBase {
       return Optional.of("OUT_OF_BOUNDS");
     }
 
-    if (observation.tagCount() == 1 && observation.ambiguity() > MAX_AMBIGUITY) {
+    if (observation.tagCount() == 1
+        && (observation.ambiguity() < 0.0 || observation.ambiguity() > MAX_AMBIGUITY)) {
       return Optional.of("AMBIGUITY=" + observation.ambiguity());
     }
 
@@ -580,97 +594,34 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Distance-scaled translation std-dev with heading ignored. Translation trust tightens while
-   * aiming. Mirrors the AdvantageKit model with 1678's heading-ignore strategy.
-   */
-  private Matrix<N3, N1> standardDeviations(PoseObservation observation, int cameraIndex) {
-    return standardDeviations(observation, cameraIndex, aiming);
-  }
-
-  /**
-   * Pure standard-deviation model with an explicit aiming flag. Package-private so tests can
-   * exercise the exact production std-dev math without depending on subsystem state.
+   * Distance-scaled uncertainty with heading ignored. The aiming argument is retained for
+   * comparison callers; operator intent does not change measurement trust.
    */
   static Matrix<N3, N1> standardDeviations(
       PoseObservation observation, int cameraIndex, boolean aiming) {
     double tagCount = Math.max(observation.tagCount(), 1);
     double rawDistance = observation.averageTagDistance();
     // Guard against missing/invalid distance samples from the IO layer.
-    double distance = rawDistance > 0.0 ? rawDistance : MAX_AVG_TAG_DISTANCE_METERS;
+    double distance =
+        Double.isFinite(rawDistance) && rawDistance > 0.0
+            ? rawDistance
+            : MAX_AVG_TAG_DISTANCE_METERS;
     double factor = (distance * distance) / tagCount;
 
-    double cameraFactor =
-        CAMERA_STDDEV_FACTORS[Math.min(cameraIndex, CAMERA_STDDEV_FACTORS.length - 1)];
-    double aimFactor = aiming ? AIM_LINEAR_STDDEV_MULTIPLIER : 1.0;
-    // Coplanar multi-tag observations can share the same mirror-solution risk as
-    // single-tag PnP, so optionally use the single-tag distrust multiplier.
-    boolean coplanarPenaltyApplies =
-        APPLY_COPLANAR_PENALTY && areTagsCoplanar(observation.tagIDs());
+    double cameraFactor = cameraStdDevFactor(cameraIndex);
     double singleTagFactor =
-        (observation.tagCount() == 1 || coplanarPenaltyApplies)
-            ? SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER
-            : 1.0;
+        (observation.tagCount() == 1) ? SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER : 1.0;
 
-    double linearStdDev =
-        LINEAR_STDDEV_BASELINE * factor * cameraFactor * aimFactor * singleTagFactor;
-    linearStdDev = Math.max(linearStdDev, 1e-6);
+    double linearStdDev = LINEAR_STDDEV_BASELINE * factor * cameraFactor * singleTagFactor;
+    linearStdDev = Math.max(linearStdDev, MIN_TRANSLATION_STDDEV_METERS);
 
     return VecBuilder.fill(linearStdDev, linearStdDev, HEADING_STDDEV_IGNORE);
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
-  // Coplanar detection
-  // ────────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Returns {@code true} when all tags in {@code tagIDs} lie on the same flat surface (same Hub
-   * face). Coplanar multi-tag PnP has the same 180° rotational ambiguity as single-tag PnP — the
-   * planar geometry admits two mirror solutions. These observations must receive the single-tag
-   * std-dev penalty even though {@code tagCount ≥ 2}.
-   *
-   * <p>Detection: compare the outward Z-axis (normal) of each tag's field pose. Tags are coplanar
-   * when all normals are within {@link
-   * frc.robot.util.constants.VisionConstants#COPLANAR_ANGLE_THRESHOLD_DEG} of the first tag's
-   * normal.
-   *
-   * <p>Package-private so tests can call it directly.
-   */
-  static boolean areTagsCoplanar(int[] tagIDs) {
-    if (tagIDs == null || tagIDs.length <= 1) {
-      return true; // single tag is trivially "coplanar"
-    }
-    var firstOpt = APTAG_FIELD_LAYOUT.getTagPose(tagIDs[0]);
-    if (firstOpt.isEmpty()) {
-      return true; // unknown tag — treat as vulnerable
-    }
-    Rotation3d referenceRotation = firstOpt.get().getRotation();
-    double thresholdRad = Math.toRadians(COPLANAR_ANGLE_THRESHOLD_DEG);
-    for (int i = 1; i < tagIDs.length; i++) {
-      var tagOpt = APTAG_FIELD_LAYOUT.getTagPose(tagIDs[i]);
-      if (tagOpt.isEmpty()) {
-        continue; // unknown tag — skip
-      }
-      if (angleBetweenTagNormalsRadians(referenceRotation, tagOpt.get().getRotation())
-          > thresholdRad) {
-        return false; // tags face different directions → not coplanar
-      }
-    }
-    return true;
-  }
-
-  static double angleBetweenTagNormalsRadians(
-      Rotation3d firstTagRotation, Rotation3d secondTagRotation) {
-    Translation3d firstNormal = TAG_NORMAL_VECTOR.rotateBy(firstTagRotation);
-    Translation3d secondNormal = TAG_NORMAL_VECTOR.rotateBy(secondTagRotation);
-    double dotProduct =
-        firstNormal.getX() * secondNormal.getX()
-            + firstNormal.getY() * secondNormal.getY()
-            + firstNormal.getZ() * secondNormal.getZ();
-    double normalProduct = firstNormal.getNorm() * secondNormal.getNorm();
-    if (normalProduct <= 1e-9) {
-      return 0.0;
-    }
-    return Math.acos(MathUtil.clamp(dotProduct / normalProduct, -1.0, 1.0));
+  private static double cameraStdDevFactor(int configIndex) {
+    return configIndex >= 0 && configIndex < CAMERA_STDDEV_FACTORS.length
+        ? CAMERA_STDDEV_FACTORS[configIndex]
+        : 1.0;
   }
 
   /** Logs a pose list as a struct array for AdvantageScope. */
@@ -680,9 +631,8 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Logs the raw, pre-filter observations for a camera as index-aligned scalar arrays. This
-   * captures everything the rejection and std-dev logic consume, so a real match log can be
-   * replayed through the filter offline to diagnose acceptance and pose-jump behavior.
+   * Logs pre-filter pose arrays for field plots. Atomic Observation records additionally preserve
+   * solver metadata, decisions, uncertainty and drivetrain context for offline diagnosis.
    */
   @SuppressWarnings("null") // DogLog null-annotation interop on Pose3d[] is benign.
   private static void logRawObservations(
@@ -756,7 +706,7 @@ public class VisionSubsystem extends SubsystemBase {
     if (snapshot.isEmpty()) {
       return false;
     }
-    swerve.resetPose(snapshot.get().pose());
+    swerve.resetPose(snapshot.get().pose(), "OPERATOR_VISION");
     DogLog.log("Vision/ForceReseed", snapshot.get().pose());
     return true;
   }

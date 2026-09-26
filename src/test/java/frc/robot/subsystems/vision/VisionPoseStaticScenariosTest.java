@@ -6,10 +6,13 @@ package frc.robot.subsystems.vision;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -21,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -31,12 +33,9 @@ import org.junit.jupiter.api.Test;
  * Y=7.279 m and right side Y=0.650 m), tested at the four yaw angles that directly face each camera
  * into the scoring structure.
  *
- * <p><b>Problem background:</b> at these near-edge positions the cameras look at the central
- * scoring Hub from the side. When a camera sees two or more tags on the <em>same</em> Hub face, the
- * multi-tag PnP geometry is coplanar (planar ambiguity identical to single-tag): the solver
- * produces two mirror solutions, occasionally picks the wrong one, and — because it is logged as a
- * multi-tag observation — the result bypasses the single-tag std-dev penalty and is accepted with
- * full confidence. This causes large, periodic odometry jumps.
+ * <p>These near-edge viewpoints exercise camera noise and pose ambiguity. The production camera
+ * configuration currently includes front, right and left cameras; the two back-facing scenarios
+ * also check behavior without their intended camera and do not require vision coverage.
  *
  * <p><b>What this test checks:</b>
  *
@@ -44,16 +43,15 @@ import org.junit.jupiter.api.Test;
  *   <li>Max single-cycle odometry jump during the 5-second measurement window must stay below
  *       {@link #MAX_JUMP_M} (stationary robot should not jump at all).
  *   <li>Max deviation of any accepted vision pose from the known ground-truth position must stay
- *       below {@link #MAX_VISION_DEVIATION_M} (bad poses must be rejected or de-weighted enough not
- *       to pull the estimator far from truth).
+ *       below {@link #MAX_VISION_DEVIATION_M}; estimator weighting cannot improve raw solver
+ *       accuracy.
  * </ul>
  *
  * <p>The PhotonVision sim receives each scenario's ground-truth pose directly, so accepted vision
  * poses are checked against an independent reference instead of the drivetrain estimator pose they
  * are meant to validate.
  *
- * <p>Tagged {@code sim} and guarded with JUnit {@link Assumptions}: skipped rather than failed when
- * HAL/simulation is unavailable.
+ * <p>Tagged {@code sim}; required HAL and container initialization failures fail the test.
  *
  * <p>Run with: {@code ./gradlew visionStabilityTest}
  */
@@ -102,18 +100,12 @@ class VisionPoseStaticScenariosTest {
   /** Measurement cycles after warmup. */
   private static final int MEASURE_CYCLES = 250; // 5 s
 
-  /**
-   * A stationary robot's odometry must not jump more than this per cycle. Any jump larger than ~2
-   * cm is a sign that a bad vision pose was accepted and fused with high confidence.
-   */
+  /** Maximum permitted native estimator correction per cycle for this stationary fixture. */
   private static final double MAX_JUMP_M = 0.15;
 
-  /**
-   * Maximum allowed distance between any accepted vision pose and the robot's known ground-truth
-   * position. Poses farther away are flipped/wrong and must not reach the Kalman filter — or if
-   * they do, the std-dev must be large enough that they don't move the estimate appreciably
-   * (checked separately by MAX_JUMP_M).
-   */
+  private static final double MAX_HEADING_DEVIATION_DEGREES = 2.0;
+
+  /** Broad raw-pose safety bound; detailed solver RMSE and outliers are checked in replay. */
   private static final double MAX_VISION_DEVIATION_M = 1.5;
 
   // ────────────────────────────────────────────────────────────────────
@@ -127,14 +119,21 @@ class VisionPoseStaticScenariosTest {
   static void setUpHal() {
     try {
       halReady = HAL.initialize(500, 0);
+      Path logDirectory = Path.of("build", "vision-stability", "logs").toAbsolutePath();
+      Files.createDirectories(logDirectory);
+      DataLogManager.start(
+          logDirectory.toString(), "vision-static-" + System.currentTimeMillis() + ".wpilog");
       DriverStationSim.setAllianceStationId(AllianceStationID.Blue1);
       DriverStationSim.setDsAttached(true);
       DriverStationSim.setAutonomous(true);
       DriverStationSim.setEnabled(true);
       DriverStationSim.notifyNewData();
       container = new RobotContainer();
+      // A canceled default command reschedules and retains its old heading target across poses.
+      // Remove it so the native drivetrain stays stationary, just like the camera ground truth.
+      container.swerveSubsystem.removeDefaultCommand();
     } catch (Throwable t) {
-      halReady = false;
+      throw new AssertionError("Static scenario initialization failed", t);
     }
   }
 
@@ -144,6 +143,7 @@ class VisionPoseStaticScenariosTest {
       CommandScheduler.getInstance().cancelAll();
       DriverStationSim.setEnabled(false);
       DriverStationSim.notifyNewData();
+      DataLogManager.getLog().flush();
     } catch (Throwable ignored) {
       // best effort
     }
@@ -201,11 +201,13 @@ class VisionPoseStaticScenariosTest {
   // ────────────────────────────────────────────────────────────────────
 
   private void runScenario(Scenario s) throws IOException {
-    Assumptions.assumeTrue(halReady, "HAL/simulation unavailable in this environment");
-    Assumptions.assumeTrue(container != null, "RobotContainer failed to initialize");
+    assertTrue(halReady, "HAL/simulation unavailable in this environment");
+    assertTrue(container != null, "RobotContainer failed to initialize");
 
     // Cancel any residual commands; reset drivetrain pose to scenario start.
     CommandScheduler.getInstance().cancelAll();
+    container.swerveSubsystem.setControl(
+        new SwerveRequest.ApplyRobotSpeeds().withSpeeds(new ChassisSpeeds()));
     container.swerveSubsystem.resetPose(s.pose());
     container.setVisionSimulationPoseSupplier(s::pose);
 
@@ -214,16 +216,21 @@ class VisionPoseStaticScenariosTest {
         "cycle,phase,t_s,"
             + "odomX,odomY,odomYawDeg,"
             + "visionX,visionY,visionYawDeg,"
-            + "odomJump_m,visionDeviation_m,hasVision");
+            + "odomJump_m,visionDeviation_m,hasVision,odomHeadingDeviation_deg");
 
     Pose2d prev = s.pose();
     double maxOdomJump = 0.0;
+    double maxFusedError = 0.0;
+    double lastSnapshotTimestamp = Double.NEGATIVE_INFINITY;
+    double maxHeadingDeviationDegrees = 0.0;
     double maxVisionDeviation = 0.0;
     double sumVisionDeviation = 0.0;
     int visionCycles = 0;
     int totalCycles = WARMUP_CYCLES + MEASURE_CYCLES;
 
     for (int cycle = 0; cycle < totalCycles; cycle++) {
+      // Emulate normal DS packets; DataLogManager pauses after ten seconds without refreshes.
+      DriverStationSim.notifyNewData();
       CommandScheduler.getInstance().run();
       SimHooks.stepTiming(DT);
 
@@ -232,26 +239,32 @@ class VisionPoseStaticScenariosTest {
           container.visionSubsystem.getLatestAcceptedObservationSnapshot();
 
       double odomJump = odom.getTranslation().getDistance(prev.getTranslation());
+      double headingDeviationDegrees =
+          Math.abs(odom.getRotation().minus(s.pose().getRotation()).getDegrees());
       boolean measuring = cycle >= WARMUP_CYCLES;
 
       double visionDev = Double.NaN;
       if (vis.isPresent()) {
         visionDev = vis.get().pose().getTranslation().getDistance(s.pose().getTranslation());
-        if (measuring) {
+        if (measuring && vis.get().timestamp() > lastSnapshotTimestamp) {
           visionCycles++;
           sumVisionDeviation += visionDev;
           maxVisionDeviation = Math.max(maxVisionDeviation, visionDev);
         }
       }
+      if (vis.isPresent()) lastSnapshotTimestamp = vis.get().timestamp();
       if (measuring) {
+        maxFusedError =
+            Math.max(maxFusedError, odom.getTranslation().getDistance(s.pose().getTranslation()));
         maxOdomJump = Math.max(maxOdomJump, odomJump);
+        maxHeadingDeviationDegrees = Math.max(maxHeadingDeviationDegrees, headingDeviationDegrees);
       }
       prev = odom;
 
       double t = cycle * DT;
       csv.add(
           String.format(
-              "%d,%s,%.3f,%.4f,%.4f,%.2f,%.4f,%.4f,%.2f,%.4f,%.4f,%b",
+              "%d,%s,%.3f,%.4f,%.4f,%.2f,%.4f,%.4f,%.2f,%.4f,%.4f,%b,%.4f",
               cycle,
               measuring ? "measure" : "warmup",
               t,
@@ -263,7 +276,8 @@ class VisionPoseStaticScenariosTest {
               vis.map(v -> v.pose().getRotation().getDegrees()).orElse(Double.NaN),
               odomJump,
               visionDev,
-              vis.isPresent()));
+              vis.isPresent(),
+              headingDeviationDegrees));
     }
 
     writeCsv("static-" + s.name() + ".csv", csv);
@@ -271,8 +285,8 @@ class VisionPoseStaticScenariosTest {
     double meanVisionDev = visionCycles > 0 ? sumVisionDeviation / visionCycles : 0.0;
     System.out.printf(
         "[VisionStatic|%-12s] groundTruth=(%.3f,%.3f,%.0f°)"
-            + "  maxOdomJump=%.4f m  visionCycles=%3d/%d"
-            + "  maxVisDev=%.4f m  meanVisDev=%.4f m%n",
+            + "  maxOdomJump=%.4f m  newestSnapshots=%3d/%d"
+            + "  maxVisDev=%.4f m  meanVisDev=%.4f m  maxHeadingDev=%.4f deg%n",
         s.name(),
         s.x(),
         s.y(),
@@ -281,12 +295,30 @@ class VisionPoseStaticScenariosTest {
         visionCycles,
         MEASURE_CYCLES,
         maxVisionDeviation,
-        meanVisionDev);
+        meanVisionDev,
+        maxHeadingDeviationDegrees);
 
     // ── Assertions ───────────────────────────────────────────────────
 
+    assertTrue(
+        maxFusedError <= .35,
+        "Fused pose error exceeded 0.35 m: " + s.name() + " " + maxFusedError);
     final double finalMaxOdomJump = maxOdomJump;
     final double finalMaxVisionDeviation = maxVisionDeviation;
+    final double finalMaxHeadingDeviation = maxHeadingDeviationDegrees;
+
+    assertTrue(
+        finalMaxHeadingDeviation <= MAX_HEADING_DEVIATION_DEGREES,
+        () ->
+            String.format(
+                "[%s] Stationary drivetrain heading deviated %.4f degrees from camera ground truth",
+                s.name(), finalMaxHeadingDeviation));
+
+    // B is intentionally absent from the production simulation camera set. Its two orientations
+    // may have no usable tags; the six orientations aimed through active cameras must see vision.
+    if (s != LEFT_BACK && s != RIGHT_BACK) {
+      assertTrue(visionCycles > 0, "Active-camera scenario must exercise vision: " + s.name());
+    }
 
     assertTrue(
         finalMaxOdomJump <= MAX_JUMP_M,

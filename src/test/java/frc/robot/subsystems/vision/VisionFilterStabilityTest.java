@@ -21,7 +21,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import frc.robot.subsystems.vision.VisionIO.PoseObservation;
 import frc.robot.subsystems.vision.VisionIO.PoseObservationType;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
-import frc.robot.util.constants.VisionConstants;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -37,7 +36,7 @@ import org.junit.jupiter.api.Test;
  * HAL-free regression guard for the lean vision filter.
  *
  * <p>This test does not run the real drivetrain or Phoenix6/PhotonVision sim. Instead it drives a
- * pure-math {@link SwerveDrivePoseEstimator} (identical to the one inside the drivetrain) with a
+ * pure-math WPILib {@link SwerveDrivePoseEstimator} (not the native CTRE estimator) with a
  * stationary ground-truth robot, then injects synthetic vision observations through the <b>real</b>
  * production filter ({@link VisionSubsystem#rejectionReason} + {@link
  * VisionSubsystem#standardDeviations}). It asserts that the fused pose never teleports and stays
@@ -183,97 +182,27 @@ class VisionFilterStabilityTest {
   }
 
   @Test
+  void invalidNumbersAndUnsupportedTagMetadataCannotReachFusion() {
+    Pose3d pose = new Pose3d(4, 4, 0, new Rotation3d());
+    for (PoseObservation observation :
+        List.of(
+            new PoseObservation(
+                1, pose, .1, 2, Double.NaN, PoseObservationType.PHOTONVISION, new int[] {2, 3}),
+            new PoseObservation(
+                1, pose, .1, 2, 2, PoseObservationType.PHOTONVISION, new int[] {2, 2}),
+            new PoseObservation(
+                1, pose, .1, 2, 2, PoseObservationType.PHOTONVISION, new int[] {2, 99}),
+            new PoseObservation(
+                1, pose, -1, 1, 2, PoseObservationType.PHOTONVISION, new int[] {2}))) {
+      assertTrue(VisionSubsystem.rejectionReason(observation).isPresent());
+    }
+  }
+
+  @Test
   void goodMultiTagObservationsAreAccepted() {
     assertTrue(
         VisionSubsystem.rejectionReason(VisionScenarios.goodMultiTag(4.0, 4.0, 0.0, 0.0)).isEmpty(),
         "Good multi-tag pose should be accepted");
-  }
-
-  @Test
-  void multitagInitializationRequiresFiveStableCoprocessorObservations() {
-    int stableCount = 0;
-    double timestamp = 1.0;
-
-    // Build 4 stable MultiTagPnP observations - should not initialize yet.
-    for (int i = 0; i < 4; i++) {
-      PoseObservation obs = multitagCoprocessorObs(4.0 + (0.01 * i), 4.0, 0.0, timestamp);
-      assertTrue(
-          VisionSubsystem.isMultitagInitCandidate(obs),
-          "MultiTag coprocessor observation should count toward initialization");
-      stableCount = VisionSubsystem.nextStableMultitagPoseCount(stableCount, true);
-      timestamp += 0.02;
-    }
-
-    assertTrue(
-        stableCount < VisionSubsystem.requiredStableMultitagPosesForInitialization(),
-        "Initialization should not complete before 5 stable MultiTagPnP observations");
-
-    PoseObservation fifth = multitagCoprocessorObs(4.04, 4.0, 0.0, timestamp);
-    assertTrue(VisionSubsystem.isMultitagInitCandidate(fifth));
-    stableCount = VisionSubsystem.nextStableMultitagPoseCount(stableCount, true);
-
-    assertEquals(
-        VisionSubsystem.requiredStableMultitagPosesForInitialization(),
-        stableCount,
-        "Exactly 5 stable MultiTagPnP observations should complete initialization");
-  }
-
-  @Test
-  void multitagInitializationStreakResetsAfterUnstableStep() {
-    double t0 = 2.0;
-    PoseObservation baseline = multitagCoprocessorObs(4.0, 4.0, 0.0, t0);
-    PoseObservation stableNext = multitagCoprocessorObs(4.05, 4.0, Math.toRadians(2.0), t0 + 0.02);
-    PoseObservation unstableNext = multitagCoprocessorObs(4.40, 4.0, 0.0, t0 + 0.04);
-
-    int stableCount = 0;
-    stableCount = VisionSubsystem.nextStableMultitagPoseCount(stableCount, true); // baseline
-
-    double stableTranslationDelta =
-        stableNext
-            .pose()
-            .toPose2d()
-            .getTranslation()
-            .getDistance(baseline.pose().toPose2d().getTranslation());
-    double stableHeadingDeltaDeg =
-        Math.abs(
-            stableNext
-                .pose()
-                .toPose2d()
-                .getRotation()
-                .minus(baseline.pose().toPose2d().getRotation())
-                .getDegrees());
-    boolean stableStep =
-        VisionSubsystem.isStableMultitagStep(
-            stableNext.timestamp(),
-            baseline.timestamp(),
-            stableTranslationDelta,
-            stableHeadingDeltaDeg);
-    stableCount = VisionSubsystem.nextStableMultitagPoseCount(stableCount, stableStep);
-    assertEquals(2, stableCount, "Stable step should increment streak");
-
-    double unstableTranslationDelta =
-        unstableNext
-            .pose()
-            .toPose2d()
-            .getTranslation()
-            .getDistance(stableNext.pose().toPose2d().getTranslation());
-    double unstableHeadingDeltaDeg =
-        Math.abs(
-            unstableNext
-                .pose()
-                .toPose2d()
-                .getRotation()
-                .minus(stableNext.pose().toPose2d().getRotation())
-                .getDegrees());
-    boolean unstableStep =
-        VisionSubsystem.isStableMultitagStep(
-            unstableNext.timestamp(),
-            stableNext.timestamp(),
-            unstableTranslationDelta,
-            unstableHeadingDeltaDeg);
-    stableCount = VisionSubsystem.nextStableMultitagPoseCount(stableCount, unstableStep);
-
-    assertEquals(1, stableCount, "Unstable step should reset streak to 1 from the new baseline");
   }
 
   @Test
@@ -338,71 +267,36 @@ class VisionFilterStabilityTest {
         "Single-tag/fallback observations should not reset stable MultiTag initialization");
   }
 
-  /**
-   * Pins the translation distrust multiplier behavior:
-   *
-   * <ul>
-   *   <li>single-tag always gets the single-tag multiplier,
-   *   <li>coplanar multi-tag also gets the multiplier (same mirror ambiguity).
-   * </ul>
-   */
   @Test
-  void singleTagTranslationStdDevAppliesTheFiveTimesMultiplier() {
-    double distance = 2.0;
+  void uncertaintyUsesDistanceAndRealTagCountWithoutAimingBoost() {
     Pose3d pose = new Pose3d(4.0, 4.0, 0.0, new Rotation3d());
-    PoseObservation singleTag =
+    PoseObservation single =
+        new PoseObservation(0, pose, .1, 1, 2, PoseObservationType.PHOTONVISION, new int[] {2});
+    PoseObservation multi =
         new PoseObservation(
-            0.0, pose, 0.1, 1, distance, PoseObservationType.PHOTONVISION, new int[] {1});
-    PoseObservation twoTagCoplanar =
+            0,
+            pose,
+            .1,
+            2,
+            2,
+            PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR,
+            new int[] {2, 3});
+    PoseObservation far =
         new PoseObservation(
-            0.0, pose, 0.1, 2, distance, PoseObservationType.PHOTONVISION, new int[] {1, 2});
-
-    double singleStdDev = VisionSubsystem.standardDeviations(singleTag, 0, false).get(0, 0);
-    double twoTagCoplanarStdDev =
-        VisionSubsystem.standardDeviations(twoTagCoplanar, 0, false).get(0, 0);
-
-    // For a single tag: stdDev = LINEAR_STDDEV_BASELINE * dist^2 * 1(cam) * 1(aim)
-    // * multiplier.
-    double singleTagBaseline = VisionConstants.LINEAR_STDDEV_BASELINE * distance * distance;
-    double observedMultiplier = singleStdDev / singleTagBaseline;
-    System.out.printf(
-        "[StdDev] singleTag(%.0fm)=%.4f m, twoTagCoplanar(%.0fm)=%.4f m, effective single-tag multiplier=%.2f%n",
-        distance, singleStdDev, distance, twoTagCoplanarStdDev, observedMultiplier);
-
+            0,
+            pose,
+            .1,
+            2,
+            4,
+            PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR,
+            new int[] {2, 3});
+    double multiSigma = VisionSubsystem.standardDeviations(multi, 0, false).get(0, 0);
+    assertTrue(multiSigma > 0);
     assertEquals(
-        VisionConstants.SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER,
-        observedMultiplier,
-        1e-9,
-        "Single-tag translation std-dev must apply the configured 5x distrust multiplier");
-
-    // Coplanar multi-tag behavior is configurable.
-    double expectedTwoTagCoplanar =
-        VisionConstants.LINEAR_STDDEV_BASELINE
-            * distance
-            * distance
-            / 2.0
-            * (VisionConstants.APPLY_COPLANAR_PENALTY
-                ? VisionConstants.SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER
-                : 1.0);
-    assertEquals(
-        expectedTwoTagCoplanar,
-        twoTagCoplanarStdDev,
-        1e-9,
-        VisionConstants.APPLY_COPLANAR_PENALTY
-            ? "Coplanar multi-tag std-dev must apply the single-tag distrust multiplier"
-            : "Coplanar multi-tag std-dev must remain unpenalized when coplanar penalty is disabled");
-  }
-
-  @Test
-  void tagNormalComparisonIgnoresInPlaneRotation() {
-    Rotation3d reference = new Rotation3d();
-    Rotation3d spunAroundNormal = new Rotation3d(0.0, 0.0, Math.PI / 2.0);
-
-    assertEquals(
-        0.0,
-        VisionSubsystem.angleBetweenTagNormalsRadians(reference, spunAroundNormal),
-        1e-9,
-        "Coplanar tags can differ by in-plane rotation without changing their plane normal");
+        10 * multiSigma, VisionSubsystem.standardDeviations(single, 0, false).get(0, 0), 1e-9);
+    assertEquals(4 * multiSigma, VisionSubsystem.standardDeviations(far, 0, false).get(0, 0), 1e-9);
+    assertEquals(multiSigma, VisionSubsystem.standardDeviations(multi, 0, true).get(0, 0), 1e-9);
+    assertEquals(1e9, VisionSubsystem.standardDeviations(multi, 0, false).get(2, 0), 1e-3);
   }
 
   @Test
@@ -411,7 +305,7 @@ class VisionFilterStabilityTest {
     PoseObservation originalObservation = singleTagPhotonVisionObs(4.0, 4.0, 0.0, 1.0);
     PoseObservation replacementObservation = singleTagPhotonVisionObs(5.0, 5.0, 0.0, 2.0);
     source.setPoseObservations(new PoseObservation[] {originalObservation});
-    source.setTagIds(new int[] {1, 2});
+    source.setTagIds(new int[] {2, 3});
 
     VisionIOInputs copied = new VisionIOInputs();
     copied.copyFrom(source);
@@ -424,51 +318,7 @@ class VisionFilterStabilityTest {
     assertNotSame(sourceObservations, copied.getPoseObservations());
     assertNotSame(sourceTagIds, copied.getTagIds());
     assertEquals(originalObservation, copied.getPoseObservations()[0]);
-    assertArrayEquals(new int[] {1, 2}, copied.getTagIds());
-  }
-
-  @Test
-  void consensusSelectsSingleCandidate() {
-    VisionSubsystem.ConsensusCandidate onlyCandidate =
-        consensusCandidate("front", 4.0, 4.0, 2.0, 1.0);
-
-    Optional<VisionSubsystem.ConsensusCandidate> selected =
-        VisionSubsystem.selectConsensusCandidate(List.of(onlyCandidate));
-
-    assertTrue(selected.isPresent());
-    assertEquals(onlyCandidate, selected.get());
-  }
-
-  @Test
-  void consensusChoosesAgreeingClusterOverFarOutlier() {
-    VisionSubsystem.ConsensusCandidate nearFront =
-        consensusCandidate("front", 4.00, 4.00, 2.0, 1.0);
-    VisionSubsystem.ConsensusCandidate nearLeft = consensusCandidate("left", 4.10, 4.03, 2.0, 1.0);
-    VisionSubsystem.ConsensusCandidate farOutlier =
-        consensusCandidate("rear", 5.40, 2.70, 2.0, 1.0);
-
-    Optional<VisionSubsystem.ConsensusCandidate> selected =
-        VisionSubsystem.selectConsensusCandidate(List.of(nearFront, nearLeft, farOutlier));
-
-    assertTrue(selected.isPresent());
-    assertTrue(
-        selected.get().equals(nearFront) || selected.get().equals(nearLeft),
-        "Consensus should select a member of the largest agreeing pose cluster");
-  }
-
-  @Test
-  void consensusTieBreakerPrefersLowerStandardDeviation() {
-    VisionSubsystem.ConsensusCandidate lowStdDev = consensusCandidate("front", 4.0, 4.0, 1.0, 1.0);
-    VisionSubsystem.ConsensusCandidate highStdDev = consensusCandidate("rear", 5.0, 5.0, 4.0, 1.0);
-
-    Optional<VisionSubsystem.ConsensusCandidate> selected =
-        VisionSubsystem.selectConsensusCandidate(List.of(highStdDev, lowStdDev));
-
-    assertTrue(selected.isPresent());
-    assertEquals(
-        lowStdDev,
-        selected.get(),
-        "When cluster size is tied, consensus should keep the most trusted observation");
+    assertArrayEquals(new int[] {2, 3}, copied.getTagIds());
   }
 
   private static SwerveDriveKinematics dummyKinematics() {
@@ -508,7 +358,7 @@ class VisionFilterStabilityTest {
         2,
         2.0,
         PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR,
-        new int[] {1, 2});
+        new int[] {2, 3});
   }
 
   private static PoseObservation singleTagPhotonVisionObs(
@@ -520,27 +370,6 @@ class VisionFilterStabilityTest {
         1,
         2.0,
         PoseObservationType.PHOTONVISION,
-        new int[] {1});
-  }
-
-  private static VisionSubsystem.ConsensusCandidate consensusCandidate(
-      String cameraName, double x, double y, double averageTagDistanceMeters, double timestamp) {
-    PoseObservation observation =
-        new PoseObservation(
-            timestamp,
-            new Pose3d(x, y, 0.0, new Rotation3d()),
-            0.05,
-            2,
-            averageTagDistanceMeters,
-            PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR,
-            new int[] {1, 2});
-    return new VisionSubsystem.ConsensusCandidate(
-        0,
-        cameraName,
-        "Vision/" + cameraName,
-        observation,
-        observation.pose().toPose2d(),
-        VisionSubsystem.standardDeviations(observation, 0, false),
-        0.0);
+        new int[] {2});
   }
 }
