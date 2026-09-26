@@ -97,7 +97,6 @@ public class RobotContainer {
   private Command defaultDriveCommand;
   private Command shootDriveCommand;
   private Command swerveBrakeCommand;
-  private Command seedFieldCentricCommand;
   private Command driveCommand;
 
   /* Intake Commands */
@@ -192,7 +191,6 @@ public class RobotContainer {
         () -> -driverController.getLeftY(), () -> -driverController.getLeftX());
 
     swerveBrakeCommand = superstructureSubsystem.swerveBrakeCmd();
-    seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
     intakeCommand = superstructureSubsystem.setStateCmd(SuperState.INTAKE);
     shootCommand = superstructureSubsystem.shootWithJuicerDelayCmd();
     shootNoAimCommand = superstructureSubsystem.shootNoAimWithJuicerDelayCmd();
@@ -426,8 +424,11 @@ public class RobotContainer {
 
     /* Driver Controls */
 
-    // Reset the field-centric heading on both start and back button press.
-    driverController.start().and(driverController.back()).onTrue(seedFieldCentricCommand);
+    // Reset the robot pose from vision on Start + Back, matching the operator binding.
+    driverController
+        .start()
+        .and(driverController.back())
+        .onTrue(superstructureSubsystem.forceReseedFromVisionCmd());
 
     /* Intake */
     driverController
