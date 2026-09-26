@@ -24,6 +24,7 @@ import dev.doglog.DogLog;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -31,12 +32,19 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import java.util.ArrayDeque;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.json.simple.JSONObject;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements Subsystem so it can easily
@@ -49,6 +57,15 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   private static final double kSimLoopPeriod = 0.004; // 4 ms
   private Notifier m_simNotifier = null;
   private double m_lastSimTime;
+
+  // Phoenix 26.3.0 SwerveDrivePoseEstimator retains 1.5 seconds of odometry. Its sampler
+  // clamps outside that interval, so retain actual sample timestamps to reject missing history.
+  private static final double kPoseHistorySeconds = 1.5;
+  private final Object m_poseHistoryLock = new Object();
+  private final ArrayDeque<Double> m_poseHistoryTimestamps = new ArrayDeque<>();
+  private int m_poseResetsInProgress;
+  private double m_poseHistoryNotBefore = Double.NEGATIVE_INFINITY;
+  private long m_poseResetSequence;
 
   /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
   private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -141,6 +158,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   public CommandSwerveDrivetrain(
       SwerveDrivetrainConstants drivetrainConstants, SwerveModuleConstants<?, ?, ?>... modules) {
     super(drivetrainConstants, modules);
+    registerTelemetry(null);
     configureAutoDriveCurrentLimits();
     if (Utils.isSimulation()) {
       startSimThread();
@@ -164,6 +182,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       double odometryUpdateFrequency,
       SwerveModuleConstants<?, ?, ?>... modules) {
     super(drivetrainConstants, odometryUpdateFrequency, modules);
+    registerTelemetry(null);
     configureAutoDriveCurrentLimits();
     if (Utils.isSimulation()) {
       startSimThread();
@@ -198,6 +217,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         odometryStandardDeviation,
         visionStandardDeviation,
         modules);
+    registerTelemetry(null);
     configureAutoDriveCurrentLimits();
     if (Utils.isSimulation()) {
       startSimThread();
@@ -210,7 +230,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       var config = RobotConfig.fromGUISettings();
       AutoBuilder.configure(
           () -> getState().Pose, // Supplier of current robot pose
-          this::resetPose, // Consumer for seeding pose against auto
+          pose -> resetPose(pose, "PATHPLANNER_AUTO"), // Consumer for seeding pose against auto
           () -> getState().Speeds, // Supplier of current robot speeds
           // Consumer of ChassisSpeeds and feedforwards to drive the robot
           (speeds, feedforwards) ->
@@ -384,14 +404,143 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   }
 
   /**
-   * Return the pose at a given timestamp, if the buffer is not empty.
+   * Samples the CTRE estimator only when its odometry history covers the requested FPGA time.
    *
-   * @param timestampSeconds The timestamp of the pose in seconds.
-   * @return The pose at the given timestamp (or Optional.empty() if the buffer is empty).
+   * @param timestampSeconds Capture timestamp in FPGA seconds, not CTRE current-time seconds.
+   * @return The latency-compensated pose, or empty for missing, expired, future, or pre-reset
+   *     history.
    */
   @Override
   public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
-    return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
+    if (!Double.isFinite(timestampSeconds)) return Optional.empty();
+    double ctreTimestamp = Utils.fpgaToCurrentTime(timestampSeconds);
+    long resetSequence;
+    synchronized (m_poseHistoryLock) {
+      if (!hasPoseHistory(ctreTimestamp)) return Optional.empty();
+      resetSequence = m_poseResetSequence;
+    }
+    // Never hold the history lock across JNI: the odometry callback also acquires it.
+    Optional<Pose2d> pose = super.samplePoseAt(ctreTimestamp);
+    synchronized (m_poseHistoryLock) {
+      return resetSequence == m_poseResetSequence && hasPoseHistory(ctreTimestamp)
+          ? pose
+          : Optional.empty();
+    }
+  }
+
+  /** Keeps internal history tracking active when an external telemetry consumer changes. */
+  @Override
+  public void registerTelemetry(Consumer<SwerveDriveState> telemetryFunction) {
+    super.registerTelemetry(
+        state -> {
+          synchronized (m_poseHistoryLock) {
+            double timestamp = state.Timestamp;
+            if (m_poseResetsInProgress == 0
+                && Double.isFinite(timestamp)
+                && timestamp > m_poseHistoryNotBefore
+                && (m_poseHistoryTimestamps.isEmpty()
+                    || timestamp > m_poseHistoryTimestamps.getLast())) {
+              m_poseHistoryTimestamps.addLast(timestamp);
+              while (timestamp - m_poseHistoryTimestamps.getFirst() > kPoseHistorySeconds) {
+                m_poseHistoryTimestamps.removeFirst();
+              }
+            }
+          }
+          if (telemetryFunction != null) telemetryFunction.accept(state);
+        });
+  }
+
+  // Caller holds m_poseHistoryLock; this method never calls JNI.
+  private boolean hasPoseHistory(double timestamp) {
+    return m_poseResetsInProgress == 0
+        && !m_poseHistoryTimestamps.isEmpty()
+        && timestamp >= m_poseHistoryTimestamps.getFirst()
+        && timestamp <= m_poseHistoryTimestamps.getLast();
+  }
+
+  @Override
+  public void resetPose(Pose2d pose) {
+    resetPose(pose, "EXTERNAL_RESET");
+  }
+
+  /** Resets the native estimator and records why its coordinate origin changed. */
+  public void resetPose(Pose2d pose, String reason) {
+    runPoseReset(() -> super.resetPose(pose), reason, pose);
+  }
+
+  @Override
+  public void resetTranslation(Translation2d translation) {
+    runPoseReset(
+        () -> super.resetTranslation(translation),
+        "RESET_TRANSLATION",
+        new Pose2d(translation, getState().Pose.getRotation()));
+  }
+
+  @Override
+  public void resetRotation(Rotation2d rotation) {
+    runPoseReset(
+        () -> super.resetRotation(rotation),
+        "RESET_ROTATION",
+        new Pose2d(getState().Pose.getTranslation(), rotation));
+  }
+
+  @Override
+  public void seedFieldCentric(Rotation2d rotation) {
+    runPoseReset(
+        () -> super.seedFieldCentric(rotation),
+        "OPERATOR_FIELD_CENTRIC_SEED",
+        new Pose2d(getState().Pose.getTranslation(), rotation.plus(getOperatorForwardDirection())));
+  }
+
+  @Override
+  public void tareEverything() {
+    runPoseReset(super::tareEverything, "TARE_EVERYTHING", Pose2d.kZero);
+  }
+
+  private void runPoseReset(Runnable resetAction, String reason, Pose2d requestedPose) {
+    Pose2d poseBefore = getState().Pose;
+    double timestamp = Timer.getFPGATimestamp();
+    long sequence;
+    synchronized (m_poseHistoryLock) {
+      m_poseResetsInProgress++;
+      m_poseHistoryTimestamps.clear();
+      sequence = ++m_poseResetSequence;
+    }
+    try {
+      resetAction.run();
+    } finally {
+      double resetFinished = Utils.getCurrentTimeSeconds();
+      synchronized (m_poseHistoryLock) {
+        m_poseHistoryTimestamps.clear();
+        m_poseHistoryNotBefore = Math.max(m_poseHistoryNotBefore, resetFinished);
+        m_poseResetsInProgress--;
+      }
+    }
+    Pose2d poseAfter = getState().Pose;
+    DogLog.log("Swerve/PoseReset/Sequence", sequence);
+    DogLog.log("Swerve/PoseReset/TimestampSeconds", timestamp);
+    DogLog.log("Swerve/PoseReset/Reason", reason);
+    DogLog.log("Swerve/PoseReset/PoseBefore", poseBefore);
+    DogLog.log("Swerve/PoseReset/RequestedPose", requestedPose);
+    DogLog.log("Swerve/PoseReset/PoseAfter", poseAfter);
+    DogLog.log("Swerve/PoseReset/Enabled", DriverStation.isEnabled());
+    DogLog.log("Swerve/PoseReset/Autonomous", DriverStation.isAutonomous());
+    Map<String, Object> event = new LinkedHashMap<>();
+    event.put("schemaVersion", 1);
+    event.put("event", "POSE_RESET");
+    event.put("sequence", sequence);
+    event.put("timestampSeconds", timestamp);
+    event.put("reason", reason);
+    event.put("poseBefore", poseCoordinates(poseBefore));
+    event.put("requested", poseCoordinates(requestedPose));
+    event.put("poseAfter", poseCoordinates(poseAfter));
+    event.put("enabled", DriverStation.isEnabled());
+    event.put("autonomous", DriverStation.isAutonomous());
+    DogLog.log("Swerve/PoseReset/Event", JSONObject.toJSONString(event));
+  }
+
+  private static List<Double> poseCoordinates(Pose2d pose) {
+    return List.of(pose.getX(), pose.getY(), pose.getRotation().getRadians());
   }
 
   /** Returns absolute chassis pitch angle in degrees from the Pigeon2 IMU. */
