@@ -57,6 +57,20 @@ estimator has already incorporated that measurement. Use the continuous drivetra
 
 `Vision/ActiveCameras`, per-camera `Connected` and `Configuration/*` topics identify actual active
 cameras and settings. Raw/accepted/rejected pose-array topics remain available for field plots.
+
+The Elastic **Vision** tab shows the actual selected solver separately for the front, right and
+left cameras. Hybrid chooses independently for each camera/frame, so there is no single global
+active solver. Live `/Robot/Vision/<camera>/CurrentStrategy` values include
+`MULTI_TAG_PNP_ON_COPROCESSOR`, `CONSTRAINED_SOLVEPNP`, `PNP_DISTANCE_TRIG_SOLVE`, and
+`LOWEST_AMBIGUITY`. The adjacent `StrategyStatus` reports `ACCEPTED` or the rejection/failure
+reason; a displayed solver does not by itself mean its pose was fused. Both string topics are
+published to NetworkTables even when ordinary NT logging is disabled.
+
+The latest frame's strategy is held between camera updates for at most the 0.5-second frame-age
+limit. A newer no-target/no-pose frame clears it to `NONE`; disconnects and stale or invalid
+timestamps also show `NONE` with the corresponding status. These summaries supplement the
+complete per-frame observation records above, which retain every strategy change in a batch.
+
 DogLog reports its queue depth/capacity and `MAX_QUEUED_LOGS` on overload. Check the original log
 for queue saturation or event-sequence gaps before treating a missing record as no measurement.
 

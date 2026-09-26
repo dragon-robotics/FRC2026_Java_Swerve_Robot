@@ -928,6 +928,143 @@
           }
         ]
       }
+    },
+    {
+      "name": "Vision",
+      "grid_layout": {
+        "layouts": [],
+        "containers": [
+          {
+            "title": "Front Current Strategy",
+            "x": 0.0,
+            "y": 0.0,
+            "width": 512.0,
+            "height": 256.0,
+            "type": "Large Text Display",
+            "properties": {
+              "topic": "/Robot/Vision/AprilTagPoseEstCameraF/CurrentStrategy",
+              "period": 0.06,
+              "data_type": "string"
+            }
+          },
+          {
+            "title": "Front Strategy Status",
+            "x": 0.0,
+            "y": 256.0,
+            "width": 512.0,
+            "height": 128.0,
+            "type": "Large Text Display",
+            "properties": {
+              "topic": "/Robot/Vision/AprilTagPoseEstCameraF/StrategyStatus",
+              "period": 0.06,
+              "data_type": "string"
+            }
+          },
+          {
+            "title": "Front Connected",
+            "x": 0.0,
+            "y": 384.0,
+            "width": 512.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/Robot/Vision/AprilTagPoseEstCameraF/Connected",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Right Current Strategy",
+            "x": 512.0,
+            "y": 0.0,
+            "width": 512.0,
+            "height": 256.0,
+            "type": "Large Text Display",
+            "properties": {
+              "topic": "/Robot/Vision/AprilTagPoseEstCameraR/CurrentStrategy",
+              "period": 0.06,
+              "data_type": "string"
+            }
+          },
+          {
+            "title": "Right Strategy Status",
+            "x": 512.0,
+            "y": 256.0,
+            "width": 512.0,
+            "height": 128.0,
+            "type": "Large Text Display",
+            "properties": {
+              "topic": "/Robot/Vision/AprilTagPoseEstCameraR/StrategyStatus",
+              "period": 0.06,
+              "data_type": "string"
+            }
+          },
+          {
+            "title": "Right Connected",
+            "x": 512.0,
+            "y": 384.0,
+            "width": 512.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/Robot/Vision/AprilTagPoseEstCameraR/Connected",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Left Current Strategy",
+            "x": 1024.0,
+            "y": 0.0,
+            "width": 512.0,
+            "height": 256.0,
+            "type": "Large Text Display",
+            "properties": {
+              "topic": "/Robot/Vision/AprilTagPoseEstCameraL/CurrentStrategy",
+              "period": 0.06,
+              "data_type": "string"
+            }
+          },
+          {
+            "title": "Left Strategy Status",
+            "x": 1024.0,
+            "y": 256.0,
+            "width": 512.0,
+            "height": 128.0,
+            "type": "Large Text Display",
+            "properties": {
+              "topic": "/Robot/Vision/AprilTagPoseEstCameraL/StrategyStatus",
+              "period": 0.06,
+              "data_type": "string"
+            }
+          },
+          {
+            "title": "Left Connected",
+            "x": 1024.0,
+            "y": 384.0,
+            "width": 512.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/Robot/Vision/AprilTagPoseEstCameraL/Connected",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          }
+        ]
+      }
     }
   ]
 }
