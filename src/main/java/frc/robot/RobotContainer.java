@@ -64,6 +64,7 @@ import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.subsystems.vision.VisionIOPhotonVisionSim;
 import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.util.HubShiftUtil;
+import frc.robot.util.VisionRunMetadata;
 import frc.robot.util.constants.FieldConstants;
 import frc.robot.util.constants.OperatorConstants;
 import frc.robot.util.constants.SwerveConstants;
@@ -155,7 +156,8 @@ public class RobotContainer {
 
   private void configureDashboardAndLogging() {
     SmartDashboard.putData("Field", field);
-    DogLog.setOptions(new DogLogOptions());
+    DogLog.setOptions(new DogLogOptions().withCaptureDs(true));
+    VisionRunMetadata.log();
     DriverStation.silenceJoystickConnectionWarning(true);
   }
 

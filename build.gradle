@@ -12,6 +12,64 @@ java {
 
 def ROBOT_MAIN_CLASS = "frc.robot.Main"
 
+// Package build identity in the robot artifact; the roboRIO never needs Git installed.
+def visionBuildMetadataDir = layout.buildDirectory.dir('generated/visionMetadata')
+def generateVisionBuildMetadata = tasks.register('generateVisionBuildMetadata') {
+    outputs.dir(visionBuildMetadataDir)
+    // Branch, index, and untracked source changes must be captured on every build.
+    outputs.upToDateWhen { false }
+    doLast {
+        def gitValue = { List<String> arguments ->
+            def output = new ByteArrayOutputStream()
+            try {
+                def result = project.exec {
+                    workingDir projectDir
+                    commandLine(['git', '-c', "safe.directory=${projectDir.absolutePath.replace('\\', '/')}"] + arguments)
+                    standardOutput = output
+                    errorOutput = new ByteArrayOutputStream()
+                    ignoreExitValue = true
+                }
+                return result.exitValue == 0 ? output.toString('UTF-8').trim() : null
+            } catch (Exception ignored) {
+                return null
+            }
+        }
+        def metadata = new Properties()
+        metadata.setProperty('GitSha', gitValue(['rev-parse', 'HEAD']) ?: 'unknown')
+        metadata.setProperty('GitBranch', gitValue(['rev-parse', '--abbrev-ref', 'HEAD']) ?: 'unknown')
+        def status = gitValue(['status', '--porcelain', '--untracked-files=normal'])
+        metadata.setProperty('GitDirty', status == null ? 'unknown' : (!status.isEmpty()).toString())
+        metadata.setProperty('BuildTimeUtc', java.time.Instant.now().toString())
+        configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def id = artifact.moduleVersion.id
+            metadata.setProperty("Dependency/${id.group}/${id.name}", id.version)
+        }
+        def outputFile = visionBuildMetadataDir.get().file('vision-build.properties').asFile
+        outputFile.parentFile.mkdirs()
+        outputFile.withOutputStream { stream -> metadata.store(stream, 'Generated robot build metadata') }
+    }
+}
+sourceSets.main.resources.srcDir(visionBuildMetadataDir)
+tasks.named('processResources') {
+    dependsOn generateVisionBuildMetadata
+}
+
+tasks.register('exportVisionLog', JavaExec) {
+    group = 'verification'
+    description = 'Export atomic vision/reset events from a WPILOG to a new JSONL file.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'frc.robot.util.VisionLogExport'
+    doFirst {
+        def input = providers.gradleProperty('visionLog').orNull
+        def output = providers.gradleProperty('visionExport').orNull
+        if (input == null || output == null) {
+            throw new GradleException('Provide -PvisionLog=<input.wpilog> -PvisionExport=<new-output.jsonl>')
+        }
+        args file(input).absolutePath, file(output).absolutePath
+    }
+}
+
 // Define my targets (RoboRIO) and artifacts (deployable files)
 // This is added by GradleRIO's backing project DeployUtils.
 deploy {
@@ -99,9 +157,9 @@ test {
     if (strategyOrder != null) {
         systemProperty 'vision.photon.strategyOrder', strategyOrder
     }
-    def applyCoplanarPenalty = System.getProperty('vision.applyCoplanarPenalty')
-    if (applyCoplanarPenalty != null) {
-        systemProperty 'vision.applyCoplanarPenalty', applyCoplanarPenalty
+    def strategyMode = System.getProperty('vision.photon.strategyMode')
+    if (strategyMode != null) {
+        systemProperty 'vision.photon.strategyMode', strategyMode
     }
     def tagDistanceConfidenceMode = System.getProperty('vision.tagDistanceConfidenceMode')
     if (tagDistanceConfidenceMode != null) {
@@ -132,25 +190,27 @@ deployArtifact.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
 wpi.java.configureTestTasks(test)
 
-// Standalone vision/odometry stability regression tests. NOT wired into build/check —
-// run explicitly with: ./gradlew visionStabilityTest
+// Focused vision verification. These classes also run in the normal test task.
+// Run explicitly with: ./gradlew visionStabilityTest
 tasks.register('visionStabilityTest', Test) {
     group = 'verification'
-    description = 'Runs the vision/odometry stability regression tests (frc.robot.subsystems.vision.*).'
+    description = 'Runs vision solver, filter, startup, CTRE history and log-export regressions.'
     useJUnitPlatform()
     // PathPlanner AutoBuilder is process-global state; fork each class to avoid
     // cross-class contamination in integration-style sim tests.
     forkEvery = 1
     filter {
         includeTestsMatching 'frc.robot.subsystems.vision.*'
+        includeTestsMatching 'frc.robot.subsystems.SwerveVisionHistoryTest'
+        includeTestsMatching 'frc.robot.util.Vision*Test'
     }
     def strategyOrder = System.getProperty('vision.photon.strategyOrder')
     if (strategyOrder != null) {
         systemProperty 'vision.photon.strategyOrder', strategyOrder
     }
-    def applyCoplanarPenalty = System.getProperty('vision.applyCoplanarPenalty')
-    if (applyCoplanarPenalty != null) {
-        systemProperty 'vision.applyCoplanarPenalty', applyCoplanarPenalty
+    def strategyMode = System.getProperty('vision.photon.strategyMode')
+    if (strategyMode != null) {
+        systemProperty 'vision.photon.strategyMode', strategyMode
     }
     def tagDistanceConfidenceMode = System.getProperty('vision.tagDistanceConfidenceMode')
     if (tagDistanceConfidenceMode != null) {
