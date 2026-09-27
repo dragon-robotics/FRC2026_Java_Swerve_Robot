@@ -376,10 +376,10 @@ public class RobotContainer {
             APTAG_CAMERA_NAMES[1],
             VisionConstants.APTAG_POSE_EST_CAM_R_POS,
             this::getVisionSimulationPose),
-        // new VisionIOPhotonVisionSim(
-        // APTAG_CAMERA_NAMES[2],
-        // VisionConstants.APTAG_POSE_EST_CAM_B_POS,
-        // this::getVisionSimulationPose),
+        new VisionIOPhotonVisionSim(
+            APTAG_CAMERA_NAMES[2],
+            VisionConstants.APTAG_POSE_EST_CAM_B_POS,
+            this::getVisionSimulationPose),
         new VisionIOPhotonVisionSim(
             APTAG_CAMERA_NAMES[3],
             VisionConstants.APTAG_POSE_EST_CAM_L_POS,
@@ -424,7 +424,8 @@ public class RobotContainer {
 
     /* Driver Controls */
 
-    // Reset the robot pose from vision on Start + Back, matching the operator binding.
+    // Reset the robot pose from vision on Start + Back, matching the operator
+    // binding.
     driverController
         .start()
         .and(driverController.back())
