@@ -51,6 +51,12 @@ Rejected observations have `suppliedStdDevs: null`; no-history references and no
 also null. `rawPose` is `[x,y,z,roll,pitch,yaw]`; 2D poses are `[x,y,heading]`; angles are radians
 unless the field explicitly says Degrees. `speeds` is `[vx,vy,omega]` in m/s, m/s, rad/s.
 
+`headingInnovationDegrees` is the signed, wrapped raw vision yaw minus capture-time estimator
+heading. `fieldHeadingAligned` records whether an absolute field pose/rotation reset has established
+the gyro's field reference; `headingGateActive` also requires available capture-time history.
+These are additive fields in schema version 1. Pose-reset events also record `fieldHeadingAligned`.
+`Vision/FieldHeadingAligned` provides the current summary state.
+
 CTRE updates asynchronously: `fusedPoseAfter` is an immediate readback, not proof that the native
 estimator has already incorporated that measurement. Use the continuous drivetrain `Pose` and
 `Timestamp` streams to inspect resulting motion/corrections.
@@ -79,9 +85,25 @@ for queue saturation or event-sequence gaps before treating a missing record as 
 - Valid observations from all cameras are submitted in capture-time order within each robot loop.
   Repeated/out-of-order timestamps are rejected independently for each camera; one camera does not
   suppress another. Frames older than 0.5 seconds, future frames, and missing-history frames are rejected.
+- Coprocessor MultiTag solves with exactly two contributing tags are rejected above 6 m average
+  distance (`TWO_TAG_MULTITAG_DISTANCE`). Other observations retain the existing 7 m average limit.
+  The range gate also applies during startup; rejected frames never advance five-pose qualification.
+- After field-heading alignment, all solvers must agree with capture-time gyro-derived heading
+  within 5 degrees (`HEADING_DELTA`). This is a quality check; vision heading still receives sigma
+  `1e9` during fusion. Absolute pose/rotation resets establish alignment, translation-only resets
+  preserve it, and taring or operator-relative field-centric seeds invalidate it. Merely enabling,
+  collecting five stable vision frames, or changing operator perspective does not establish alignment.
+  A gyro field-heading error above this limit can reject accurate vision. Manual reseeding still
+  uses a fresh accepted snapshot; it does not bypass these gates to recover a rejected heading.
 - Startup solving is coprocessor MultiTag, then lowest ambiguity. After five-pose qualification,
-  the default HYBRID order uses tag facing and motion, with capture-time heading for constrained/trig.
-  Constrained PnP uses a coprocessor seed when available; rotation guards remain 0.5/1.0 rad/s.
+  the default HYBRID order uses tag facing and motion. Constrained/trig require established field
+  alignment and available capture-time heading; qualification alone does not make them eligible.
+  Constrained PnP uses a coprocessor seed when available and is eligible through +/-90 degrees/s
+  (pi/2 rad/s). Trig retains its +/-1.0 rad/s limit. `CurrentStrategy` records the actual solver.
+  Eligibility uses the current angular rate; heading is sampled at frame capture time.
+  Constrained/trig solving and the heading gate share that heading source, so agreement does not
+  rule out a shared heading bias. Within the 90 degrees/s limit, the simulation fault sweep produced
+  accepted errors up to 0.339 m with a 2-degree heading bias, and 0.305 m with a 20 ms heading offset.
   See [strategy order and test evidence](vision-strategy-test-audit.md).
 - Translation uncertainty starts at `max(0.02 m, 0.10 * distance² / tagCount * cameraFactor * singleTagFactor)`;
   the single-tag factor is 5, X/Y use equal values, and heading sigma is `1e9` radians. These are
