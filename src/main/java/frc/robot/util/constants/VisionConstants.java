@@ -84,6 +84,12 @@ public final class VisionConstants {
   /** Reject observations whose average tag distance exceeds this (meters). 1678 strategy. */
   public static final double MAX_AVG_TAG_DISTANCE_METERS = 7.0;
 
+  /** Two-tag coprocessor solves need a tighter range limit than broader tag support. */
+  public static final double MAX_TWO_TAG_MULTITAG_DISTANCE_METERS = 6.0;
+
+  /** Raw vision yaw may disagree this much with an aligned capture-time field heading. */
+  public static final double MAX_HEADING_DELTA_DEGREES = 5.0;
+
   /** Reject vision updates while chassis pitch/roll exceeds this absolute tilt (degrees). */
   public static final double MAX_ABS_TILT_DEGREES_FOR_VISION =
       Double.parseDouble(System.getProperty("vision.maxAbsTiltDeg", "8.0"));

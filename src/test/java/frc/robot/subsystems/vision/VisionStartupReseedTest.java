@@ -8,6 +8,7 @@ import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj.simulation.SimHooks;
@@ -29,6 +30,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class VisionStartupReseedTest {
   private static final Pose2d INITIAL_POSE = new Pose2d(3, 3, Rotation2d.kZero);
@@ -42,6 +45,7 @@ class VisionStartupReseedTest {
   private final Map<String, String> telemetry = new HashMap<>();
   private final List<double[]> measurements = new ArrayList<>();
   private boolean delayFifthObservation;
+  private HeadingProbeCamera headingProbe;
   private VisionSubsystem vision;
 
   @BeforeAll
@@ -56,6 +60,9 @@ class VisionStartupReseedTest {
 
   @BeforeEach
   void startVision() {
+    DriverStationSim.setEnabled(false);
+    DriverStationSim.notifyNewData();
+    headingProbe = new HeadingProbeCamera();
     // Observe ordinary fusion separately so a hard reset is visible in the native pose.
     vision =
         new VisionSubsystem(
@@ -74,20 +81,163 @@ class VisionStartupReseedTest {
               }
             },
             front,
-            rear);
+            rear,
+            headingProbe);
     vision.periodic();
-    swerve.resetPose(INITIAL_POSE);
+    // The startup estimate has not yet established an absolute field heading.
+    swerve.tareEverything();
+    swerve.resetTranslation(INITIAL_POSE.getTranslation());
     captureTime();
   }
 
   @AfterEach
   void stopVision() {
+    DriverStationSim.setEnabled(false);
+    DriverStationSim.notifyNewData();
     CommandScheduler.getInstance().unregisterSubsystem(vision);
+    headingProbe.camera.close();
   }
 
   @AfterAll
   static void stopDrivetrain() {
     if (swerve != null) swerve.close();
+  }
+
+  @Test
+  void photonHeadingAndSeedRequireAnAbsoluteFieldResetAndFreshHistory() {
+    assertPhotonHeadingAvailable(false);
+
+    double beforeReset = captureTime();
+    swerve.resetPose(VISION_POSE, "PATHPLANNER_AUTO");
+    assertTrue(headingProbe.provider.getHeadingAtTimestamp(beforeReset).isEmpty());
+    assertTrue(headingProbe.provider.getSeedPoseAtTimestamp(beforeReset).isEmpty());
+    assertPhotonHeadingAvailable(true);
+
+    swerve.seedFieldCentric(Rotation2d.kZero);
+    assertPhotonHeadingAvailable(false);
+
+    swerve.resetRotation(Rotation2d.fromDegrees(25));
+    assertPhotonHeadingAvailable(true);
+
+    swerve.tareEverything();
+    assertPhotonHeadingAvailable(false);
+  }
+
+  @Test
+  void fieldAlignedHeadingRejectsAnInconsistentPoseBeforeSubmission() throws Exception {
+    swerve.resetPose(INITIAL_POSE, "PATHPLANNER_AUTO");
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
+    for (double heading : new double[] {-6, 6}) {
+      publish(
+          front,
+          new Pose2d(3.1, 3, Rotation2d.fromDegrees(heading)),
+          PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR,
+          2,
+          3);
+    }
+    assertEquals(0, accepted.size(), "Heading-inconsistent poses must never reach CTRE");
+    JSONObject event = (JSONObject) new JSONParser().parse(diagnostics.get(diagnostics.size() - 1));
+    assertEquals("HEADING_DELTA", event.get("rejectionReason"));
+    assertEquals(true, event.get("headingGateActive"));
+    assertEquals(6, Math.abs(((Number) event.get("headingInnovationDegrees")).doubleValue()), .1);
+  }
+
+  @ParameterizedTest
+  @ValueSource(doubles = {-3.5, 3.5, -2 * Math.PI - .2, 2 * Math.PI + .2})
+  void nativeCaptureHistorySuppliesNormalizedPhotonHeadingAfterAbsoluteResets(double radians) {
+    double expected = Math.atan2(Math.sin(radians), Math.cos(radians));
+    double tolerance = Math.toRadians(.1);
+    for (boolean fullPoseReset : new boolean[] {true, false}) {
+      String resetMethod = fullPoseReset ? "resetPose" : "resetRotation";
+      if (fullPoseReset) {
+        swerve.resetPose(new Pose2d(3, 3, new Rotation2d(radians)), "TEST_UNWRAPPED_HEADING");
+      } else {
+        swerve.resetRotation(new Rotation2d(radians));
+      }
+      double capture = captureTime();
+      Rotation2d nativeHeading = swerve.samplePoseAt(capture).orElseThrow().getRotation();
+      Rotation2d photonHeading = headingProbe.provider.getHeadingAtTimestamp(capture).orElseThrow();
+      Pose3d photonSeed = headingProbe.provider.getSeedPoseAtTimestamp(capture).orElseThrow();
+      assertEquals(
+          0,
+          nativeHeading.minus(new Rotation2d(radians)).getRadians(),
+          tolerance,
+          resetMethod + " must preserve the requested physical orientation");
+      assertEquals(
+          expected,
+          nativeHeading.getRadians(),
+          tolerance,
+          resetMethod + " native capture history must wrap heading to [-pi, pi]");
+      assertEquals(
+          expected,
+          photonHeading.getRadians(),
+          tolerance,
+          resetMethod + " must supply PhotonVision a normalized capture heading");
+      assertEquals(
+          expected,
+          photonSeed.getRotation().toRotation2d().getRadians(),
+          tolerance,
+          resetMethod + " capture heading and pose seed must use the same angle representation");
+    }
+  }
+
+  @Test
+  void enabledQualificationDoesNotPretendTheFieldHeadingWasReset() throws Exception {
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
+    for (int i = 0; i < 6; i++) {
+      publish(front, VISION_POSE, PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR, 2, 3);
+    }
+    assertEquals(
+        6, accepted.size(), "Five-pose qualification alone must not enable the heading gate");
+    assertPose(INITIAL_POSE, "Enabled qualification must not hard-reset the field pose");
+    JSONObject event = (JSONObject) new JSONParser().parse(diagnostics.get(diagnostics.size() - 1));
+    assertEquals(false, event.get("headingGateActive"));
+    assertEquals("startup-front", event.get("initializationCamera"));
+    assertTrue(
+        headingProbe.initializationComplete, "Five accepted poses must finish qualification");
+    assertPhotonHeadingAvailable(false);
+  }
+
+  @Test
+  void qualityGateDoesNotBlockTwoMeterTranslationRecovery() {
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
+    swerve.resetPose(INITIAL_POSE, "PATHPLANNER_AUTO");
+    for (double offset : new double[] {.25, .5, 1, 2}) {
+      publish(
+          front,
+          new Pose2d(3 + offset, 3, Rotation2d.kZero),
+          PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR,
+          2,
+          3);
+    }
+    assertEquals(4, accepted.size(), "A correct heading must permit recoverable XY disagreement");
+  }
+
+  @Test
+  void distantTwoTagFramesCannotAdvanceStartupQualification() {
+    for (int i = 0; i < 5; i++) {
+      front.observation =
+          new PoseObservation(
+              captureTime(),
+              new Pose3d(VISION_POSE),
+              .05,
+              2,
+              6.5,
+              PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR,
+              new int[] {29, 30});
+      vision.periodic();
+    }
+    assertEquals(0, accepted.size(), "Rejected distant poses cannot seed startup");
+    assertPose(INITIAL_POSE, "Five rejected frames must not reset the estimator");
+    for (int i = 0; i < 4; i++) {
+      publish(front, VISION_POSE, PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR, 2, 3);
+      assertPose(INITIAL_POSE, "A full five accepted frames must still be required");
+    }
+    publish(front, VISION_POSE, PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR, 2, 3);
+    assertPose(VISION_POSE, "Nearby stable MultiTag observations must recover startup");
   }
 
   @Test
@@ -497,6 +647,25 @@ class VisionStartupReseedTest {
     vision.periodic();
   }
 
+  private void assertPhotonHeadingAvailable(boolean expected) {
+    double capture = captureTime();
+    Pose2d capturedPose = swerve.samplePoseAt(capture).orElseThrow();
+    assertEquals(
+        expected,
+        headingProbe.provider.getHeadingAtTimestamp(capture).isPresent(),
+        "Capture history alone must not supply an unaligned field heading to PhotonVision");
+    assertEquals(
+        expected,
+        headingProbe.provider.getSeedPoseAtTimestamp(capture).isPresent(),
+        "Capture history alone must not supply an unaligned field pose seed to PhotonVision");
+    if (expected) {
+      assertEquals(
+          capturedPose.getRotation(), headingProbe.provider.getHeadingAtTimestamp(capture).get());
+      assertEquals(
+          new Pose3d(capturedPose), headingProbe.provider.getSeedPoseAtTimestamp(capture).get());
+    }
+  }
+
   private double captureTime() {
     Timer.delay(.02);
     double deadline = Timer.getFPGATimestamp() + 3.0;
@@ -515,6 +684,35 @@ class VisionStartupReseedTest {
     assertEquals(expected.getY(), actual.getY(), .03, message);
     assertEquals(
         expected.getRotation().getDegrees(), actual.getRotation().getDegrees(), .1, message);
+  }
+
+  /** Captures the real subsystem provider while avoiding external camera frame reads. */
+  private static class HeadingProbeCamera extends VisionIOPhotonVision {
+    private VisionHeadingProvider provider;
+    private boolean initializationComplete;
+
+    HeadingProbeCamera() {
+      super("startup-heading-probe", new Transform3d());
+    }
+
+    @Override
+    public void setHeadingProvider(VisionHeadingProvider provider) {
+      super.setHeadingProvider(provider);
+      this.provider = provider;
+    }
+
+    @Override
+    public void markVisionInitializationComplete() {
+      super.markVisionInitializationComplete();
+      initializationComplete = true;
+    }
+
+    @Override
+    public void updateInputs(VisionIOInputs inputs) {
+      inputs.setCameraName(getCameraName());
+      inputs.setConnected(true);
+      processResults(List.of(), inputs);
+    }
   }
 
   private static class TestCamera implements VisionIO {

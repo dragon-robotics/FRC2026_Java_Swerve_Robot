@@ -28,6 +28,7 @@ final class VisionDiagnostics {
       boolean accepted,
       String rejectionReason,
       boolean startupInnovationBypassAllowed,
+      boolean fieldHeadingAligned,
       Pose2d fusedBefore,
       Pose2d fusedAfter,
       ChassisSpeeds speeds,
@@ -55,6 +56,19 @@ final class VisionDiagnostics {
       data.put("rawPose", pose(observation.pose()));
       data.put("referencePose", pose(reference));
       data.put("innovationMeters", finite(innovation));
+      data.put("fieldHeadingAligned", fieldHeadingAligned);
+      data.put("headingGateActive", fieldHeadingAligned && reference != null);
+      data.put(
+          "headingInnovationDegrees",
+          reference == null
+              ? null
+              : finite(
+                  observation
+                      .pose()
+                      .toPose2d()
+                      .getRotation()
+                      .minus(reference.getRotation())
+                      .getDegrees()));
       data.put(
           "innovationXYMeters",
           reference == null

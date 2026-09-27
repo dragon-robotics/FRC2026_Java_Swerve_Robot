@@ -66,6 +66,13 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   private int m_poseResetsInProgress;
   private double m_poseHistoryNotBefore = Double.NEGATIVE_INFINITY;
   private long m_poseResetSequence;
+  private boolean m_fieldHeadingAligned;
+
+  private enum HeadingAlignmentEffect {
+    PRESERVE,
+    ESTABLISH,
+    INVALIDATE
+  }
 
   /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
   private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -458,6 +465,16 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         && timestamp <= m_poseHistoryTimestamps.getLast();
   }
 
+  /**
+   * Whether an explicit absolute-field pose/rotation reset has anchored the gyro heading.
+   * Operator-relative zeroing and taring do not establish an absolute field heading.
+   */
+  public boolean isFieldHeadingAligned() {
+    synchronized (m_poseHistoryLock) {
+      return m_poseResetsInProgress == 0 && m_fieldHeadingAligned;
+    }
+  }
+
   @Override
   public void resetPose(Pose2d pose) {
     resetPose(pose, "EXTERNAL_RESET");
@@ -465,7 +482,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
   /** Resets the native estimator and records why its coordinate origin changed. */
   public void resetPose(Pose2d pose, String reason) {
-    runPoseReset(() -> super.resetPose(pose), reason, pose);
+    runPoseReset(() -> super.resetPose(pose), reason, pose, HeadingAlignmentEffect.ESTABLISH);
   }
 
   @Override
@@ -473,7 +490,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     runPoseReset(
         () -> super.resetTranslation(translation),
         "RESET_TRANSLATION",
-        new Pose2d(translation, getState().Pose.getRotation()));
+        new Pose2d(translation, getState().Pose.getRotation()),
+        HeadingAlignmentEffect.PRESERVE);
   }
 
   @Override
@@ -481,7 +499,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     runPoseReset(
         () -> super.resetRotation(rotation),
         "RESET_ROTATION",
-        new Pose2d(getState().Pose.getTranslation(), rotation));
+        new Pose2d(getState().Pose.getTranslation(), rotation),
+        HeadingAlignmentEffect.ESTABLISH);
   }
 
   @Override
@@ -489,15 +508,18 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     runPoseReset(
         () -> super.seedFieldCentric(rotation),
         "OPERATOR_FIELD_CENTRIC_SEED",
-        new Pose2d(getState().Pose.getTranslation(), rotation.plus(getOperatorForwardDirection())));
+        new Pose2d(getState().Pose.getTranslation(), rotation.plus(getOperatorForwardDirection())),
+        HeadingAlignmentEffect.INVALIDATE);
   }
 
   @Override
   public void tareEverything() {
-    runPoseReset(super::tareEverything, "TARE_EVERYTHING", Pose2d.kZero);
+    runPoseReset(
+        super::tareEverything, "TARE_EVERYTHING", Pose2d.kZero, HeadingAlignmentEffect.INVALIDATE);
   }
 
-  private void runPoseReset(Runnable resetAction, String reason, Pose2d requestedPose) {
+  private void runPoseReset(
+      Runnable resetAction, String reason, Pose2d requestedPose, HeadingAlignmentEffect alignment) {
     Pose2d poseBefore = getState().Pose;
     double timestamp = Timer.getFPGATimestamp();
     long sequence;
@@ -506,14 +528,21 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       m_poseHistoryTimestamps.clear();
       sequence = ++m_poseResetSequence;
     }
+    boolean completed = false;
     try {
       resetAction.run();
+      completed = true;
     } finally {
       double resetFinished = Utils.getCurrentTimeSeconds();
       synchronized (m_poseHistoryLock) {
         m_poseHistoryTimestamps.clear();
         m_poseHistoryNotBefore = Math.max(m_poseHistoryNotBefore, resetFinished);
         m_poseResetsInProgress--;
+        if (!completed || alignment == HeadingAlignmentEffect.INVALIDATE) {
+          m_fieldHeadingAligned = false;
+        } else if (alignment == HeadingAlignmentEffect.ESTABLISH) {
+          m_fieldHeadingAligned = true;
+        }
       }
     }
     Pose2d poseAfter = getState().Pose;
@@ -536,6 +565,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     event.put("poseAfter", poseCoordinates(poseAfter));
     event.put("enabled", DriverStation.isEnabled());
     event.put("autonomous", DriverStation.isAutonomous());
+    event.put("fieldHeadingAligned", isFieldHeadingAligned());
     DogLog.log("Swerve/PoseReset/Event", JSONObject.toJSONString(event));
   }
 

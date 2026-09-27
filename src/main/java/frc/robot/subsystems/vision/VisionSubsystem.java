@@ -16,7 +16,9 @@ import static frc.robot.util.constants.VisionConstants.MAX_ABS_TILT_DEGREES_FOR_
 import static frc.robot.util.constants.VisionConstants.MAX_AMBIGUITY;
 import static frc.robot.util.constants.VisionConstants.MAX_AVG_TAG_DISTANCE_METERS;
 import static frc.robot.util.constants.VisionConstants.MAX_FRAME_AGE_SECONDS;
+import static frc.robot.util.constants.VisionConstants.MAX_HEADING_DELTA_DEGREES;
 import static frc.robot.util.constants.VisionConstants.MAX_POSE_DELTA_METERS;
+import static frc.robot.util.constants.VisionConstants.MAX_TWO_TAG_MULTITAG_DISTANCE_METERS;
 import static frc.robot.util.constants.VisionConstants.MAX_Z_ERROR;
 import static frc.robot.util.constants.VisionConstants.MIN_TRANSLATION_STDDEV_METERS;
 import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_MAX_HEADING_DELTA_DEGREES;
@@ -262,7 +264,8 @@ public class VisionSubsystem extends SubsystemBase {
         DriverStation.isDisabled()
             && !hasEnteredEnabledModeSinceStartup
             && !visionInitializationComplete;
-    String reason = rejectionReason(observation).orElse("");
+    boolean fieldHeadingAligned = swerve.isFieldHeadingAligned();
+    String reason = rejectionReason(observation, reference, fieldHeadingAligned).orElse("");
     if (!Double.isFinite(observation.timestamp())) reason = "INVALID_TIMESTAMP";
     else if (age < 0.0) reason = "FUTURE_TIMESTAMP";
     else if (age > MAX_FRAME_AGE_SECONDS) reason = "STALE_FRAME";
@@ -314,6 +317,7 @@ public class VisionSubsystem extends SubsystemBase {
                 accepted,
                 reason,
                 startup,
+                fieldHeadingAligned,
                 before.Pose,
                 swerve.getState().Pose,
                 before.Speeds,
@@ -405,6 +409,7 @@ public class VisionSubsystem extends SubsystemBase {
         "Vision/RobotAngularSpeedDegreesPerSecond", Math.toDegrees(angularSpeedRadiansPerSecond));
     DogLog.log("Vision/Initialization/StableMultitagPoseCount", stableMultitagPoseCount);
     DogLog.log("Vision/Initialization/Complete", visionInitializationComplete);
+    DogLog.log("Vision/FieldHeadingAligned", swerve.isFieldHeadingAligned());
   }
 
   /**
@@ -595,11 +600,12 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Returns a human-readable rejection reason, or empty if the observation should be accepted.
+   * Returns a static measurement-quality rejection reason, or empty when those checks pass.
    *
    * <p>Reject when: no tags, unrealistic Z, outside the field, a single tag with high ambiguity, or
    * the average tag distance exceeds {@link
-   * frc.robot.util.constants.VisionConstants#MAX_AVG_TAG_DISTANCE_METERS}.
+   * frc.robot.util.constants.VisionConstants#MAX_AVG_TAG_DISTANCE_METERS}. Two-tag coprocessor
+   * MultiTag observations additionally use the tighter two-tag range limit.
    *
    * <p>Static and package-private so tests can exercise the real gate logic without a HAL/sim
    * drivetrain.
@@ -648,6 +654,34 @@ public class VisionSubsystem extends SubsystemBase {
       return Optional.of("DISTANCE=" + observation.averageTagDistance());
     }
 
+    if (observation.type() == PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR
+        && observation.tagCount() == 2
+        && observation.averageTagDistance() > MAX_TWO_TAG_MULTITAG_DISTANCE_METERS) {
+      return Optional.of("TWO_TAG_MULTITAG_DISTANCE=" + observation.averageTagDistance());
+    }
+
+    return Optional.empty();
+  }
+
+  /** Applies heading consistency only with an established field frame and capture-time history. */
+  static Optional<String> rejectionReason(
+      PoseObservation observation, Pose2d captureReference, boolean fieldHeadingAligned) {
+    Optional<String> qualityRejection = rejectionReason(observation);
+    if (qualityRejection.isPresent() || !fieldHeadingAligned || captureReference == null) {
+      return qualityRejection;
+    }
+    double headingDelta =
+        observation
+            .pose()
+            .toPose2d()
+            .getRotation()
+            .minus(captureReference.getRotation())
+            .getDegrees();
+    // Permit the exact boundary despite roundoff from wrapped rotation arithmetic.
+    if (!Double.isFinite(headingDelta)
+        || Math.abs(headingDelta) > MAX_HEADING_DELTA_DEGREES + 1e-9) {
+      return Optional.of("HEADING_DELTA");
+    }
     return Optional.empty();
   }
 
@@ -769,15 +803,17 @@ public class VisionSubsystem extends SubsystemBase {
     return true;
   }
 
-  /** Feeds the drivetrain heading to PhotonVision for single-tag constrained solving. */
+  /** Supplies field-aligned capture-time history to PhotonVision's heading-dependent solvers. */
   private class DrivetrainHeadingProvider implements VisionIOPhotonVision.VisionHeadingProvider {
     @Override
     public Optional<Rotation2d> getHeadingAtTimestamp(double fpgaTimestampSeconds) {
+      if (!swerve.isFieldHeadingAligned()) return Optional.empty();
       return swerve.samplePoseAt(fpgaTimestampSeconds).map(Pose2d::getRotation);
     }
 
     @Override
     public Optional<Pose3d> getSeedPoseAtTimestamp(double fpgaTimestampSeconds) {
+      if (!swerve.isFieldHeadingAligned()) return Optional.empty();
       return swerve.samplePoseAt(fpgaTimestampSeconds).map(Pose3d::new);
     }
 
