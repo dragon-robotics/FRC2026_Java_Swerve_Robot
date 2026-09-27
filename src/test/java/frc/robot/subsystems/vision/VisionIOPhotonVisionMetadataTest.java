@@ -1,5 +1,7 @@
 package frc.robot.subsystems.vision;
 
+import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
+import static frc.robot.util.constants.VisionConstants.APTAG_POSE_EST_CAM_F_POS;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,6 +22,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.photonvision.estimation.TargetModel;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.simulation.VisionTargetSim;
 import org.photonvision.targeting.MultiTargetPNPResult;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
@@ -169,10 +175,12 @@ class VisionIOPhotonVisionMetadataTest {
 
   @ParameterizedTest
   @ValueSource(doubles = {-1.01, 1.01, Double.NaN, Double.POSITIVE_INFINITY})
-  void unsafeAngularRateFallsBackToCameraOnlyPose(double rate) throws Exception {
+  void unsafeTrigAngularRateFallsBackToCameraOnlyPose(double rate) throws Exception {
     provideZeroHeading();
     angularRate = rate;
     io.markVisionInitializationComplete();
+    // Isolate the trig guard: constrained solving has a separate 90 degrees/second limit.
+    System.setProperty("vision.photon.strategyOrder", "PNP_DISTANCE_TRIG_SOLVE,LOWEST_AMBIGUITY");
     assertEquals(
         "LOWEST_AMBIGUITY", process(frame(List.of(target(2, 2, .1)), null)).get(0).solver());
   }
@@ -183,6 +191,7 @@ class VisionIOPhotonVisionMetadataTest {
     provideZeroHeading();
     angularRate = rate;
     io.markVisionInitializationComplete();
+    System.setProperty("vision.photon.strategyOrder", "PNP_DISTANCE_TRIG_SOLVE,LOWEST_AMBIGUITY");
     assertEquals(
         "PNP_DISTANCE_TRIG_SOLVE", process(frame(List.of(target(2, 2, .1)), null)).get(0).solver());
   }
@@ -194,6 +203,40 @@ class VisionIOPhotonVisionMetadataTest {
     io.markVisionInitializationComplete();
     assertEquals(
         "LOWEST_AMBIGUITY", process(frame(List.of(target(2, 2, .1)), null)).get(0).solver());
+  }
+
+  @Test
+  void calibratedConstrainedSolveStillRequiresCaptureTimeHeading() {
+    io.camera.close();
+    io = new VisionIOPhotonVision("metadata-calibrated", APTAG_POSE_EST_CAM_F_POS);
+    var properties = new SimCameraProperties();
+    properties.setCalibration(800, 600, Rotation2d.fromDegrees(72));
+    properties.setCalibError(0, 0);
+    var truth = new Pose3d(4.407, .650, 0, new Rotation3d(0, 0, Math.PI / 2));
+    try (var simulation = new PhotonCameraSim(io.camera, properties, APTAG_FIELD_LAYOUT)) {
+      simulation.enableRawStream(false);
+      simulation.enableProcessedStream(false);
+      simulation.enableDrawWireframe(false);
+      var targets =
+          APTAG_FIELD_LAYOUT.getTags().stream()
+              .map(tag -> new VisionTargetSim(tag.pose, TargetModel.kAprilTag36h11, tag.ID))
+              .toList();
+      var frame = simulation.process(10, truth.transformBy(APTAG_POSE_EST_CAM_F_POS), targets);
+      simulation.submitProcessedFrame(frame);
+      assertTrue(io.camera.getCameraMatrix().isPresent());
+      assertTrue(io.camera.getDistCoeffs().isPresent());
+      provideHeading(truth.getRotation().toRotation2d());
+      io.markVisionInitializationComplete();
+      System.setProperty(
+          "vision.photon.strategyOrder",
+          "CONSTRAINED_SOLVEPNP,MULTI_TAG_PNP_ON_COPROCESSOR,LOWEST_AMBIGUITY");
+
+      assertEquals("CONSTRAINED_SOLVEPNP", process(frame).get(0).solver());
+      headingAvailable = false;
+      assertEquals("MULTI_TAG_PNP_ON_COPROCESSOR", process(frame).get(0).solver());
+      headingAvailable = true;
+      assertEquals("CONSTRAINED_SOLVEPNP", process(frame).get(0).solver());
+    }
   }
 
   @Test
@@ -230,11 +273,15 @@ class VisionIOPhotonVisionMetadataTest {
   }
 
   private void provideZeroHeading() {
+    provideHeading(Rotation2d.kZero);
+  }
+
+  private void provideHeading(Rotation2d heading) {
     io.setHeadingProvider(
         new VisionIOPhotonVision.VisionHeadingProvider() {
           @Override
           public Optional<Rotation2d> getHeadingAtTimestamp(double timestamp) {
-            return headingAvailable ? Optional.of(new Rotation2d()) : Optional.empty();
+            return headingAvailable ? Optional.of(heading) : Optional.empty();
           }
 
           @Override

@@ -154,15 +154,12 @@ public final class VisionConstants {
   /** Enables constrained SolvePnP fallback in PhotonVision IO. */
   public static final boolean ENABLE_CONSTRAINED_FALLBACK = true;
 
-  /**
-   * Skip constrained fallback when rotating too quickly, since gyro/vision latency mismatch can
-   * induce drift.
-   */
-  public static final double CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC = 0.5;
+  /** Constrained PnP is eligible through 90 degrees/second with aligned capture-time heading. */
+  public static final double CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC = Math.PI / 2.0;
 
   /**
-   * Trig solve remains usable deeper into rotation than constrained solve, so it gets a separate
-   * cutoff.
+   * Trig solving retains its independent angular-rate cutoff; widening constrained eligibility does
+   * not change this limit.
    */
   public static final double TRIG_MAX_ANGULAR_RATE_RAD_PER_SEC = 1.0;
 
