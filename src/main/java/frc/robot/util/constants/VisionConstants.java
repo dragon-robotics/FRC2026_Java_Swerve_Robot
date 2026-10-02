@@ -10,64 +10,67 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 
 /**
- * Vision camera transforms, AprilTag acceptance gates, and pose-estimator uncertainty settings.
+ * Vision camera transforms, AprilTag acceptance gates, and pose-estimator
+ * uncertainty settings.
  *
- * <p>Camera transforms are robot-relative. Translation values are meters in the WPILib robot frame
+ * <p>
+ * Camera transforms are robot-relative. Translation values are meters in the
+ * WPILib robot frame
  * (+X forward, +Y left, +Z up). Rotation values are radians.
  */
 public final class VisionConstants {
 
-  private VisionConstants() {}
+  private VisionConstants() {
+  }
 
   /* AprilTag pose-estimation cameras */
 
   public static final String[] APTAG_CAMERA_NAMES = {
-    "AprilTagPoseEstCameraF",
-    "AprilTagPoseEstCameraR",
-    "AprilTagPoseEstCameraB",
-    "AprilTagPoseEstCameraL"
+      "AprilTagPoseEstCameraF",
+      "AprilTagPoseEstCameraR",
+      "AprilTagPoseEstCameraB",
+      "AprilTagPoseEstCameraL"
   };
 
-  public static final Transform3d APTAG_POSE_EST_CAM_F_POS =
-      new Transform3d(
-          new Translation3d(
-              Units.inchesToMeters(-11.152),
-              Units.inchesToMeters(-9.5165),
-              Units.inchesToMeters(20.930)),
-          new Rotation3d(0, Units.degreesToRadians(-15), 0));
+  public static final Transform3d APTAG_POSE_EST_CAM_F_POS = new Transform3d(
+      new Translation3d(
+          Units.inchesToMeters(-11.152),
+          Units.inchesToMeters(-9.5165),
+          Units.inchesToMeters(20.930)),
+      new Rotation3d(0, Units.degreesToRadians(-15), 0));
 
-  public static final Transform3d APTAG_POSE_EST_CAM_R_POS =
-      new Transform3d(
-          new Translation3d(
-              Units.inchesToMeters(-8.387),
-              Units.inchesToMeters(-13.355),
-              Units.inchesToMeters(16.181)),
-          new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(-90)));
+  public static final Transform3d APTAG_POSE_EST_CAM_R_POS = new Transform3d(
+      new Translation3d(
+          Units.inchesToMeters(-8.387),
+          Units.inchesToMeters(-13.355),
+          Units.inchesToMeters(16.75)),
+      new Rotation3d(0, Units.degreesToRadians(-10), Units.degreesToRadians(-90)));
 
-  public static final Transform3d APTAG_POSE_EST_CAM_B_POS =
-      new Transform3d(
-          new Translation3d(
-              Units.inchesToMeters(-9.164),
-              Units.inchesToMeters(12.5),
-              Units.inchesToMeters(20.839)),
-          new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(180)));
+  public static final Transform3d APTAG_POSE_EST_CAM_B_POS = new Transform3d(
+      new Translation3d(
+          Units.inchesToMeters(-9.164),
+          Units.inchesToMeters(12.5),
+          Units.inchesToMeters(20.839)),
+      new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(180)));
 
-  public static final Transform3d APTAG_POSE_EST_CAM_L_POS =
-      new Transform3d(
-          new Translation3d(
-              Units.inchesToMeters(-8.387),
-              Units.inchesToMeters(13.355),
-              Units.inchesToMeters(16.931)),
-          new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(90)));
+  public static final Transform3d APTAG_POSE_EST_CAM_L_POS = new Transform3d(
+      new Translation3d(
+          Units.inchesToMeters(-8.387),
+          Units.inchesToMeters(13.355),
+          Units.inchesToMeters(17.48)),
+      new Rotation3d(0, Units.degreesToRadians(-10), Units.degreesToRadians(90)));
 
   public static final Transform3d[] APTAG_POSE_EST_CAM_POSITIONS = {
-    APTAG_POSE_EST_CAM_F_POS,
-    APTAG_POSE_EST_CAM_R_POS,
-    APTAG_POSE_EST_CAM_B_POS,
-    APTAG_POSE_EST_CAM_L_POS
+      APTAG_POSE_EST_CAM_F_POS,
+      APTAG_POSE_EST_CAM_R_POS,
+      APTAG_POSE_EST_CAM_B_POS,
+      APTAG_POSE_EST_CAM_L_POS
   };
 
-  /** Default x, y, and heading standard deviations used when no richer model is available. */
+  /**
+   * Default x, y, and heading standard deviations used when no richer model is
+   * available.
+   */
   public static final Matrix<N3, N1> DEFAULT_TAG_STDDEV = VecBuilder.fill(0.9, 0.9, 0.9);
 
   /* Acceptance gates */
@@ -81,21 +84,34 @@ public final class VisionConstants {
   /** Coarse IO per-target prefilter: ignore tags farther than this (meters). */
   public static final double MAX_TAG_DISTANCE = 8.0;
 
-  /** Reject observations whose average tag distance exceeds this (meters). 1678 strategy. */
+  /**
+   * Reject observations whose average tag distance exceeds this (meters). 1678
+   * strategy.
+   */
   public static final double MAX_AVG_TAG_DISTANCE_METERS = 7.0;
 
-  /** Two-tag coprocessor solves need a tighter range limit than broader tag support. */
+  /**
+   * Two-tag coprocessor solves need a tighter range limit than broader tag
+   * support.
+   */
   public static final double MAX_TWO_TAG_MULTITAG_DISTANCE_METERS = 6.0;
 
-  /** Raw vision yaw may disagree this much with an aligned capture-time field heading. */
+  /**
+   * Raw vision yaw may disagree this much with an aligned capture-time field
+   * heading.
+   */
   public static final double MAX_HEADING_DELTA_DEGREES = 5.0;
 
-  /** Reject vision updates while chassis pitch/roll exceeds this absolute tilt (degrees). */
-  public static final double MAX_ABS_TILT_DEGREES_FOR_VISION =
-      Double.parseDouble(System.getProperty("vision.maxAbsTiltDeg", "8.0"));
+  /**
+   * Reject vision updates while chassis pitch/roll exceeds this absolute tilt
+   * (degrees).
+   */
+  public static final double MAX_ABS_TILT_DEGREES_FOR_VISION = Double
+      .parseDouble(System.getProperty("vision.maxAbsTiltDeg", "8.0"));
 
   /**
-   * Innovation gate on translation: reject vision poses farther than this from the predicted
+   * Innovation gate on translation: reject vision poses farther than this from
+   * the predicted
    * drivetrain pose at the same timestamp.
    */
   public static final double MAX_POSE_DELTA_METERS = 2.5;
@@ -103,7 +119,9 @@ public final class VisionConstants {
   /** Old camera frames cannot be applied to the current estimator. */
   public static final double MAX_FRAME_AGE_SECONDS = 0.5;
 
-  /** Prevent unrealistically strong corrections from very close multi-tag frames. */
+  /**
+   * Prevent unrealistically strong corrections from very close multi-tag frames.
+   */
   public static final double MIN_TRANSLATION_STDDEV_METERS = 0.02;
 
   /* VisionSubsystem state/reseed behavior */
@@ -114,38 +132,57 @@ public final class VisionConstants {
   /** Limit how often disabled auto-reseed can reset pose. */
   public static final double DISABLED_AUTO_RESEED_MIN_INTERVAL_SECONDS = 0.5;
 
-  /** Re-seed again in disabled if odometry drifts too far from latest accepted vision. */
+  /**
+   * Re-seed again in disabled if odometry drifts too far from latest accepted
+   * vision.
+   */
   public static final double DISABLED_AUTO_RESEED_DELTA_METERS = 0.25;
 
-  /** Disabled auto-reseed only trusts multi-tag solutions to avoid gyro-seeded single-tag bias. */
+  /**
+   * Disabled auto-reseed only trusts multi-tag solutions to avoid gyro-seeded
+   * single-tag bias.
+   */
   public static final int DISABLED_AUTO_RESEED_MIN_TAG_COUNT = 2;
 
-  /** Stable MultiTagPnP observations required before vision init is considered complete. */
+  /**
+   * Stable MultiTagPnP observations required before vision init is considered
+   * complete.
+   */
   public static final int MULTITAG_INIT_STABLE_POSES_REQUIRED = 5;
 
-  /** Maximum translation delta between consecutive MultiTagPnP observations to stay stable. */
+  /**
+   * Maximum translation delta between consecutive MultiTagPnP observations to
+   * stay stable.
+   */
   public static final double MULTITAG_INIT_MAX_TRANSLATION_DELTA_METERS = 0.20;
 
-  /** Maximum heading delta between consecutive MultiTagPnP observations to stay stable. */
+  /**
+   * Maximum heading delta between consecutive MultiTagPnP observations to stay
+   * stable.
+   */
   public static final double MULTITAG_INIT_MAX_HEADING_DELTA_DEGREES = 10.0;
 
   /* Standard-deviation model */
 
   /**
-   * Conservative initial translation coefficient, scaled by dist^2 / tagCount in VisionSubsystem.
-   * Hardware logs must calibrate this; tag geometry can produce heavy-tailed errors even in
+   * Conservative initial translation coefficient, scaled by dist^2 / tagCount in
+   * VisionSubsystem.
+   * Hardware logs must calibrate this; tag geometry can produce heavy-tailed
+   * errors even in
    * MultiTag.
    */
   public static final double LINEAR_STDDEV_BASELINE = 0.10;
 
   /**
-   * Heading std-dev fed to the pose estimator; set huge so vision never moves heading. The gyro is
+   * Heading std-dev fed to the pose estimator; set huge so vision never moves
+   * heading. The gyro is
    * authoritative. 1678 strategy.
    */
   public static final double HEADING_STDDEV_IGNORE = 1e9;
 
   /**
-   * Single-tag observations have 180-deg PnP flip ambiguity; distrust their translation heavily.
+   * Single-tag observations have 180-deg PnP flip ambiguity; distrust their
+   * translation heavily.
    */
   public static final double SINGLE_TAG_LINEAR_STDDEV_MULTIPLIER = 5.0;
 
@@ -154,30 +191,41 @@ public final class VisionConstants {
   /** Enables constrained SolvePnP fallback in PhotonVision IO. */
   public static final boolean ENABLE_CONSTRAINED_FALLBACK = true;
 
-  /** Constrained PnP is eligible through 90 degrees/second with aligned capture-time heading. */
+  /**
+   * Constrained PnP is eligible through 90 degrees/second with aligned
+   * capture-time heading.
+   */
   public static final double CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC = Math.PI / 2.0;
 
   /**
-   * Trig solving retains its independent angular-rate cutoff; widening constrained eligibility does
+   * Trig solving retains its independent angular-rate cutoff; widening
+   * constrained eligibility does
    * not change this limit.
    */
   public static final double TRIG_MAX_ANGULAR_RATE_RAD_PER_SEC = 1.0;
 
-  /** Weight on heading error in constrained solve. Higher values trust heading more strongly. */
+  /**
+   * Weight on heading error in constrained solve. Higher values trust heading
+   * more strongly.
+   */
   public static final double CONSTRAINED_HEADING_SCALE_FACTOR = 0.2;
 
-  /** Per-camera translation standard-deviation multipliers ordered like APTAG_CAMERA_NAMES. */
-  public static final double[] CAMERA_STDDEV_FACTORS = new double[] {1.0, 1.0, 1.0, 1.0};
+  /**
+   * Per-camera translation standard-deviation multipliers ordered like
+   * APTAG_CAMERA_NAMES.
+   */
+  public static final double[] CAMERA_STDDEV_FACTORS = new double[] { 1.0, 1.0, 1.0, 1.0 };
 
   /** Default per-frame solver policy after five-pose startup qualification. */
   public static final String PHOTON_POSE_STRATEGY_MODE = "HYBRID";
 
   /**
-   * Fixed chain for STANDARD mode, overridable with {@code vision.photon.strategyOrder}. Supported
-   * names include: MULTI_TAG_PNP_ON_COPROCESSOR, CONSTRAINED_SOLVEPNP, PNP_DISTANCE_TRIG_SOLVE,
+   * Fixed chain for STANDARD mode, overridable with
+   * {@code vision.photon.strategyOrder}. Supported
+   * names include: MULTI_TAG_PNP_ON_COPROCESSOR, CONSTRAINED_SOLVEPNP,
+   * PNP_DISTANCE_TRIG_SOLVE,
    * LOWEST_AMBIGUITY.
    */
-  public static final String PHOTON_POSE_STRATEGY_ORDER =
-      System.getProperty(
-          "vision.photon.strategyOrder", "MULTI_TAG_PNP_ON_COPROCESSOR,LOWEST_AMBIGUITY");
+  public static final String PHOTON_POSE_STRATEGY_ORDER = System.getProperty(
+      "vision.photon.strategyOrder", "MULTI_TAG_PNP_ON_COPROCESSOR,LOWEST_AMBIGUITY");
 }
