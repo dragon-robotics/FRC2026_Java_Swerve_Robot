@@ -104,8 +104,8 @@ public class Superstructure extends SubsystemBase {
   /* Manual shot setpoints */
   private static final double MANUAL_BUMPER_UP_RPM = 2500.0;
   private static final double MANUAL_BUMPER_UP_HOOD = 0.0;
-  private static final double MANUAL_TRENCH_RPM = 2800.0;
-  private static final double MANUAL_TRENCH_HOOD = 0.15;
+  private static final double MANUAL_TRENCH_RPM = 2900.0;
+  private static final double MANUAL_TRENCH_HOOD = 0.75;
   private static final double NEUTRAL_ZONE_HOOD_LOCK = 2.0;
 
   /** Pre-cached zone names avoid .name() heap allocation every cycle. */
