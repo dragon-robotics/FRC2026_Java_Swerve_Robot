@@ -43,21 +43,21 @@ public final class VisionConstants {
       new Translation3d(
           Units.inchesToMeters(-8.387),
           Units.inchesToMeters(-13.355),
-          Units.inchesToMeters(16.75)),
+          Units.inchesToMeters(16.0375)),
       new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(-90)));
 
   public static final Transform3d APTAG_POSE_EST_CAM_B_POS = new Transform3d(
       new Translation3d(
           Units.inchesToMeters(-9.164),
           Units.inchesToMeters(12.5),
-          Units.inchesToMeters(20.839)),
-      new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(180)));
+          Units.inchesToMeters(20.6775)),
+      new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(180)));
 
   public static final Transform3d APTAG_POSE_EST_CAM_L_POS = new Transform3d(
       new Translation3d(
           Units.inchesToMeters(-8.387),
           Units.inchesToMeters(13.355),
-          Units.inchesToMeters(17.48)),
+          Units.inchesToMeters(16.7875)),
       new Rotation3d(0, Units.degreesToRadians(-12), Units.degreesToRadians(90)));
 
   public static final Transform3d[] APTAG_POSE_EST_CAM_POSITIONS = {
