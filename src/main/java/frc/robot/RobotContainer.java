@@ -358,10 +358,8 @@ public class RobotContainer {
         swerveSubsystem::addVisionMeasurement,
         new VisionIOPhotonVision(APTAG_CAMERA_NAMES[0], VisionConstants.APTAG_POSE_EST_CAM_F_POS),
         new VisionIOPhotonVision(APTAG_CAMERA_NAMES[1], VisionConstants.APTAG_POSE_EST_CAM_R_POS),
-        // new VisionIOPhotonVision(APTAG_CAMERA_NAMES[2],
-        // VisionConstants.APTAG_POSE_EST_CAM_B_POS),
-        new VisionIOPhotonVision(APTAG_CAMERA_NAMES[3],
-            VisionConstants.APTAG_POSE_EST_CAM_L_POS));
+        new VisionIOPhotonVision(APTAG_CAMERA_NAMES[2], VisionConstants.APTAG_POSE_EST_CAM_B_POS),
+        new VisionIOPhotonVision(APTAG_CAMERA_NAMES[3], VisionConstants.APTAG_POSE_EST_CAM_L_POS));
   }
 
   private VisionSubsystem createSimulationVisionSubsystem() {
@@ -376,10 +374,10 @@ public class RobotContainer {
             APTAG_CAMERA_NAMES[1],
             VisionConstants.APTAG_POSE_EST_CAM_R_POS,
             this::getVisionSimulationPose),
-        // new VisionIOPhotonVisionSim(
-        // APTAG_CAMERA_NAMES[2],
-        // VisionConstants.APTAG_POSE_EST_CAM_B_POS,
-        // this::getVisionSimulationPose),
+        new VisionIOPhotonVisionSim(
+            APTAG_CAMERA_NAMES[2],
+            VisionConstants.APTAG_POSE_EST_CAM_B_POS,
+            this::getVisionSimulationPose),
         new VisionIOPhotonVisionSim(
             APTAG_CAMERA_NAMES[3],
             VisionConstants.APTAG_POSE_EST_CAM_L_POS,
