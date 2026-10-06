@@ -1,6 +1,6 @@
 package frc.robot.subsystems.vision;
 
-import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
+import static frc.robot.util.constants.FieldConstants.APTAG_POSE_ESTIMATION_LAYOUT;
 import static frc.robot.util.constants.VisionConstants.CONSTRAINED_HEADING_SCALE_FACTOR;
 import static frc.robot.util.constants.VisionConstants.CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC;
 import static frc.robot.util.constants.VisionConstants.ENABLE_CONSTRAINED_FALLBACK;
@@ -106,7 +106,7 @@ public class VisionIOPhotonVision implements VisionIO {
   public VisionIOPhotonVision(String name, Transform3d robotToCamera) {
     this.camera = new PhotonCamera(name);
     this.robotToCamera = robotToCamera;
-    this.poseEstimator = new PhotonPoseEstimator(APTAG_FIELD_LAYOUT, robotToCamera);
+    this.poseEstimator = new PhotonPoseEstimator(APTAG_POSE_ESTIMATION_LAYOUT, robotToCamera);
   }
 
   @Override

@@ -20,15 +20,18 @@ import java.nio.file.Path;
 public final class FieldConstants {
 
   /** AprilTag field layout loaded from deploy, with WPILib default field fallback. */
-  public static final AprilTagFieldLayout APTAG_FIELD_LAYOUT = loadDefaultAprilTagLayout();
+  public static final AprilTagFieldLayout APTAG_FIELD_LAYOUT =
+      loadAprilTagLayout("2026-rebuilt-welded.json");
+  public static final AprilTagFieldLayout APTAG_POSE_ESTIMATION_LAYOUT =
+      loadAprilTagLayout("2026-rebuilt-welded-no-single.json");
 
-  private static AprilTagFieldLayout loadDefaultAprilTagLayout() {
+  private static AprilTagFieldLayout loadAprilTagLayout(String layoutFileName) {
     Path defaultPath =
         Path.of(
             Filesystem.getDeployDirectory().getPath(),
             "apriltags",
             "welded",
-            "2026-rebuilt-welded-no-single.json");
+            layoutFileName);
     AprilTagFieldLayout defaultLayout = null;
     try {
       defaultLayout = new AprilTagFieldLayout(defaultPath);
