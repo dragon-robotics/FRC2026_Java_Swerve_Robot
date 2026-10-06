@@ -4,7 +4,7 @@
 
 package frc.robot.subsystems.vision;
 
-import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
+import static frc.robot.util.constants.FieldConstants.APTAG_POSE_ESTIMATION_LAYOUT;
 import static frc.robot.util.constants.VisionConstants.AIM_LINEAR_STDDEV_MULTIPLIER;
 import static frc.robot.util.constants.VisionConstants.APPLY_COPLANAR_PENALTY;
 import static frc.robot.util.constants.VisionConstants.CAMERA_STDDEV_FACTORS;
@@ -562,9 +562,9 @@ public class VisionSubsystem extends SubsystemBase {
 
     Pose2d pose2d = pose.toPose2d();
     if (pose2d.getX() < 0.0
-        || pose2d.getX() > APTAG_FIELD_LAYOUT.getFieldLength()
+        || pose2d.getX() > APTAG_POSE_ESTIMATION_LAYOUT.getFieldLength()
         || pose2d.getY() < 0.0
-        || pose2d.getY() > APTAG_FIELD_LAYOUT.getFieldWidth()) {
+        || pose2d.getY() > APTAG_POSE_ESTIMATION_LAYOUT.getFieldWidth()) {
       return Optional.of("OUT_OF_BOUNDS");
     }
 
@@ -639,14 +639,14 @@ public class VisionSubsystem extends SubsystemBase {
     if (tagIDs == null || tagIDs.length <= 1) {
       return true; // single tag is trivially "coplanar"
     }
-    var firstOpt = APTAG_FIELD_LAYOUT.getTagPose(tagIDs[0]);
+    var firstOpt = APTAG_POSE_ESTIMATION_LAYOUT.getTagPose(tagIDs[0]);
     if (firstOpt.isEmpty()) {
       return true; // unknown tag — treat as vulnerable
     }
     Rotation3d referenceRotation = firstOpt.get().getRotation();
     double thresholdRad = Math.toRadians(COPLANAR_ANGLE_THRESHOLD_DEG);
     for (int i = 1; i < tagIDs.length; i++) {
-      var tagOpt = APTAG_FIELD_LAYOUT.getTagPose(tagIDs[i]);
+      var tagOpt = APTAG_POSE_ESTIMATION_LAYOUT.getTagPose(tagIDs[i]);
       if (tagOpt.isEmpty()) {
         continue; // unknown tag — skip
       }

@@ -1,6 +1,6 @@
 package frc.robot.subsystems.vision;
 
-import static frc.robot.util.constants.FieldConstants.APTAG_FIELD_LAYOUT;
+import static frc.robot.util.constants.FieldConstants.APTAG_POSE_ESTIMATION_LAYOUT;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -37,7 +37,7 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
     this.poseSupplier = poseSupplier;
 
     visionSim = new VisionSystemSim(VISION_SIM_NAME);
-    visionSim.addAprilTags(APTAG_FIELD_LAYOUT);
+    visionSim.addAprilTags(APTAG_POSE_ESTIMATION_LAYOUT);
 
     var cameraProperties = new SimCameraProperties();
     cameraProperties.setCalibration(
@@ -49,7 +49,7 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
     cameraProperties.setAvgLatencyMs(CAMERA_AVERAGE_LATENCY_MS);
     cameraProperties.setLatencyStdDevMs(CAMERA_LATENCY_STD_DEV_MS);
 
-    cameraSim = new PhotonCameraSim(camera, cameraProperties, APTAG_FIELD_LAYOUT);
+    cameraSim = new PhotonCameraSim(camera, cameraProperties, APTAG_POSE_ESTIMATION_LAYOUT);
 
     visionSim.addCamera(cameraSim, robotToCamera);
   }
