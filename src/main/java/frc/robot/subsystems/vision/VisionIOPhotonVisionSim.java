@@ -10,7 +10,10 @@ import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 
-/** PhotonVision IO backed by PhotonLib simulation for deterministic vision tests. */
+/**
+ * PhotonVision IO backed by PhotonLib simulation for deterministic vision
+ * tests.
+ */
 public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
   private static final String VISION_SIM_NAME = "main";
   private static final int CAMERA_RESOLUTION_WIDTH_PIXELS = 800;
@@ -27,9 +30,10 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
   /**
    * Creates a simulated PhotonVision camera.
    *
-   * @param name PhotonVision camera name
+   * @param name          PhotonVision camera name
    * @param robotToCamera transform from robot frame to camera frame
-   * @param poseSupplier current robot pose supplier in the field coordinate frame
+   * @param poseSupplier  current robot pose supplier in the field coordinate
+   *                      frame
    */
   public VisionIOPhotonVisionSim(
       String name, Transform3d robotToCamera, Supplier<Pose2d> poseSupplier) {
