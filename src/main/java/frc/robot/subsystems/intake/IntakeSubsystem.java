@@ -34,13 +34,9 @@ import frc.robot.io.TorqueCurrentMotorIO;
 /**
  * Controls the slapdown intake arm and intake roller.
  *
- * <p>
- * Arm positions are mechanism rotations from the absolute/fused encoder. Roller
- * commands use
- * volts, RPM, or percent output based on the method name. The state machine
- * sends motor commands on
- * state entry, then uses sensor feedback in {@link #periodic()} to advance
- * transition states.
+ * <p>Arm positions are mechanism rotations from the absolute/fused encoder. Roller commands use
+ * volts, RPM, or percent output based on the method name. The state machine sends motor commands on
+ * state entry, then uses sensor feedback in {@link #periodic()} to advance transition states.
  */
 public class IntakeSubsystem extends SubsystemBase {
 
@@ -70,10 +66,7 @@ public class IntakeSubsystem extends SubsystemBase {
   protected final MotorIOInputs intakeRollerFollowInputs;
   protected final MotorIOInputs intakeArmInputs;
 
-  /**
-   * Last state that received entry CAN commands. Reset to null when entering a
-   * new state.
-   */
+  /** Last state that received entry CAN commands. Reset to null when entering a new state. */
   private IntakeState lastCommandedState = null;
 
   // Juicer sub-phase tracking; reset to PRE_JUICE on entry.
@@ -83,10 +76,9 @@ public class IntakeSubsystem extends SubsystemBase {
   /**
    * Creates a new intake subsystem.
    *
-   * @param intakeRollerLeadIO   lead roller motor IO
+   * @param intakeRollerLeadIO lead roller motor IO
    * @param intakeRollerFollowIO counter-rotating roller motor IO
-   * @param intakeArmIO          arm motor IO; controls deploy, stow, and juicer
-   *                             positions
+   * @param intakeArmIO arm motor IO; controls deploy, stow, and juicer positions
    */
   public IntakeSubsystem(
       MotorIO intakeRollerLeadIO, MotorIO intakeRollerFollowIO, MotorIO intakeArmIO) {
@@ -115,17 +107,14 @@ public class IntakeSubsystem extends SubsystemBase {
     // intakeRollerFollowIO.setMotorVoltage(voltage.times(-1.0));
   }
 
-  /**
-   * Directly commands both intake roller percent outputs with opposed polarity.
-   */
+  /** Directly commands both intake roller percent outputs with opposed polarity. */
   public void runIntakeRollerPercentage(double percentage) {
     intakeRollerLeadIO.setMotorPercentage(percentage);
     // intakeRollerFollowIO.setMotorPercentage(-percentage);
   }
 
   /**
-   * Directly commands both intake roller torque currents with opposed polarity
-   * and a duty-cycle
+   * Directly commands both intake roller torque currents with opposed polarity and a duty-cycle
    * cap.
    */
   public void runIntakeRollerTorqueCurrentFOC(Current torqueCurrent, double maxAbsDutyCycle) {
@@ -144,7 +133,8 @@ public class IntakeSubsystem extends SubsystemBase {
         rollerIO.setMotorVoltage(Volts.of(0.0));
         return;
       }
-      Voltage fallbackVoltage = torqueCurrent.in(Amps) > 0 ? INTAKE_ROLLER_VOLTAGE : OUTTAKE_ROLLER_VOLTAGE;
+      Voltage fallbackVoltage =
+          torqueCurrent.in(Amps) > 0 ? INTAKE_ROLLER_VOLTAGE : OUTTAKE_ROLLER_VOLTAGE;
       rollerIO.setMotorVoltage(fallbackVoltage.times(cappedMaxAbsDutyCycle));
     }
   }
@@ -180,7 +170,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * Commands the intake arm to a mechanism position.
    *
    * @param setpoint mechanism rotations from the arm absolute/fused encoder
-   * @param slotID   closed-loop slot used by the motor controller
+   * @param slotID closed-loop slot used by the motor controller
    */
   public void setIntakeArmSetpoint(double setpoint, int slotID) {
     intakeArmIO.setMotorPosition(setpoint, slotID);
@@ -194,13 +184,9 @@ public class IntakeSubsystem extends SubsystemBase {
   /**
    * Holds the deployed arm down while intaking.
    *
-   * <p>
-   * If the arm is not deployed yet, this commands the deployed position first.
-   * TalonFX-backed
-   * arms use torque current in amps after reaching deployed; other motor IO
-   * implementations fall
-   * back to position hold because not every controller supports torque-current
-   * control.
+   * <p>If the arm is not deployed yet, this commands the deployed position first. TalonFX-backed
+   * arms use torque current in amps after reaching deployed; other motor IO implementations fall
+   * back to position hold because not every controller supports torque-current control.
    */
   public void tensionDeployedIntakeArm() {
     if (!isIntakeArmAtDeployed()) {
@@ -217,9 +203,7 @@ public class IntakeSubsystem extends SubsystemBase {
   /**
    * Releases the arm motor to neutral output.
    *
-   * <p>
-   * For this slapdown intake, gravity holds the arm down after deploy. Use only
-   * when coasting
+   * <p>For this slapdown intake, gravity holds the arm down after deploy. Use only when coasting
    * the arm is intentional.
    */
   public void coastIntakeArm() {
@@ -249,30 +233,24 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeRollerLeadInputs.getMotorVelocity();
   }
 
-  /**
-   * Returns true when arm position is within configured tolerance of deployed
-   * rotations.
-   */
+  /** Returns true when arm position is within configured tolerance of deployed rotations. */
   public boolean isIntakeArmAtDeployed() {
-    double positionError = Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError =
+        Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
-  /**
-   * Returns true when arm position is within configured tolerance of stowed
-   * rotations.
-   */
+  /** Returns true when arm position is within configured tolerance of stowed rotations. */
   public boolean isIntakeArmAtStowed() {
-    double positionError = Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError =
+        Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
-  /**
-   * Returns true when arm position is within configured tolerance of pre-juice
-   * rotations.
-   */
+  /** Returns true when arm position is within configured tolerance of pre-juice rotations. */
   public boolean isIntakeArmAtPreJuice() {
-    double positionError = Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError =
+        Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
@@ -300,10 +278,7 @@ public class IntakeSubsystem extends SubsystemBase {
         || currIntakeState == IntakeState.DEPLOYED;
   }
 
-  /**
-   * Requests an intake state; transition states finish inside
-   * {@link #handleStateTransition()}.
-   */
+  /** Requests an intake state; transition states finish inside {@link #handleStateTransition()}. */
   public void setDesiredState(IntakeState state) {
     this.desiredIntakeState = state;
 
@@ -316,7 +291,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
     switch (state) {
       case HOME -> currIntakeState = IntakeState.STOWING;
-      case INTAKE, OUTTAKE -> currIntakeState = canStartRollerStateImmediately() ? state : IntakeState.DEPLOYING;
+      case INTAKE, OUTTAKE -> currIntakeState =
+          canStartRollerStateImmediately() ? state : IntakeState.DEPLOYING;
       case DEPLOYED -> currIntakeState = IntakeState.DEPLOYING;
       case JUICER -> {
         currIntakeState = IntakeState.JUICER;
@@ -324,14 +300,11 @@ public class IntakeSubsystem extends SubsystemBase {
         juicerPhase = JuicerPhase.PRE_JUICE;
         lastJuicerPhase = null;
       }
-      default -> {
-      }
+      default -> {}
     }
   }
 
-  /**
-   * Advances the intake state machine and sends hardware commands on state entry.
-   */
+  /** Advances the intake state machine and sends hardware commands on state entry. */
   public void handleStateTransition() {
     switch (currIntakeState) {
       case HOME -> handleHomeState();
