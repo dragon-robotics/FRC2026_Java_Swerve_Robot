@@ -30,13 +30,18 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
 import frc.robot.io.TorqueCurrentMotorIO;
+import frc.robot.subsystems.intake.IntakeSubsystem.JuicerPhase;
 
 /**
  * Controls the slapdown intake arm and intake roller.
  *
- * <p>Arm positions are mechanism rotations from the absolute/fused encoder. Roller commands use
- * volts, RPM, or percent output based on the method name. The state machine sends motor commands on
- * state entry, then uses sensor feedback in {@link #periodic()} to advance transition states.
+ * <p>
+ * Arm positions are mechanism rotations from the absolute/fused encoder. Roller
+ * commands use
+ * volts, RPM, or percent output based on the method name. The state machine
+ * sends motor commands on
+ * state entry, then uses sensor feedback in {@link #periodic()} to advance
+ * transition states.
  */
 public class IntakeSubsystem extends SubsystemBase {
 
@@ -47,12 +52,21 @@ public class IntakeSubsystem extends SubsystemBase {
     DEPLOYED,
     DEPLOYING,
     STOWING,
-    JUICER
+    JUICER,
+    JUICER_TOSS
   }
 
   /** Sub-phases for the JUICER state's timed sequence. */
   public enum JuicerPhase {
     PRE_JUICE,
+    SQUEEZE
+  }
+
+  /** Sub-phases for the JUICER_TOSS state's timed sequence. */
+  public enum JuicerTossPhase {
+    PRE_JUICE_TOSS_PT1,
+    PRE_JUICE_TOSS_PT2,
+    PRE_JUICE_TOSS_PT3,
     SQUEEZE
   }
 
@@ -66,19 +80,27 @@ public class IntakeSubsystem extends SubsystemBase {
   protected final MotorIOInputs intakeRollerFollowInputs;
   protected final MotorIOInputs intakeArmInputs;
 
-  /** Last state that received entry CAN commands. Reset to null when entering a new state. */
+  /**
+   * Last state that received entry CAN commands. Reset to null when entering a
+   * new state.
+   */
   private IntakeState lastCommandedState = null;
 
   // Juicer sub-phase tracking; reset to PRE_JUICE on entry.
   private JuicerPhase juicerPhase = JuicerPhase.PRE_JUICE;
   private JuicerPhase lastJuicerPhase = null;
 
+  // Juicer Toss sub-phase tracking; reset to PRE_JUICE_PT1 on entry.
+  private JuicerTossPhase juicerTossPhase = JuicerTossPhase.PRE_JUICE_TOSS_PT1;
+  private JuicerTossPhase lastJuicerTossPhase = null;
+
   /**
    * Creates a new intake subsystem.
    *
-   * @param intakeRollerLeadIO lead roller motor IO
+   * @param intakeRollerLeadIO   lead roller motor IO
    * @param intakeRollerFollowIO counter-rotating roller motor IO
-   * @param intakeArmIO arm motor IO; controls deploy, stow, and juicer positions
+   * @param intakeArmIO          arm motor IO; controls deploy, stow, and juicer
+   *                             positions
    */
   public IntakeSubsystem(
       MotorIO intakeRollerLeadIO, MotorIO intakeRollerFollowIO, MotorIO intakeArmIO) {
@@ -107,14 +129,17 @@ public class IntakeSubsystem extends SubsystemBase {
     // intakeRollerFollowIO.setMotorVoltage(voltage.times(-1.0));
   }
 
-  /** Directly commands both intake roller percent outputs with opposed polarity. */
+  /**
+   * Directly commands both intake roller percent outputs with opposed polarity.
+   */
   public void runIntakeRollerPercentage(double percentage) {
     intakeRollerLeadIO.setMotorPercentage(percentage);
     // intakeRollerFollowIO.setMotorPercentage(-percentage);
   }
 
   /**
-   * Directly commands both intake roller torque currents with opposed polarity and a duty-cycle
+   * Directly commands both intake roller torque currents with opposed polarity
+   * and a duty-cycle
    * cap.
    */
   public void runIntakeRollerTorqueCurrentFOC(Current torqueCurrent, double maxAbsDutyCycle) {
@@ -133,8 +158,7 @@ public class IntakeSubsystem extends SubsystemBase {
         rollerIO.setMotorVoltage(Volts.of(0.0));
         return;
       }
-      Voltage fallbackVoltage =
-          torqueCurrent.in(Amps) > 0 ? INTAKE_ROLLER_VOLTAGE : OUTTAKE_ROLLER_VOLTAGE;
+      Voltage fallbackVoltage = torqueCurrent.in(Amps) > 0 ? INTAKE_ROLLER_VOLTAGE : OUTTAKE_ROLLER_VOLTAGE;
       rollerIO.setMotorVoltage(fallbackVoltage.times(cappedMaxAbsDutyCycle));
     }
   }
@@ -170,7 +194,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * Commands the intake arm to a mechanism position.
    *
    * @param setpoint mechanism rotations from the arm absolute/fused encoder
-   * @param slotID closed-loop slot used by the motor controller
+   * @param slotID   closed-loop slot used by the motor controller
    */
   public void setIntakeArmSetpoint(double setpoint, int slotID) {
     intakeArmIO.setMotorPosition(setpoint, slotID);
@@ -184,9 +208,13 @@ public class IntakeSubsystem extends SubsystemBase {
   /**
    * Holds the deployed arm down while intaking.
    *
-   * <p>If the arm is not deployed yet, this commands the deployed position first. TalonFX-backed
-   * arms use torque current in amps after reaching deployed; other motor IO implementations fall
-   * back to position hold because not every controller supports torque-current control.
+   * <p>
+   * If the arm is not deployed yet, this commands the deployed position first.
+   * TalonFX-backed
+   * arms use torque current in amps after reaching deployed; other motor IO
+   * implementations fall
+   * back to position hold because not every controller supports torque-current
+   * control.
    */
   public void tensionDeployedIntakeArm() {
     if (!isIntakeArmAtDeployed()) {
@@ -203,7 +231,9 @@ public class IntakeSubsystem extends SubsystemBase {
   /**
    * Releases the arm motor to neutral output.
    *
-   * <p>For this slapdown intake, gravity holds the arm down after deploy. Use only when coasting
+   * <p>
+   * For this slapdown intake, gravity holds the arm down after deploy. Use only
+   * when coasting
    * the arm is intentional.
    */
   public void coastIntakeArm() {
@@ -233,25 +263,44 @@ public class IntakeSubsystem extends SubsystemBase {
     return intakeRollerLeadInputs.getMotorVelocity();
   }
 
-  /** Returns true when arm position is within configured tolerance of deployed rotations. */
+  /**
+   * Returns true when arm position is within configured tolerance of deployed
+   * rotations.
+   */
   public boolean isIntakeArmAtDeployed() {
-    double positionError =
-        Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
-  /** Returns true when arm position is within configured tolerance of stowed rotations. */
+  /**
+   * Returns true when arm position is within configured tolerance of stowed
+   * rotations.
+   */
   public boolean isIntakeArmAtStowed() {
-    double positionError =
-        Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
   }
 
-  /** Returns true when arm position is within configured tolerance of pre-juice rotations. */
+  /**
+   * Returns true when arm position is within configured tolerance of pre-juice
+   * rotations.
+   */
   public boolean isIntakeArmAtPreJuice() {
-    double positionError =
-        Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
+    double positionError = Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition());
     return positionError < INTAKE_ARM_POSITION_TOLERANCE;
+  }
+
+  public boolean isIntakeArmAtPreJuiceToss(JuicerTossPhase phase) {
+    return switch (phase) {
+      case PRE_JUICE_TOSS_PT1 ->
+        Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition()) < INTAKE_ARM_POSITION_TOLERANCE;
+      case PRE_JUICE_TOSS_PT2 ->
+        Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition()) < INTAKE_ARM_POSITION_TOLERANCE;
+      case PRE_JUICE_TOSS_PT3 ->
+        Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition()) < INTAKE_ARM_POSITION_TOLERANCE;
+      case SQUEEZE ->
+        Math.abs(INTAKE_ARM_STOWED_POSITION - intakeArmInputs.getMotorPosition()) < INTAKE_ARM_POSITION_TOLERANCE;
+    };
   }
 
   public boolean isIntaking() {
@@ -278,7 +327,10 @@ public class IntakeSubsystem extends SubsystemBase {
         || currIntakeState == IntakeState.DEPLOYED;
   }
 
-  /** Requests an intake state; transition states finish inside {@link #handleStateTransition()}. */
+  /**
+   * Requests an intake state; transition states finish inside
+   * {@link #handleStateTransition()}.
+   */
   public void setDesiredState(IntakeState state) {
     this.desiredIntakeState = state;
 
@@ -291,8 +343,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     switch (state) {
       case HOME -> currIntakeState = IntakeState.STOWING;
-      case INTAKE, OUTTAKE -> currIntakeState =
-          canStartRollerStateImmediately() ? state : IntakeState.DEPLOYING;
+      case INTAKE, OUTTAKE -> currIntakeState = canStartRollerStateImmediately() ? state : IntakeState.DEPLOYING;
       case DEPLOYED -> currIntakeState = IntakeState.DEPLOYING;
       case JUICER -> {
         currIntakeState = IntakeState.JUICER;
@@ -300,11 +351,21 @@ public class IntakeSubsystem extends SubsystemBase {
         juicerPhase = JuicerPhase.PRE_JUICE;
         lastJuicerPhase = null;
       }
-      default -> {}
+      case JUICER_TOSS -> {
+        currIntakeState = IntakeState.JUICER_TOSS;
+        // Always restart the juicer sequence from PRE_JUICE on (re-)entry
+        juicerTossPhase = JuicerTossPhase.PRE_JUICE_TOSS_PT1;
+        lastJuicerTossPhase = null;
+      }
+
+      default -> {
+      }
     }
   }
 
-  /** Advances the intake state machine and sends hardware commands on state entry. */
+  /**
+   * Advances the intake state machine and sends hardware commands on state entry.
+   */
   public void handleStateTransition() {
     switch (currIntakeState) {
       case HOME -> handleHomeState();
@@ -314,6 +375,7 @@ public class IntakeSubsystem extends SubsystemBase {
       case DEPLOYING -> handleDeployingState();
       case STOWING -> handleStowingState();
       case JUICER -> handleJuicerState();
+      case JUICER_TOSS -> handleJuicerTossState();
     }
   }
 
@@ -430,8 +492,42 @@ public class IntakeSubsystem extends SubsystemBase {
     }
   }
 
+  private void handleJuicerTossState() {
+    if (isStateEntry()) {
+      runIntakeRollerTorqueCurrentFOC(INTAKE_ROLLER_TORQUE_CURRENT, 0.5);
+      lastJuicerTossPhase = null;
+      markStateEntryHandled();
+    }
+
+    switch (juicerTossPhase) {
+      case PRE_JUICE_TOSS_PT1 -> {
+        handlePreJuiceTossPhase(JuicerTossPhase.PRE_JUICE_TOSS_PT1);
+        if (isIntakeArmAtPreJuiceToss(JuicerTossPhase.PRE_JUICE_TOSS_PT1)) {
+          juicerTossPhase = JuicerTossPhase.PRE_JUICE_TOSS_PT2;
+        }
+      }
+      case PRE_JUICE_TOSS_PT2 -> {
+        handlePreJuiceTossPhase(JuicerTossPhase.PRE_JUICE_TOSS_PT2);
+        if (isIntakeArmAtPreJuiceToss(JuicerTossPhase.PRE_JUICE_TOSS_PT2)) {
+          juicerTossPhase = JuicerTossPhase.SQUEEZE;
+        }
+      }
+      case PRE_JUICE_TOSS_PT3 -> {
+        handlePreJuiceTossPhase(JuicerTossPhase.PRE_JUICE_TOSS_PT3);
+        if (isIntakeArmAtPreJuiceToss(JuicerTossPhase.PRE_JUICE_TOSS_PT3)) {
+          juicerTossPhase = JuicerTossPhase.SQUEEZE;
+        }
+      }
+      case SQUEEZE -> handleSqueezeTossPhase();
+    }
+  }
+
   private boolean isJuicerPhaseEntry() {
     return lastJuicerPhase != juicerPhase;
+  }
+
+  private boolean isJuicerTossPhaseEntry() {
+    return lastJuicerTossPhase != juicerTossPhase;
   }
 
   private void handlePreJuicePhase() {
@@ -443,6 +539,22 @@ public class IntakeSubsystem extends SubsystemBase {
     lastJuicerPhase = juicerPhase;
   }
 
+  private void handlePreJuiceTossPhase(JuicerTossPhase phase) {
+    if (!isJuicerTossPhaseEntry()) {
+      return;
+    }
+
+    if (phase == JuicerTossPhase.PRE_JUICE_TOSS_PT1) {
+      setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
+    } else if (phase == JuicerTossPhase.PRE_JUICE_TOSS_PT2) {
+      setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
+    } else if (phase == JuicerTossPhase.PRE_JUICE_TOSS_PT3) {
+      setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
+    }
+
+    lastJuicerTossPhase = juicerTossPhase;
+  }
+
   private void handleSqueezePhase() {
     if (!isJuicerPhaseEntry()) {
       return;
@@ -450,6 +562,15 @@ public class IntakeSubsystem extends SubsystemBase {
 
     setIntakeArmSetpoint(INTAKE_ARM_JUICER_FINAL_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
     lastJuicerPhase = juicerPhase;
+  }
+
+  private void handleSqueezeTossPhase() {
+    if (!isJuicerTossPhaseEntry()) {
+      return;
+    }
+
+    setIntakeArmSetpoint(INTAKE_ARM_JUICER_FINAL_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
+    lastJuicerTossPhase = juicerTossPhase;
   }
 
   @Override
