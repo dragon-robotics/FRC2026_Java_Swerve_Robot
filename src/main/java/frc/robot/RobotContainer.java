@@ -194,7 +194,7 @@ public class RobotContainer {
     swerveBrakeCommand = superstructureSubsystem.swerveBrakeCmd();
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
     intakeCommand = superstructureSubsystem.setStateCmd(SuperState.INTAKE);
-    shootCommand = superstructureSubsystem.shootWithJuicerDelayCmd();
+    shootCommand = superstructureSubsystem.shootWithJuicerDelayCmd(1.5);
     shootNoAimCommand = superstructureSubsystem.shootNoAimWithJuicerDelayCmd();
     driveCommand = superstructureSubsystem.setStateCmd(SuperState.DRIVE);
   }
@@ -502,6 +502,20 @@ public class RobotContainer {
     // Commands.run(() -> shooterSubsystem.runKickerMotorPercentage(1),
     // shooterSubsystem)
     // .withName("Kicker Full Power"));
+
+    // Test default shoot with Juicer delay command
+    testController.a()
+        .whileTrue(superstructureSubsystem.shootWithJuicerDelayTestCmd(1.5))
+        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
+    testController.b()
+        .whileTrue(superstructureSubsystem.shootWithJuicerDelayTestCmd(1.0))
+        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
+    testController.x()
+        .whileTrue(superstructureSubsystem.shootWithJuicerTossDelayCmd(1.5))
+        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
+    testController.y()
+        .whileTrue(superstructureSubsystem.shootWithJuicerTossDelayCmd(1.0))
+        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
   }
 
   public Command getAutonomousCommand() {
