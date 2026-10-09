@@ -31,13 +31,9 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 /**
  * PhotonVision camera IO for AprilTag pose estimation.
  *
- * <p>
- * This class owns camera-frame processing only: it reads unread PhotonVision
- * pipeline results,
- * attempts configured pose solvers, and converts successful estimates into
- * {@link PoseObservation}
- * values for {@link VisionSubsystem}. Field-bound checks, drivetrain innovation
- * checks, and
+ * <p>This class owns camera-frame processing only: it reads unread PhotonVision pipeline results,
+ * attempts configured pose solvers, and converts successful estimates into {@link PoseObservation}
+ * values for {@link VisionSubsystem}. Field-bound checks, drivetrain innovation checks, and
  * standard-deviation weighting stay in the subsystem.
  */
 public class VisionIOPhotonVision implements VisionIO {
@@ -46,7 +42,8 @@ public class VisionIOPhotonVision implements VisionIO {
   protected final PhotonPoseEstimator poseEstimator;
   private VisionHeadingProvider headingProvider;
 
-  private static final TargetObservation NO_TARGET = new TargetObservation(new Rotation2d(), new Rotation2d());
+  private static final TargetObservation NO_TARGET =
+      new TargetObservation(new Rotation2d(), new Rotation2d());
 
   // Kept as a quick throttle knob if processing every unread frame gets too
   // expensive.
@@ -54,10 +51,12 @@ public class VisionIOPhotonVision implements VisionIO {
   private static final int MAX_RESULTS_PER_UPDATE = 2;
 
   private static final String STRATEGY_MODE_PROPERTY = "vision.photon.strategyMode";
-  private static final String TAG_DISTANCE_CONFIDENCE_MODE_PROPERTY = "vision.tagDistanceConfidenceMode";
+  private static final String TAG_DISTANCE_CONFIDENCE_MODE_PROPERTY =
+      "vision.tagDistanceConfidenceMode";
   private static final String HYBRID_STRATEGY_MODE = "HYBRID";
   private static final double HYBRID_TRANSLATION_SPEED_THRESHOLD_METERS_PER_SECOND = 0.5;
-  private static final TagDistanceConfidenceMode TAG_DISTANCE_CONFIDENCE_MODE = configuredTagDistanceConfidenceMode();
+  private static final TagDistanceConfidenceMode TAG_DISTANCE_CONFIDENCE_MODE =
+      configuredTagDistanceConfidenceMode();
 
   enum TagDistanceConfidenceMode {
     /** Average every tag used by the pose estimate. */
@@ -66,9 +65,7 @@ public class VisionIOPhotonVision implements VisionIO {
     MAX_TAG_DISTANCE
   }
 
-  /**
-   * Supplies drivetrain state needed by heading-seeded PhotonVision strategies.
-   */
+  /** Supplies drivetrain state needed by heading-seeded PhotonVision strategies. */
   public interface VisionHeadingProvider {
     /**
      * Returns drivetrain heading at a PhotonVision frame timestamp.
@@ -104,7 +101,7 @@ public class VisionIOPhotonVision implements VisionIO {
   /**
    * Creates a PhotonVision IO wrapper.
    *
-   * @param name          PhotonVision camera name
+   * @param name PhotonVision camera name
    * @param robotToCamera transform from robot frame to camera frame
    */
   public VisionIOPhotonVision(String name, Transform3d robotToCamera) {
@@ -123,10 +120,7 @@ public class VisionIOPhotonVision implements VisionIO {
     this.headingProvider = headingProvider;
   }
 
-  /**
-   * Allows normal dynamic strategy selection after stable startup localization
-   * completes.
-   */
+  /** Allows normal dynamic strategy selection after stable startup localization completes. */
   public void markVisionInitializationComplete() {
     preferMultitagUntilInitialized = false;
   }
@@ -231,9 +225,10 @@ public class VisionIOPhotonVision implements VisionIO {
 
   private static EstimatedRobotPose withStrategyType(
       EstimatedRobotPose estimate, PoseStrategy strategy) {
-    VisionIO.PoseObservationType observationType = strategy == PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
-        ? VisionIO.PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR
-        : VisionIO.PoseObservationType.PHOTONVISION;
+    VisionIO.PoseObservationType observationType =
+        strategy == PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
+            ? VisionIO.PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR
+            : VisionIO.PoseObservationType.PHOTONVISION;
 
     return new EstimatedRobotPose(
         estimate.estimatedPose,
@@ -249,10 +244,10 @@ public class VisionIOPhotonVision implements VisionIO {
       // Startup localization must prioritize coprocessor multi-tag until vision
       // has produced a stable initialization sequence.
       return new PoseStrategy[] {
-          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-          PoseStrategy.CONSTRAINED_SOLVEPNP,
-          PoseStrategy.LOWEST_AMBIGUITY
+        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+        PoseStrategy.CONSTRAINED_SOLVEPNP,
+        PoseStrategy.LOWEST_AMBIGUITY
       };
     }
 
@@ -270,8 +265,10 @@ public class VisionIOPhotonVision implements VisionIO {
   }
 
   private PoseStrategy[] resolveHybridStrategyOrder(PhotonPipelineResult result) {
-    double linearSpeedMetersPerSecond = headingProvider == null ? 0.0 : headingProvider.getLinearSpeedMetersPerSecond();
-    double angularRateRadPerSec = headingProvider == null ? 0.0 : Math.abs(headingProvider.getAngularRateRadPerSec());
+    double linearSpeedMetersPerSecond =
+        headingProvider == null ? 0.0 : headingProvider.getLinearSpeedMetersPerSecond();
+    double angularRateRadPerSec =
+        headingProvider == null ? 0.0 : Math.abs(headingProvider.getAngularRateRadPerSec());
     int visibleTargetCount = result.getTargets().size();
     int[] observedTagIds = toObservedTagIds(result.getTargets());
     boolean coplanarTargetSet = VisionSubsystem.areTagsCoplanar(observedTagIds);
@@ -298,51 +295,51 @@ public class VisionIOPhotonVision implements VisionIO {
     if (angularRateRadPerSec > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
       if (visibleTargetCount >= 2) {
         return new PoseStrategy[] {
-            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-            PoseStrategy.LOWEST_AMBIGUITY
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.LOWEST_AMBIGUITY
         };
       }
 
       return new PoseStrategy[] {
-          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          PoseStrategy.LOWEST_AMBIGUITY
+        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        PoseStrategy.LOWEST_AMBIGUITY
       };
     }
 
     if (visibleTargetCount >= 2) {
       if (coplanarTargetSet) {
         return new PoseStrategy[] {
-            PoseStrategy.CONSTRAINED_SOLVEPNP,
-            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-            PoseStrategy.LOWEST_AMBIGUITY
+          PoseStrategy.CONSTRAINED_SOLVEPNP,
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+          PoseStrategy.LOWEST_AMBIGUITY
         };
       }
 
       return new PoseStrategy[] {
-          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          PoseStrategy.CONSTRAINED_SOLVEPNP,
-          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-          PoseStrategy.LOWEST_AMBIGUITY
+        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        PoseStrategy.CONSTRAINED_SOLVEPNP,
+        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+        PoseStrategy.LOWEST_AMBIGUITY
       };
     }
 
     if (linearSpeedMetersPerSecond > HYBRID_TRANSLATION_SPEED_THRESHOLD_METERS_PER_SECOND) {
       return new PoseStrategy[] {
-          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          PoseStrategy.CONSTRAINED_SOLVEPNP,
-          PoseStrategy.LOWEST_AMBIGUITY
+        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        PoseStrategy.CONSTRAINED_SOLVEPNP,
+        PoseStrategy.LOWEST_AMBIGUITY
       };
     }
 
     return new PoseStrategy[] {
-        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-        PoseStrategy.CONSTRAINED_SOLVEPNP,
-        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        PoseStrategy.LOWEST_AMBIGUITY
+      PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+      PoseStrategy.CONSTRAINED_SOLVEPNP,
+      PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+      PoseStrategy.LOWEST_AMBIGUITY
     };
   }
 
@@ -356,7 +353,8 @@ public class VisionIOPhotonVision implements VisionIO {
       return Optional.empty();
     }
 
-    Optional<Rotation2d> headingSample = headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
+    Optional<Rotation2d> headingSample =
+        headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
     if (headingSample.isEmpty()) {
       return Optional.empty();
     }
@@ -387,10 +385,10 @@ public class VisionIOPhotonVision implements VisionIO {
 
     if (parsed.isEmpty()) {
       return new PoseStrategy[] {
-          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          PoseStrategy.CONSTRAINED_SOLVEPNP,
-          PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
-          PoseStrategy.LOWEST_AMBIGUITY
+        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        PoseStrategy.CONSTRAINED_SOLVEPNP,
+        PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+        PoseStrategy.LOWEST_AMBIGUITY
       };
     }
 
@@ -403,11 +401,13 @@ public class VisionIOPhotonVision implements VisionIO {
       return Optional.empty();
     }
 
-    if (Math.abs(headingProvider.getAngularRateRadPerSec()) > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
+    if (Math.abs(headingProvider.getAngularRateRadPerSec())
+        > CONSTRAINED_MAX_ANGULAR_RATE_RAD_PER_SEC) {
       return Optional.empty();
     }
 
-    Optional<Rotation2d> headingSample = headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
+    Optional<Rotation2d> headingSample =
+        headingProvider.getHeadingAtTimestamp(result.getTimestampSeconds());
     if (headingSample.isEmpty()) {
       return Optional.empty();
     }
@@ -485,12 +485,14 @@ public class VisionIOPhotonVision implements VisionIO {
       observedTagIds = Arrays.copyOf(observedTagIds, observedTagCount);
     }
 
-    VisionIO.PoseObservationType observationType = estimatedPose.strategy == PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
-        ? VisionIO.PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR
-        : VisionIO.PoseObservationType.PHOTONVISION;
+    VisionIO.PoseObservationType observationType =
+        estimatedPose.strategy == PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
+            ? VisionIO.PoseObservationType.PHOTONVISION_MULTITAG_COPROCESSOR
+            : VisionIO.PoseObservationType.PHOTONVISION;
 
-    double averageTagDistanceMeters = confidenceDistance(
-        TAG_DISTANCE_CONFIDENCE_MODE, totalDistanceAll, distanceSampleCountAll, maxDistanceAll);
+    double averageTagDistanceMeters =
+        confidenceDistance(
+            TAG_DISTANCE_CONFIDENCE_MODE, totalDistanceAll, distanceSampleCountAll, maxDistanceAll);
 
     poseObservations.add(
         new PoseObservation(
@@ -528,9 +530,10 @@ public class VisionIOPhotonVision implements VisionIO {
   }
 
   private static TagDistanceConfidenceMode configuredTagDistanceConfidenceMode() {
-    String raw = System.getProperty(
-        TAG_DISTANCE_CONFIDENCE_MODE_PROPERTY,
-        TagDistanceConfidenceMode.ALL_TAG_AVERAGE.name());
+    String raw =
+        System.getProperty(
+            TAG_DISTANCE_CONFIDENCE_MODE_PROPERTY,
+            TagDistanceConfidenceMode.ALL_TAG_AVERAGE.name());
     try {
       return TagDistanceConfidenceMode.valueOf(raw.trim().toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException ex) {

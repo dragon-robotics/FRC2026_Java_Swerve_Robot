@@ -14,26 +14,21 @@ import java.nio.file.Path;
 /**
  * Field geometry, AprilTag layout, and derived field-zone helpers.
  *
- * <p>
- * All field distances use meters in the WPILib field coordinate frame. Zone
- * classification
+ * <p>All field distances use meters in the WPILib field coordinate frame. Zone classification
  * normalizes poses to the blue-alliance perspective before applying boundaries.
  */
 public final class FieldConstants {
 
-  /**
-   * AprilTag field layout loaded from deploy, with WPILib default field fallback.
-   */
-  public static final AprilTagFieldLayout APTAG_FIELD_LAYOUT = loadAprilTagLayout("2026-rebuilt-welded.json");
-  public static final AprilTagFieldLayout APTAG_POSE_ESTIMATION_LAYOUT = loadAprilTagLayout(
-      "2026-rebuilt-welded-no-single.json");
+  /** AprilTag field layout loaded from deploy, with WPILib default field fallback. */
+  public static final AprilTagFieldLayout APTAG_FIELD_LAYOUT =
+      loadAprilTagLayout("2026-rebuilt-welded.json");
+
+  public static final AprilTagFieldLayout APTAG_POSE_ESTIMATION_LAYOUT =
+      loadAprilTagLayout("2026-rebuilt-welded-no-single.json");
 
   private static AprilTagFieldLayout loadAprilTagLayout(String layoutFileName) {
-    Path defaultPath = Path.of(
-        Filesystem.getDeployDirectory().getPath(),
-        "apriltags",
-        "welded",
-        layoutFileName);
+    Path defaultPath =
+        Path.of(Filesystem.getDeployDirectory().getPath(), "apriltags", "welded", layoutFileName);
     AprilTagFieldLayout defaultLayout = null;
     try {
       defaultLayout = new AprilTagFieldLayout(defaultPath);
@@ -55,9 +50,7 @@ public final class FieldConstants {
   /** Approximate playable field height in meters. */
   public static final double FIELD_HEIGHT = Units.inchesToMeters(72);
 
-  /**
-   * Named field zones used by autonomous pathing, aiming, and purge decisions.
-   */
+  /** Named field zones used by autonomous pathing, aiming, and purge decisions. */
   public static enum FieldZones {
     ALLIANCE_LEFT,
     ALLIANCE_LEFT_TRENCH,
@@ -81,11 +74,8 @@ public final class FieldConstants {
     /**
      * Classifies a robot pose into a named field zone.
      *
-     * <p>
-     * Red-alliance poses are mirrored into the blue-alliance frame before
-     * classification, so
-     * left/right labels are relative to the active alliance driver-station
-     * perspective.
+     * <p>Red-alliance poses are mirrored into the blue-alliance frame before classification, so
+     * left/right labels are relative to the active alliance driver-station perspective.
      */
     public static FieldZones fromPose(Pose2d pose, DriverStation.Alliance alliance) {
       double x = pose.getX();
@@ -152,8 +142,9 @@ public final class FieldConstants {
 
     private static boolean isInNeutralRightPurgeBand(double normalizedY) {
       return normalizedY >= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_END
-          && normalizedY <= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START
-              - SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS;
+          && normalizedY
+              <= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START
+                  - SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS;
     }
 
     private static boolean isInNeutralRightShootBand(double normalizedY) {
@@ -162,8 +153,9 @@ public final class FieldConstants {
     }
 
     private static boolean isInNeutralLeftPurgeBand(double normalizedY) {
-      return normalizedY >= LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_END
-          + SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS
+      return normalizedY
+              >= LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_END
+                  + SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS
           && normalizedY <= LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_START;
     }
 
@@ -217,8 +209,9 @@ public final class FieldConstants {
     }
 
     private static FieldZones classifyOpponentLeftZone(double normalizedY) {
-      if (normalizedY > LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_END
-          + SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS
+      if (normalizedY
+              > LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_END
+                  + SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS
           && normalizedY <= LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_START) {
         return OPPONENT_LEFT_TRENCH;
       }
@@ -235,8 +228,9 @@ public final class FieldConstants {
         return OPPONENT_RIGHT_BUMP;
       }
       if (normalizedY >= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_END
-          && normalizedY <= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START
-              - SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS) {
+          && normalizedY
+              <= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START
+                  - SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS) {
         return OPPONENT_RIGHT_TRENCH;
       }
       return OPPONENT_RIGHT;
@@ -249,8 +243,9 @@ public final class FieldConstants {
     }
 
     private static FieldZones classifyLeftNearNeutralZone(double normalizedY) {
-      if (normalizedY > LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_END
-          + SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS
+      if (normalizedY
+              > LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_END
+                  + SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS
           && normalizedY <= LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_START) {
         return ALLIANCE_LEFT_TRENCH;
       }
@@ -267,18 +262,16 @@ public final class FieldConstants {
         return ALLIANCE_RIGHT_BUMP;
       }
       if (normalizedY >= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_END
-          && normalizedY <= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START
-              - SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS) {
+          && normalizedY
+              <= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START
+                  - SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS) {
         return ALLIANCE_RIGHT_TRENCH;
       }
       return ALLIANCE_RIGHT;
     }
   }
 
-  /**
-   * Alliance-specific target points for shooting and purging from neutral-field
-   * positions.
-   */
+  /** Alliance-specific target points for shooting and purging from neutral-field positions. */
   public static class AimPoints {
 
     public static final Translation2d BLUE_HUB_CENTER = Hub.BLUE_CENTER_POSE;
@@ -288,38 +281,44 @@ public final class FieldConstants {
     private static final double RED_NEUTRAL_AIM_X = FIELD_LENGTH - BLUE_NEUTRAL_AIM_X;
 
     /* Blue alliance */
-    public static final Translation2d BLUE_LEFT_PURGE_POINT = new Translation2d(
-        BLUE_NEUTRAL_AIM_X,
-        (LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_START
-            + LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_END)
-            / 2.0);
-    public static final Translation2d BLUE_RIGHT_PURGE_POINT = new Translation2d(
-        BLUE_NEUTRAL_AIM_X,
-        (LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START
-            + LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_END)
-            / 2.0);
-    public static final Translation2d BLUE_LEFT_SHOOT_POINT = new Translation2d(
-        BLUE_NEUTRAL_AIM_X,
-        (LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_END + LinesHorizontal.CENTER) / 2.0);
-    public static final Translation2d BLUE_RIGHT_SHOOT_POINT = new Translation2d(
-        BLUE_NEUTRAL_AIM_X,
-        (LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START + LinesHorizontal.CENTER) / 2.0);
+    public static final Translation2d BLUE_LEFT_PURGE_POINT =
+        new Translation2d(
+            BLUE_NEUTRAL_AIM_X,
+            (LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_START
+                    + LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_END)
+                / 2.0);
+    public static final Translation2d BLUE_RIGHT_PURGE_POINT =
+        new Translation2d(
+            BLUE_NEUTRAL_AIM_X,
+            (LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START
+                    + LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_END)
+                / 2.0);
+    public static final Translation2d BLUE_LEFT_SHOOT_POINT =
+        new Translation2d(
+            BLUE_NEUTRAL_AIM_X,
+            (LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_END + LinesHorizontal.CENTER) / 2.0);
+    public static final Translation2d BLUE_RIGHT_SHOOT_POINT =
+        new Translation2d(
+            BLUE_NEUTRAL_AIM_X,
+            (LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START + LinesHorizontal.CENTER) / 2.0);
 
     /* Red alliance */
-    public static final Translation2d RED_LEFT_PURGE_POINT = new Translation2d(
-        RED_NEUTRAL_AIM_X,
-        FIELD_WIDTH
-            - ((LinesHorizontal.RED_LEFT_TRENCH_OPEN_START
-                + LinesHorizontal.RED_LEFT_TRENCH_OPEN_END)
-                / 2.0));
-    public static final Translation2d RED_RIGHT_PURGE_POINT = new Translation2d(RED_NEUTRAL_AIM_X,
-        FIELD_WIDTH - RED_LEFT_PURGE_POINT.getY());
-    public static final Translation2d RED_LEFT_SHOOT_POINT = new Translation2d(
-        RED_NEUTRAL_AIM_X,
-        FIELD_WIDTH
-            - ((LinesHorizontal.RED_LEFT_TRENCH_OPEN_END + LinesHorizontal.CENTER) / 2.0));
-    public static final Translation2d RED_RIGHT_SHOOT_POINT = new Translation2d(RED_NEUTRAL_AIM_X,
-        FIELD_WIDTH - RED_LEFT_SHOOT_POINT.getY());
+    public static final Translation2d RED_LEFT_PURGE_POINT =
+        new Translation2d(
+            RED_NEUTRAL_AIM_X,
+            FIELD_WIDTH
+                - ((LinesHorizontal.RED_LEFT_TRENCH_OPEN_START
+                        + LinesHorizontal.RED_LEFT_TRENCH_OPEN_END)
+                    / 2.0));
+    public static final Translation2d RED_RIGHT_PURGE_POINT =
+        new Translation2d(RED_NEUTRAL_AIM_X, FIELD_WIDTH - RED_LEFT_PURGE_POINT.getY());
+    public static final Translation2d RED_LEFT_SHOOT_POINT =
+        new Translation2d(
+            RED_NEUTRAL_AIM_X,
+            FIELD_WIDTH
+                - ((LinesHorizontal.RED_LEFT_TRENCH_OPEN_END + LinesHorizontal.CENTER) / 2.0));
+    public static final Translation2d RED_RIGHT_SHOOT_POINT =
+        new Translation2d(RED_NEUTRAL_AIM_X, FIELD_WIDTH - RED_LEFT_SHOOT_POINT.getY());
   }
 
   /** Relevant field lines defined by X-axis offset in meters. */
@@ -327,19 +326,19 @@ public final class FieldConstants {
     public static final double CENTER = FIELD_LENGTH / 2.0;
     public static final double STARTING = APTAG_FIELD_LAYOUT.getTagPose(26).get().getX();
     public static final double ALLIANCE_ZONE = STARTING;
-    public static final double HUB_CENTER = APTAG_FIELD_LAYOUT.getTagPose(26).get().getX() + Hub.WIDTH / 2.0;
+    public static final double HUB_CENTER =
+        APTAG_FIELD_LAYOUT.getTagPose(26).get().getX() + Hub.WIDTH / 2.0;
     public static final double NEUTRAL_ZONE_NEAR = CENTER - Units.inchesToMeters(120);
     public static final double NEUTRAL_ZONE_FAR = CENTER + Units.inchesToMeters(120);
-    public static final double OPP_HUB_CENTER = APTAG_FIELD_LAYOUT.getTagPose(4).get().getX() + Hub.WIDTH / 2.0;
+    public static final double OPP_HUB_CENTER =
+        APTAG_FIELD_LAYOUT.getTagPose(4).get().getX() + Hub.WIDTH / 2.0;
     public static final double OPP_ALLIANCE_ZONE = APTAG_FIELD_LAYOUT.getTagPose(10).get().getX();
   }
 
   /**
    * Relevant field lines defined by Y-axis offset in meters.
    *
-   * <p>
-   * Field element start/end labels are left-to-right from the perspective of that
-   * alliance
+   * <p>Field element start/end labels are left-to-right from the perspective of that alliance
    * station.
    */
   public static class LinesHorizontal {
@@ -349,27 +348,35 @@ public final class FieldConstants {
     // Right of hub
     public static final double BLUE_RIGHT_BUMP_START = Hub.BLUE_NEAR_RIGHT_CORNER.getY();
     public static final double BLUE_RIGHT_BUMP_END = BLUE_RIGHT_BUMP_START - RightBump.WIDTH;
-    public static final double BLUE_RIGHT_BUMP_MIDDLE = (BLUE_RIGHT_BUMP_START + BLUE_RIGHT_BUMP_END) / 2.0;
-    public static final double BLUE_RIGHT_TRENCH_OPEN_START = BLUE_RIGHT_BUMP_END - Units.inchesToMeters(12.0);
+    public static final double BLUE_RIGHT_BUMP_MIDDLE =
+        (BLUE_RIGHT_BUMP_START + BLUE_RIGHT_BUMP_END) / 2.0;
+    public static final double BLUE_RIGHT_TRENCH_OPEN_START =
+        BLUE_RIGHT_BUMP_END - Units.inchesToMeters(12.0);
     public static final double BLUE_RIGHT_TRENCH_OPEN_END = 0;
 
     public static final double RED_RIGHT_BUMP_END = Hub.RED_NEAR_RIGHT_CORNER.getY();
     public static final double RED_RIGHT_BUMP_START = RED_RIGHT_BUMP_END - RightBump.WIDTH;
-    public static final double RED_RIGHT_BUMP_MIDDLE = (RED_RIGHT_BUMP_START + RED_RIGHT_BUMP_END) / 2.0;
-    public static final double RED_RIGHT_TRENCH_OPEN_START = RED_RIGHT_BUMP_END - Units.inchesToMeters(12.0);
+    public static final double RED_RIGHT_BUMP_MIDDLE =
+        (RED_RIGHT_BUMP_START + RED_RIGHT_BUMP_END) / 2.0;
+    public static final double RED_RIGHT_TRENCH_OPEN_START =
+        RED_RIGHT_BUMP_END - Units.inchesToMeters(12.0);
     public static final double RED_RIGHT_TRENCH_OPEN_END = 0;
 
     // Left of hub
     public static final double BLUE_LEFT_BUMP_END = Hub.BLUE_NEAR_LEFT_CORNER.getY();
     public static final double BLUE_LEFT_BUMP_START = BLUE_LEFT_BUMP_END + LeftBump.WIDTH;
-    public static final double BLUE_LEFT_BUMP_MIDDLE = (BLUE_LEFT_BUMP_START + BLUE_LEFT_BUMP_END) / 2.0;
-    public static final double BLUE_LEFT_TRENCH_OPEN_END = BLUE_LEFT_BUMP_START + Units.inchesToMeters(12.0);
+    public static final double BLUE_LEFT_BUMP_MIDDLE =
+        (BLUE_LEFT_BUMP_START + BLUE_LEFT_BUMP_END) / 2.0;
+    public static final double BLUE_LEFT_TRENCH_OPEN_END =
+        BLUE_LEFT_BUMP_START + Units.inchesToMeters(12.0);
     public static final double BLUE_LEFT_TRENCH_OPEN_START = FIELD_WIDTH;
 
     public static final double RED_LEFT_BUMP_START = Hub.RED_NEAR_LEFT_CORNER.getY();
     public static final double RED_LEFT_BUMP_END = RED_LEFT_BUMP_START + LeftBump.WIDTH;
-    public static final double RED_LEFT_BUMP_MIDDLE = (RED_LEFT_BUMP_START + RED_LEFT_BUMP_END) / 2.0;
-    public static final double RED_LEFT_TRENCH_OPEN_END = RED_LEFT_BUMP_END + Units.inchesToMeters(12.0);
+    public static final double RED_LEFT_BUMP_MIDDLE =
+        (RED_LEFT_BUMP_START + RED_LEFT_BUMP_END) / 2.0;
+    public static final double RED_LEFT_TRENCH_OPEN_END =
+        RED_LEFT_BUMP_END + Units.inchesToMeters(12.0);
     public static final double RED_LEFT_TRENCH_OPEN_START = FIELD_WIDTH;
   }
 
@@ -378,33 +385,41 @@ public final class FieldConstants {
 
     /* Dimensions */
     public static final double WIDTH = Units.inchesToMeters(47.0);
-    public static final double HEIGHT = Units.inchesToMeters(72.0); // includes the catcher at the top
+    public static final double HEIGHT =
+        Units.inchesToMeters(72.0); // includes the catcher at the top
     public static final double INNER_WIDTH = Units.inchesToMeters(41.7);
     public static final double INNER_HEIGHT = Units.inchesToMeters(56.5);
 
     // ── Blue Alliance ──────────────────────────────────────────────────────
 
-    public static final Translation3d BLUE_TOP_CENTER_POINT = new Translation3d(
-        APTAG_FIELD_LAYOUT.getTagPose(26).get().getX() + WIDTH / 2.0,
-        FIELD_WIDTH / 2.0,
-        HEIGHT);
+    public static final Translation3d BLUE_TOP_CENTER_POINT =
+        new Translation3d(
+            APTAG_FIELD_LAYOUT.getTagPose(26).get().getX() + WIDTH / 2.0,
+            FIELD_WIDTH / 2.0,
+            HEIGHT);
 
-    public static final Translation3d BLUE_INNER_CENTER_POINT = new Translation3d(
-        APTAG_FIELD_LAYOUT.getTagPose(26).get().getX() + INNER_WIDTH / 2.0,
-        FIELD_WIDTH / 2.0,
-        INNER_HEIGHT);
+    public static final Translation3d BLUE_INNER_CENTER_POINT =
+        new Translation3d(
+            APTAG_FIELD_LAYOUT.getTagPose(26).get().getX() + INNER_WIDTH / 2.0,
+            FIELD_WIDTH / 2.0,
+            INNER_HEIGHT);
 
-    public static final Translation2d BLUE_CENTER_POSE = new Translation2d(
-        APTAG_FIELD_LAYOUT.getTagPose(26).get().getX() + WIDTH / 2.0, FIELD_WIDTH / 2.0);
+    public static final Translation2d BLUE_CENTER_POSE =
+        new Translation2d(
+            APTAG_FIELD_LAYOUT.getTagPose(26).get().getX() + WIDTH / 2.0, FIELD_WIDTH / 2.0);
 
-    public static final Translation2d BLUE_NEAR_LEFT_CORNER = new Translation2d(
-        BLUE_TOP_CENTER_POINT.getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0 + WIDTH / 2.0);
-    public static final Translation2d BLUE_NEAR_RIGHT_CORNER = new Translation2d(
-        BLUE_TOP_CENTER_POINT.getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0 - WIDTH / 2.0);
-    public static final Translation2d BLUE_FAR_LEFT_CORNER = new Translation2d(
-        BLUE_TOP_CENTER_POINT.getX() + WIDTH / 2.0, FIELD_WIDTH / 2.0 + WIDTH / 2.0);
-    public static final Translation2d BLUE_FAR_RIGHT_CORNER = new Translation2d(
-        BLUE_TOP_CENTER_POINT.getX() + WIDTH / 2.0, FIELD_WIDTH / 2.0 - WIDTH / 2.0);
+    public static final Translation2d BLUE_NEAR_LEFT_CORNER =
+        new Translation2d(
+            BLUE_TOP_CENTER_POINT.getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0 + WIDTH / 2.0);
+    public static final Translation2d BLUE_NEAR_RIGHT_CORNER =
+        new Translation2d(
+            BLUE_TOP_CENTER_POINT.getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0 - WIDTH / 2.0);
+    public static final Translation2d BLUE_FAR_LEFT_CORNER =
+        new Translation2d(
+            BLUE_TOP_CENTER_POINT.getX() + WIDTH / 2.0, FIELD_WIDTH / 2.0 + WIDTH / 2.0);
+    public static final Translation2d BLUE_FAR_RIGHT_CORNER =
+        new Translation2d(
+            BLUE_TOP_CENTER_POINT.getX() + WIDTH / 2.0, FIELD_WIDTH / 2.0 - WIDTH / 2.0);
 
     // Blue hub faces — sourced directly from AprilTag poses
     public static final Pose2d BLUE_NEAR_FACE = APTAG_FIELD_LAYOUT.getTagPose(26).get().toPose2d();
@@ -417,27 +432,34 @@ public final class FieldConstants {
     // X_red = FIELD_LENGTH - X_blue
     // Y_red = FIELD_WIDTH - Y_blue (left/right labels swap across centerline)
 
-    public static final Translation3d RED_TOP_CENTER_POINT = new Translation3d(
-        APTAG_FIELD_LAYOUT.getTagPose(10).get().getX() - WIDTH / 2.0,
-        FIELD_WIDTH / 2.0,
-        HEIGHT);
+    public static final Translation3d RED_TOP_CENTER_POINT =
+        new Translation3d(
+            APTAG_FIELD_LAYOUT.getTagPose(10).get().getX() - WIDTH / 2.0,
+            FIELD_WIDTH / 2.0,
+            HEIGHT);
 
-    public static final Translation3d RED_INNER_CENTER_POINT = new Translation3d(
-        APTAG_FIELD_LAYOUT.getTagPose(10).get().getX() - INNER_WIDTH / 2.0,
-        FIELD_WIDTH / 2.0,
-        INNER_HEIGHT);
+    public static final Translation3d RED_INNER_CENTER_POINT =
+        new Translation3d(
+            APTAG_FIELD_LAYOUT.getTagPose(10).get().getX() - INNER_WIDTH / 2.0,
+            FIELD_WIDTH / 2.0,
+            INNER_HEIGHT);
 
-    public static final Translation2d RED_CENTER_POSE = new Translation2d(
-        APTAG_FIELD_LAYOUT.getTagPose(10).get().getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0);
+    public static final Translation2d RED_CENTER_POSE =
+        new Translation2d(
+            APTAG_FIELD_LAYOUT.getTagPose(10).get().getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0);
 
-    public static final Translation2d RED_NEAR_LEFT_CORNER = new Translation2d(
-        RED_TOP_CENTER_POINT.getX() + WIDTH / 2.0, FIELD_WIDTH / 2.0 + WIDTH / 2.0);
-    public static final Translation2d RED_NEAR_RIGHT_CORNER = new Translation2d(
-        RED_TOP_CENTER_POINT.getX() + WIDTH / 2.0, FIELD_WIDTH / 2.0 - WIDTH / 2.0);
-    public static final Translation2d RED_FAR_LEFT_CORNER = new Translation2d(
-        RED_TOP_CENTER_POINT.getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0 + WIDTH / 2.0);
-    public static final Translation2d RED_FAR_RIGHT_CORNER = new Translation2d(
-        RED_TOP_CENTER_POINT.getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0 - WIDTH / 2.0);
+    public static final Translation2d RED_NEAR_LEFT_CORNER =
+        new Translation2d(
+            RED_TOP_CENTER_POINT.getX() + WIDTH / 2.0, FIELD_WIDTH / 2.0 + WIDTH / 2.0);
+    public static final Translation2d RED_NEAR_RIGHT_CORNER =
+        new Translation2d(
+            RED_TOP_CENTER_POINT.getX() + WIDTH / 2.0, FIELD_WIDTH / 2.0 - WIDTH / 2.0);
+    public static final Translation2d RED_FAR_LEFT_CORNER =
+        new Translation2d(
+            RED_TOP_CENTER_POINT.getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0 + WIDTH / 2.0);
+    public static final Translation2d RED_FAR_RIGHT_CORNER =
+        new Translation2d(
+            RED_TOP_CENTER_POINT.getX() - WIDTH / 2.0, FIELD_WIDTH / 2.0 - WIDTH / 2.0);
 
     // Red hub faces — sourced directly from AprilTag poses
     // Note: near/far and left/right are from the red driver station perspective
@@ -455,26 +477,27 @@ public final class FieldConstants {
     public static final double DEPTH = Units.inchesToMeters(44.4);
 
     // ── Blue Alliance ──────────────────────────────────────────────────────
-    public static final Translation2d BLUE_NEAR_LEFT_CORNER = Hub.BLUE_NEAR_LEFT_CORNER
-        .plus(new Translation2d(0.0, WIDTH));
-    public static final Translation2d BLUE_NEAR_RIGHT_CORNER = Hub.BLUE_NEAR_RIGHT_CORNER
-        .plus(new Translation2d(0.0, WIDTH));
-    public static final Translation2d BLUE_FAR_LEFT_CORNER = Hub.BLUE_FAR_LEFT_CORNER
-        .plus(new Translation2d(0.0, WIDTH));
-    public static final Translation2d BLUE_FAR_RIGHT_CORNER = Hub.BLUE_FAR_RIGHT_CORNER
-        .plus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d BLUE_NEAR_LEFT_CORNER =
+        Hub.BLUE_NEAR_LEFT_CORNER.plus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d BLUE_NEAR_RIGHT_CORNER =
+        Hub.BLUE_NEAR_RIGHT_CORNER.plus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d BLUE_FAR_LEFT_CORNER =
+        Hub.BLUE_FAR_LEFT_CORNER.plus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d BLUE_FAR_RIGHT_CORNER =
+        Hub.BLUE_FAR_RIGHT_CORNER.plus(new Translation2d(0.0, WIDTH));
 
     // ── Red Alliance ───────────────────────────────────────────────────────
     // Red bump is the field-symmetric mirror of blue:
     // X_red = FIELD_LENGTH - X_blue
     // Y_red = FIELD_WIDTH - Y_blue (left/right labels swap across centerline)
-    public static final Translation2d RED_NEAR_LEFT_CORNER = Hub.RED_NEAR_LEFT_CORNER
-        .plus(new Translation2d(0.0, WIDTH));
-    public static final Translation2d RED_NEAR_RIGHT_CORNER = Hub.RED_NEAR_RIGHT_CORNER
-        .plus(new Translation2d(0.0, WIDTH));
-    public static final Translation2d RED_FAR_LEFT_CORNER = Hub.RED_FAR_LEFT_CORNER.plus(new Translation2d(0.0, WIDTH));
-    public static final Translation2d RED_FAR_RIGHT_CORNER = Hub.RED_FAR_RIGHT_CORNER
-        .plus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d RED_NEAR_LEFT_CORNER =
+        Hub.RED_NEAR_LEFT_CORNER.plus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d RED_NEAR_RIGHT_CORNER =
+        Hub.RED_NEAR_RIGHT_CORNER.plus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d RED_FAR_LEFT_CORNER =
+        Hub.RED_FAR_LEFT_CORNER.plus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d RED_FAR_RIGHT_CORNER =
+        Hub.RED_FAR_RIGHT_CORNER.plus(new Translation2d(0.0, WIDTH));
   }
 
   /** Right-side bump geometry, mirrored for each alliance perspective. */
@@ -487,22 +510,22 @@ public final class FieldConstants {
 
     // ── Blue Alliance ──────────────────────────────────────────────────────
     public static final Translation2d BLUE_NEAR_LEFT_CORNER = Hub.BLUE_NEAR_RIGHT_CORNER;
-    public static final Translation2d BLUE_NEAR_RIGHT_CORNER = Hub.BLUE_NEAR_RIGHT_CORNER
-        .minus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d BLUE_NEAR_RIGHT_CORNER =
+        Hub.BLUE_NEAR_RIGHT_CORNER.minus(new Translation2d(0.0, WIDTH));
     public static final Translation2d BLUE_FAR_LEFT_CORNER = Hub.BLUE_FAR_LEFT_CORNER;
-    public static final Translation2d BLUE_FAR_RIGHT_CORNER = Hub.BLUE_FAR_RIGHT_CORNER
-        .minus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d BLUE_FAR_RIGHT_CORNER =
+        Hub.BLUE_FAR_RIGHT_CORNER.minus(new Translation2d(0.0, WIDTH));
 
     // ── Red Alliance ───────────────────────────────────────────────────────
     // Red bump is the field-symmetric mirror of blue:
     // X_red = FIELD_LENGTH - X_blue
     // Y_red = FIELD_WIDTH - Y_blue (left/right labels swap across centerline)
     public static final Translation2d RED_NEAR_LEFT_CORNER = Hub.RED_NEAR_RIGHT_CORNER;
-    public static final Translation2d RED_NEAR_RIGHT_CORNER = Hub.RED_NEAR_RIGHT_CORNER
-        .minus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d RED_NEAR_RIGHT_CORNER =
+        Hub.RED_NEAR_RIGHT_CORNER.minus(new Translation2d(0.0, WIDTH));
     public static final Translation2d RED_FAR_LEFT_CORNER = Hub.RED_FAR_LEFT_CORNER;
-    public static final Translation2d RED_FAR_RIGHT_CORNER = Hub.RED_FAR_RIGHT_CORNER
-        .minus(new Translation2d(0.0, WIDTH));
+    public static final Translation2d RED_FAR_RIGHT_CORNER =
+        Hub.RED_FAR_RIGHT_CORNER.minus(new Translation2d(0.0, WIDTH));
   }
 
   /** Left trench dimensions and opening points. */
@@ -515,19 +538,19 @@ public final class FieldConstants {
     public static final double OPENING_HEIGHT = Units.inchesToMeters(22.25);
 
     // ── Blue Alliance ──────────────────────────────────────────────────────
-    public static final Translation3d BLUE_OPENING_TOP_LEFT = new Translation3d(LinesVertical.HUB_CENTER, FIELD_WIDTH,
-        OPENING_HEIGHT);
-    public static final Translation3d BLUE_OPENING_TOP_RIGHT = new Translation3d(LinesVertical.HUB_CENTER,
-        FIELD_WIDTH - OPENING_WIDTH, OPENING_HEIGHT);
+    public static final Translation3d BLUE_OPENING_TOP_LEFT =
+        new Translation3d(LinesVertical.HUB_CENTER, FIELD_WIDTH, OPENING_HEIGHT);
+    public static final Translation3d BLUE_OPENING_TOP_RIGHT =
+        new Translation3d(LinesVertical.HUB_CENTER, FIELD_WIDTH - OPENING_WIDTH, OPENING_HEIGHT);
 
     // ── Red Alliance ───────────────────────────────────────────────────────
     // Red trench is the field-symmetric mirror of blue:
     // X_red = FIELD_LENGTH - X_blue
     // Y_red = FIELD_WIDTH - Y_blue (left/right labels swap across centerline)
-    public static final Translation3d RED_OPENING_TOP_LEFT = new Translation3d(LinesVertical.HUB_CENTER, 0.0,
-        OPENING_HEIGHT);
-    public static final Translation3d RED_OPENING_TOP_RIGHT = new Translation3d(LinesVertical.HUB_CENTER, OPENING_WIDTH,
-        OPENING_HEIGHT);
+    public static final Translation3d RED_OPENING_TOP_LEFT =
+        new Translation3d(LinesVertical.HUB_CENTER, 0.0, OPENING_HEIGHT);
+    public static final Translation3d RED_OPENING_TOP_RIGHT =
+        new Translation3d(LinesVertical.HUB_CENTER, OPENING_WIDTH, OPENING_HEIGHT);
   }
 
   /** Right trench dimensions and opening points. */
@@ -540,19 +563,19 @@ public final class FieldConstants {
     public static final double OPENING_HEIGHT = Units.inchesToMeters(22.25);
 
     // ── Blue Alliance ──────────────────────────────────────────────────────
-    public static final Translation3d BLUE_OPENING_TOP_LEFT = new Translation3d(LinesVertical.HUB_CENTER, OPENING_WIDTH,
-        OPENING_HEIGHT);
-    public static final Translation3d BLUE_OPENING_TOP_RIGHT = new Translation3d(LinesVertical.HUB_CENTER, 0,
-        OPENING_HEIGHT);
+    public static final Translation3d BLUE_OPENING_TOP_LEFT =
+        new Translation3d(LinesVertical.HUB_CENTER, OPENING_WIDTH, OPENING_HEIGHT);
+    public static final Translation3d BLUE_OPENING_TOP_RIGHT =
+        new Translation3d(LinesVertical.HUB_CENTER, 0, OPENING_HEIGHT);
 
     // ── Red Alliance ───────────────────────────────────────────────────────
     // Red trench is the field-symmetric mirror of blue:
     // X_red = FIELD_LENGTH - X_blue
     // Y_red = FIELD_WIDTH - Y_blue (left/right labels swap across centerline)
-    public static final Translation3d RED_OPENING_TOP_LEFT = new Translation3d(LinesVertical.HUB_CENTER,
-        FIELD_WIDTH - OPENING_WIDTH, OPENING_HEIGHT);
-    public static final Translation3d RED_OPENING_TOP_RIGHT = new Translation3d(LinesVertical.HUB_CENTER, FIELD_WIDTH,
-        OPENING_HEIGHT);
+    public static final Translation3d RED_OPENING_TOP_LEFT =
+        new Translation3d(LinesVertical.HUB_CENTER, FIELD_WIDTH - OPENING_WIDTH, OPENING_HEIGHT);
+    public static final Translation3d RED_OPENING_TOP_RIGHT =
+        new Translation3d(LinesVertical.HUB_CENTER, FIELD_WIDTH, OPENING_HEIGHT);
   }
 
   /** Depot dimensions and corner points. */
@@ -564,22 +587,24 @@ public final class FieldConstants {
     public static final double DISTANCE_FROM_CENTER_Y = Units.inchesToMeters(75.93);
 
     // ── Blue Alliance ───────────────────────────────────────────────────────
-    public static final Translation3d BLUE_DEPOT_CENTER = new Translation3d(DEPTH,
-        (FIELD_WIDTH / 2) + DISTANCE_FROM_CENTER_Y, HEIGHT);
-    public static final Translation3d BLUE_LEFT_CORNER = new Translation3d(DEPTH,
-        (FIELD_WIDTH / 2) + DISTANCE_FROM_CENTER_Y + (WIDTH / 2), HEIGHT);
-    public static final Translation3d BLUE_RIGHT_CORNER = new Translation3d(DEPTH,
-        (FIELD_WIDTH / 2) + DISTANCE_FROM_CENTER_Y - (WIDTH / 2), HEIGHT);
+    public static final Translation3d BLUE_DEPOT_CENTER =
+        new Translation3d(DEPTH, (FIELD_WIDTH / 2) + DISTANCE_FROM_CENTER_Y, HEIGHT);
+    public static final Translation3d BLUE_LEFT_CORNER =
+        new Translation3d(DEPTH, (FIELD_WIDTH / 2) + DISTANCE_FROM_CENTER_Y + (WIDTH / 2), HEIGHT);
+    public static final Translation3d BLUE_RIGHT_CORNER =
+        new Translation3d(DEPTH, (FIELD_WIDTH / 2) + DISTANCE_FROM_CENTER_Y - (WIDTH / 2), HEIGHT);
 
     // ── Red Alliance ───────────────────────────────────────────────────────
     // Red depot is the field-symmetric mirror of blue:
     // X_red = FIELD_LENGTH - X_blue
     // Y_red = FIELD_WIDTH - Y_blue (left/right labels swap across centerline)
-    public static final Translation3d RED_DEPOT_CENTER = new Translation3d(FIELD_LENGTH - DEPTH,
-        (FIELD_WIDTH / 2) - DISTANCE_FROM_CENTER_Y, HEIGHT);
-    public static final Translation3d RED_LEFT_CORNER = new Translation3d(
-        FIELD_LENGTH - DEPTH, (FIELD_WIDTH / 2) - DISTANCE_FROM_CENTER_Y + (WIDTH / 2), HEIGHT);
-    public static final Translation3d RED_RIGHT_CORNER = new Translation3d(
-        FIELD_LENGTH - DEPTH, (FIELD_WIDTH / 2) - DISTANCE_FROM_CENTER_Y - (WIDTH / 2), HEIGHT);
+    public static final Translation3d RED_DEPOT_CENTER =
+        new Translation3d(FIELD_LENGTH - DEPTH, (FIELD_WIDTH / 2) - DISTANCE_FROM_CENTER_Y, HEIGHT);
+    public static final Translation3d RED_LEFT_CORNER =
+        new Translation3d(
+            FIELD_LENGTH - DEPTH, (FIELD_WIDTH / 2) - DISTANCE_FROM_CENTER_Y + (WIDTH / 2), HEIGHT);
+    public static final Translation3d RED_RIGHT_CORNER =
+        new Translation3d(
+            FIELD_LENGTH - DEPTH, (FIELD_WIDTH / 2) - DISTANCE_FROM_CENTER_Y - (WIDTH / 2), HEIGHT);
   }
 }
