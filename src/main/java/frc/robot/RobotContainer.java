@@ -47,6 +47,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import frc.robot.commands.WheelRadiusCharacterizationCmd;
 import frc.robot.generated.TunerConstants;
 import frc.robot.io.TalonFXMotorIO;
 import frc.robot.io.TalonFXMotorIOSim;
@@ -502,6 +503,20 @@ public class RobotContainer {
     // Commands.run(() -> shooterSubsystem.runKickerMotorPercentage(1),
     // shooterSubsystem)
     // .withName("Kicker Full Power"));
+
+    // Hold to characterize wheel radius; release to stop and retain the DogLog result.
+    testController
+        .rightBumper()
+        .and(RobotModeTriggers.teleop().or(RobotModeTriggers.test()))
+        .whileTrue(
+            new WheelRadiusCharacterizationCmd(
+                    swerveSubsystem,
+                    TunerConstants.FrontLeft,
+                    TunerConstants.FrontRight,
+                    TunerConstants.BackLeft,
+                    TunerConstants.BackRight)
+                // Resume heading hold at the new heading instead of turning back to the old target.
+                .finallyDo(() -> superstructureSubsystem.setCurrentHeading(Optional.empty())));
 
     // Test Juicer Toss itself
     testController.leftBumper()
