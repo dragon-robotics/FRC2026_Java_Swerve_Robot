@@ -316,7 +316,7 @@ public class Superstructure extends SubsystemBase {
    * intake, shooter, hopper, and swerve in a single command group so there
    * is no parallel-requirements conflict. Intended for autonomous use.
    */
-  public Command shootWithJuicerDelayTestCmd(double delaySeconds) {
+  public Command shootWithJuicerDelayCmd(double delaySeconds) {
     Timer juicerTimer = new Timer();
     return Commands.runOnce(juicerTimer::restart)
         .andThen(
@@ -349,14 +349,14 @@ public class Superstructure extends SubsystemBase {
    * intake, shooter, hopper, and swerve in a single command group so there
    * is no parallel-requirements conflict. Intended for autonomous use.
    */
-  public Command shootWithJuicerDelayCmd(double delaySeconds) {
+  public Command shootWithJuicerTestDelayCmd(double delaySeconds) {
     Timer juicerTimer = new Timer();
     return Commands.runOnce(juicerTimer::restart)
         .andThen(
             Commands.run(
                 () -> {
                   boolean purge = isPurgeZone();
-                  setDesiredSuperState(purge ? SuperState.PURGE : SuperState.MANUAL_SHOOT);
+                  setDesiredSuperState(purge ? SuperState.PURGE : SuperState.SHOOT_WITH_AIM);
                   if (purge) {
                     intake.setDesiredState(IntakeState.OUTTAKE);
                   } else {
@@ -382,7 +382,7 @@ public class Superstructure extends SubsystemBase {
    * intake, shooter, hopper, and swerve in a single command group so there is no
    * parallel-requirements conflict. Intended for autonomous use.
    */
-  public Command shootWithJuicerTossDelayCmd(double delaySeconds) {
+  public Command shootWithJuicerTossTestDelayCmd(double delaySeconds) {
     Timer juicerTimer = new Timer();
     return Commands.runOnce(juicerTimer::restart)
         .andThen(

@@ -505,16 +505,16 @@ public class RobotContainer {
 
     // Test default shoot with Juicer delay command
     testController.a()
-        .whileTrue(superstructureSubsystem.shootWithJuicerDelayTestCmd(1.5))
+        .whileTrue(superstructureSubsystem.shootWithJuicerTestDelayCmd(1.5))
         .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
     testController.b()
-        .whileTrue(superstructureSubsystem.shootWithJuicerDelayTestCmd(1.0))
+        .whileTrue(superstructureSubsystem.shootWithJuicerTestDelayCmd(1.0))
         .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
     testController.x()
-        .whileTrue(superstructureSubsystem.shootWithJuicerTossDelayCmd(1.5))
+        .whileTrue(superstructureSubsystem.shootWithJuicerTossTestDelayCmd(1.5))
         .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
     testController.y()
-        .whileTrue(superstructureSubsystem.shootWithJuicerTossDelayCmd(1.0))
+        .whileTrue(superstructureSubsystem.shootWithJuicerTossTestDelayCmd(1.0))
         .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
   }
 
