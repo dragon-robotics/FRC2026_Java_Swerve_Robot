@@ -503,6 +503,11 @@ public class RobotContainer {
     // shooterSubsystem)
     // .withName("Kicker Full Power"));
 
+    // Test Juicer Toss itself
+    testController.leftBumper()
+        .whileTrue(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER_TOSS))
+        .onFalse(superstructureSubsystem.intakeOverrideCmd(IntakeState.DEPLOYED));
+
     // Test default shoot with Juicer delay command
     testController.a()
         .whileTrue(superstructureSubsystem.shootWithJuicerTestDelayCmd(1.5))
