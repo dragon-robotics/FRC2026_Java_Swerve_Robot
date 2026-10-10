@@ -14,6 +14,7 @@ import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_PRE_POS
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_POSITION_TOLERANCE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_SLOW_PID_SLOT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_AUTO_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TORQUE_CURRENT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_VOLTAGE;
@@ -85,6 +86,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * new state.
    */
   private IntakeState lastCommandedState = null;
+  private Boolean lastIntakeAutoEnabled = null;
 
   // Juicer sub-phase tracking; reset to PRE_JUICE on entry.
   private JuicerPhase juicerPhase = JuicerPhase.PRE_JUICE;
@@ -177,7 +179,11 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Runs the roller inward at the configured intake torque current. */
   public void runIntake() {
-    runIntakeRollerTorqueCurrentFOC();
+    double maxDutyCycle =
+        DriverStation.isAutonomousEnabled()
+            ? INTAKE_AUTO_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE
+            : INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE;
+    runIntakeRollerTorqueCurrentFOC(INTAKE_ROLLER_TORQUE_CURRENT, maxDutyCycle);
   }
 
   /** Runs the roller outward at the configured outtake torque current. */
@@ -398,12 +404,16 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   private void handleIntakeState() {
-    if (!isStateEntry()) {
+    boolean autoEnabled = DriverStation.isAutonomousEnabled();
+    if (!isStateEntry()
+        && lastIntakeAutoEnabled != null
+        && lastIntakeAutoEnabled == autoEnabled) {
       return;
     }
 
     tensionDeployedIntakeArm();
     runIntake();
+    lastIntakeAutoEnabled = autoEnabled;
     markStateEntryHandled();
   }
 
