@@ -1,6 +1,7 @@
 package frc.robot.subsystems.shooter;
 
 import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_AUTO_PREP_RPM;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_DEFAULT_SETTING;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_READY_TOLERANCE_ROTATIONS;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_PREP_VOLTAGE;
@@ -16,6 +17,7 @@ import static frc.robot.util.constants.ShooterConstants.getSetpointForDistance;
 import dev.doglog.DogLog;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.io.MotorIO;
@@ -120,7 +122,11 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** Runs the flywheel at the configured prep RPM. */
   public void prepShooter() {
-    runShooterMotorRPM(SHOOTER_PREP_RPM);
+    runShooterMotorRPM(getPrepRPM());
+  }
+
+  private double getPrepRPM() {
+    return DriverStation.isAutonomousEnabled() ? SHOOTER_AUTO_PREP_RPM : SHOOTER_PREP_RPM;
   }
 
   /** Stops the flywheel with 0 volts. */
@@ -292,7 +298,7 @@ public class ShooterSubsystem extends SubsystemBase {
     prepKicker();
     setHoodAngle(SHOOTER_HOOD_DEFAULT_SETTING);
 
-    if (MathUtil.isNear(SHOOTER_PREP_RPM, getShooterSpeed(), SHOOTER_READY_TOLERANCE_RPM)) {
+    if (MathUtil.isNear(getPrepRPM(), getShooterSpeed(), SHOOTER_READY_TOLERANCE_RPM)) {
       currShooterState = ShooterState.PREPFUEL;
     }
   }
