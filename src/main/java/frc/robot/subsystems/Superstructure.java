@@ -323,7 +323,7 @@ public class Superstructure extends SubsystemBase {
             Commands.run(
                 () -> {
                   boolean purge = isPurgeZone();
-                  setDesiredSuperState(purge ? SuperState.PURGE : SuperState.MANUAL_SHOOT);
+                  setDesiredSuperState(purge ? SuperState.PURGE : SuperState.SHOOT_WITH_AIM);
                   if (purge) {
                     intake.setDesiredState(IntakeState.OUTTAKE);
                   } else {
