@@ -16,14 +16,51 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import edu.wpi.first.hal.HAL;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
 import frc.robot.io.TorqueCurrentMotorIO;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class IntakeSubsystemTest {
+
+  private static boolean halReady;
+
+  @BeforeAll
+  static void initializeHal() {
+    halReady = HAL.initialize(500, 0);
+  }
+
+  @BeforeEach
+  void setTeleopMode() {
+    Assumptions.assumeTrue(halReady, "HAL/simulation unavailable in this environment");
+    setAutonomousEnabled(false);
+  }
+
+  @AfterEach
+  void resetDriverStation() {
+    if (halReady) {
+      DriverStationSim.resetData();
+      DriverStationSim.notifyNewData();
+    }
+  }
+
+  @AfterAll
+  static void shutdownHal() {
+    if (halReady) {
+      DriverStationSim.resetData();
+      DriverStationSim.notifyNewData();
+      HAL.shutdown();
+    }
+  }
 
   @Test
   void counterRotatingRollersUseMatchingControllerInversion() {
@@ -144,6 +181,51 @@ class IntakeSubsystemTest {
         () -> assertEquals(90.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
         () -> assertNotNull(rollerLead.lastMaxAbsDutyCycle),
         () -> assertEquals(0.8, rollerLead.lastMaxAbsDutyCycle, 1e-9));
+  }
+
+  @Test
+  void runIntakeUsesNinetyPercentDutyCapDuringAutonomous() {
+    FakeTorqueCurrentMotorIO rollerLead = new FakeTorqueCurrentMotorIO();
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, new FakeMotorIO(), new FakeMotorIO());
+    setAutonomousEnabled(true);
+
+    intake.runIntake();
+
+    assertAll(
+        () -> assertEquals(90.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertEquals(0.9, rollerLead.lastMaxAbsDutyCycle, 1e-9));
+  }
+
+  @Test
+  void runIntakeUsesTenPointEightVoltFallbackDuringAutonomous() {
+    FakeMotorIO rollerLead = new FakeMotorIO();
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, new FakeMotorIO(), new FakeMotorIO());
+    setAutonomousEnabled(true);
+
+    intake.runIntake();
+
+    assertEquals(10.8, rollerLead.lastVoltage.in(Volts), 1e-9);
+  }
+
+  @Test
+  void intakeStateRefreshesDutyCapWhenAutonomousModeChanges() {
+    FakeTorqueCurrentMotorIO rollerLead = new FakeTorqueCurrentMotorIO();
+    FakeMotorIO arm = new FakeMotorIO();
+    arm.position = INTAKE_ARM_DEPLOYED_POSITION;
+    IntakeSubsystem intake = new IntakeSubsystem(rollerLead, new FakeMotorIO(), arm);
+    intake.setDesiredState(INTAKE);
+
+    intake.periodic();
+    intake.periodic();
+    assertEquals(0.8, rollerLead.lastMaxAbsDutyCycle, 1e-9);
+
+    setAutonomousEnabled(true);
+    intake.periodic();
+    assertEquals(0.9, rollerLead.lastMaxAbsDutyCycle, 1e-9);
+
+    setAutonomousEnabled(false);
+    intake.periodic();
+    assertEquals(0.8, rollerLead.lastMaxAbsDutyCycle, 1e-9);
   }
 
   @Test
@@ -358,6 +440,13 @@ class IntakeSubsystemTest {
     public void updateInputs(MotorIOInputs inputs) {
       inputs.setMotorPosition(position);
     }
+  }
+
+  private static void setAutonomousEnabled(boolean enabled) {
+    DriverStationSim.setDsAttached(true);
+    DriverStationSim.setAutonomous(enabled);
+    DriverStationSim.setEnabled(true);
+    DriverStationSim.notifyNewData();
   }
 
   private static class FakeTorqueCurrentMotorIO extends FakeMotorIO
