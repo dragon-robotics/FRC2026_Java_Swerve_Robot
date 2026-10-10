@@ -257,7 +257,7 @@ public class VisionIOPhotonVision implements VisionIO {
     }
 
     if (HYBRID_STRATEGY_MODE.equalsIgnoreCase(
-        System.getProperty(STRATEGY_MODE_PROPERTY, HYBRID_STRATEGY_MODE))) {
+        System.getProperty(STRATEGY_MODE_PROPERTY, "STANDARD"))) {
       return resolveHybridStrategyOrder(result);
     }
 
