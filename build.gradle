@@ -232,28 +232,40 @@ def rightPaths = fileTree(pathplannerPathsDir) {
     include '*S7*.path'
 }
 
-tasks.register('mirrorAutos', Exec) {
+def mirrorAutosLeftToRightTask = tasks.register('mirrorAutosLeftToRight', Exec) {
     group = 'automation'
-    description = 'Generate and update right-side PathPlanner autos and paths from canonical left-side assets.'
+    description = 'Generate and update right-side PathPlanner autos and paths from left-side assets.'
     workingDir = projectDir
-    commandLine pythonExecutable, mirrorScriptPath
+    commandLine pythonExecutable, mirrorScriptPath, '--direction', 'left-to-right'
 
-    // Re-run when canonical left assets change; produced right assets are outputs.
+    // Re-run when left-side assets change; produced right-side assets are outputs.
     inputs.files(leftAutos, leftPaths)
     inputs.file(pathplannerNavgrid)
     inputs.file(file(mirrorScriptPath))
     outputs.files(rightAutos, rightPaths)
 }
 
+tasks.register('mirrorAutosRightToLeft', Exec) {
+    group = 'automation'
+    description = 'Generate and update left-side PathPlanner autos and paths from right-side assets.'
+    workingDir = projectDir
+    commandLine pythonExecutable, mirrorScriptPath, '--direction', 'right-to-left'
+
+    inputs.files(rightAutos, rightPaths)
+    inputs.file(pathplannerNavgrid)
+    inputs.file(file(mirrorScriptPath))
+    outputs.files(leftAutos, leftPaths)
+}
+
 tasks.register('checkMirroredAutos', Exec) {
     group = 'verification'
-    description = 'Validate that generated right-side PathPlanner autos and paths match the canonical left-side assets.'
+    description = 'Validate that right-side PathPlanner assets match left-side assets.'
     workingDir = projectDir
-    commandLine pythonExecutable, mirrorScriptPath, '--check'
+    commandLine pythonExecutable, mirrorScriptPath, '--check', '--direction', 'left-to-right'
 }
 
 tasks.named('build') {
-    dependsOn tasks.named('mirrorAutos')
+    dependsOn mirrorAutosLeftToRightTask
 }
 
 spotless {
@@ -299,7 +311,6 @@ spotless {
     }
 }
 
-def mirrorAutosTask = tasks.named('mirrorAutos')
 tasks.matching { Task task ->
     task.name in [
         'spotlessJava',
@@ -308,5 +319,5 @@ tasks.matching { Task task ->
         'spotlessMisc'
     ]
 }.configureEach {
-    dependsOn mirrorAutosTask
+    dependsOn mirrorAutosLeftToRightTask
 }
