@@ -15,6 +15,7 @@ import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_TOSS_PR
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_POSITION_TOLERANCE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_SLOW_PID_SLOT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_AUTO_ROLLER_TORQUE_CURRENT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_AUTO_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TORQUE_CURRENT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE;
@@ -183,7 +184,10 @@ public class IntakeSubsystem extends SubsystemBase {
     double maxDutyCycle = DriverStation.isAutonomousEnabled()
         ? INTAKE_AUTO_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE
         : INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE;
-    runIntakeRollerTorqueCurrentFOC(INTAKE_ROLLER_TORQUE_CURRENT, maxDutyCycle);
+    Current maxIntakeCurrent = DriverStation.isAutonomousEnabled()
+        ? INTAKE_AUTO_ROLLER_TORQUE_CURRENT
+        : INTAKE_ROLLER_TORQUE_CURRENT;
+    runIntakeRollerTorqueCurrentFOC(maxIntakeCurrent, maxDutyCycle);
   }
 
   /** Runs the roller outward at the configured outtake torque current. */
