@@ -195,7 +195,7 @@ public class RobotContainer {
     swerveBrakeCommand = superstructureSubsystem.swerveBrakeCmd();
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
     intakeCommand = superstructureSubsystem.setStateCmd(SuperState.INTAKE);
-    shootCommand = superstructureSubsystem.shootWithJuicerDelayCmd(1.5);
+    shootCommand = superstructureSubsystem.shootWithJuicerTossTestDelayCmd(1.0);
     shootNoAimCommand = superstructureSubsystem.shootNoAimWithJuicerDelayCmd();
     driveCommand = superstructureSubsystem.setStateCmd(SuperState.DRIVE);
   }
@@ -497,25 +497,28 @@ public class RobotContainer {
         .and(operatorController.a())
         .onTrue(superstructureSubsystem.toggleShootModeCmd(ShootMode.MANUAL_TRENCH));
 
-    // operatorController
-    // .rightBumper()
-    // .whileTrue(
-    // Commands.run(() -> shooterSubsystem.runKickerMotorPercentage(1),
-    // shooterSubsystem)
-    // .withName("Kicker Full Power"));
+    operatorController
+        .rightBumper()
+        .and(operatorController.leftBumper().negate())
+        .whileTrue(
+            Commands.run(() -> shooterSubsystem.runKickerMotorPercentage(1),
+                shooterSubsystem)
+                .withName("Kicker Full Power"));
 
-    // Hold to characterize wheel radius; release to stop and retain the DogLog result.
+    // Hold to characterize wheel radius; release to stop and retain the DogLog
+    // result.
     testController
         .rightBumper()
         .and(RobotModeTriggers.teleop().or(RobotModeTriggers.test()))
         .whileTrue(
             new WheelRadiusCharacterizationCmd(
-                    swerveSubsystem,
-                    TunerConstants.FrontLeft,
-                    TunerConstants.FrontRight,
-                    TunerConstants.BackLeft,
-                    TunerConstants.BackRight)
-                // Resume heading hold at the new heading instead of turning back to the old target.
+                swerveSubsystem,
+                TunerConstants.FrontLeft,
+                TunerConstants.FrontRight,
+                TunerConstants.BackLeft,
+                TunerConstants.BackRight)
+                // Resume heading hold at the new heading instead of turning back to the old
+                // target.
                 .finallyDo(() -> superstructureSubsystem.setCurrentHeading(Optional.empty())));
 
     // Test Juicer Toss itself

@@ -630,7 +630,7 @@ public class Superstructure extends SubsystemBase {
           setDesiredSuperState(SuperState.OUTTAKE);
           intake.setDesiredState(IntakeState.OUTTAKE);
           hopper.setDesiredState(HopperState.INDEXTOINTAKE);
-          shooter.setDesiredState(ShooterState.PREPFUEL);
+          shooter.setDesiredState(ShooterState.UNJAM);
         },
         intake,
         hopper,
