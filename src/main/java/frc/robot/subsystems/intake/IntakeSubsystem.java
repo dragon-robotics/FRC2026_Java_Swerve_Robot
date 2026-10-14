@@ -11,6 +11,7 @@ import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_DEPLOY_TENSION
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_FAST_PID_SLOT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_FINAL_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_PRE_POSITION;
+import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_JUICER_TOSS_PRE_POSITION;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_POSITION_TOLERANCE;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_SLOW_PID_SLOT;
 import static frc.robot.util.constants.IntakeConstants.INTAKE_ARM_STOWED_POSITION;
@@ -179,10 +180,9 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Runs the roller inward at the configured intake torque current. */
   public void runIntake() {
-    double maxDutyCycle =
-        DriverStation.isAutonomousEnabled()
-            ? INTAKE_AUTO_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE
-            : INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE;
+    double maxDutyCycle = DriverStation.isAutonomousEnabled()
+        ? INTAKE_AUTO_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE
+        : INTAKE_ROLLER_TORQUE_CURRENT_MAX_DUTY_CYCLE;
     runIntakeRollerTorqueCurrentFOC(INTAKE_ROLLER_TORQUE_CURRENT, maxDutyCycle);
   }
 
@@ -299,7 +299,8 @@ public class IntakeSubsystem extends SubsystemBase {
   public boolean isIntakeArmAtPreJuiceToss(JuicerTossPhase phase) {
     return switch (phase) {
       case PRE_JUICE_TOSS_PT1 ->
-        Math.abs(INTAKE_ARM_JUICER_PRE_POSITION - intakeArmInputs.getMotorPosition()) < INTAKE_ARM_POSITION_TOLERANCE;
+        Math.abs(
+            INTAKE_ARM_JUICER_TOSS_PRE_POSITION - intakeArmInputs.getMotorPosition()) < INTAKE_ARM_POSITION_TOLERANCE;
       case PRE_JUICE_TOSS_PT2 ->
         Math.abs(INTAKE_ARM_DEPLOYED_POSITION - intakeArmInputs.getMotorPosition()) < INTAKE_ARM_POSITION_TOLERANCE;
       case PRE_JUICE_TOSS_PT3 ->
@@ -555,9 +556,9 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     if (phase == JuicerTossPhase.PRE_JUICE_TOSS_PT1) {
-      setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
+      setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
     } else if (phase == JuicerTossPhase.PRE_JUICE_TOSS_PT2) {
-      setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_SLOW_PID_SLOT);
+      setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_FAST_PID_SLOT);
     } else if (phase == JuicerTossPhase.PRE_JUICE_TOSS_PT3) {
       setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
     }
