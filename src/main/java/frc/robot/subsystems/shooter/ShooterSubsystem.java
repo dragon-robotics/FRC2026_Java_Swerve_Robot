@@ -5,10 +5,12 @@ import static frc.robot.util.constants.ShooterConstants.SHOOTER_AUTO_PREP_RPM;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_DEFAULT_SETTING;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_HOOD_READY_TOLERANCE_ROTATIONS;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_PREP_VOLTAGE;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_REVERSE_VOLTAGE;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_STOP_DELAY_SECONDS;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_STOP_PERCENT_OUTPUT;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_KICKER_VOLTAGE;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_PREP_RPM;
+import static frc.robot.util.constants.ShooterConstants.SHOOTER_PREP_TRANSITION_DELAY_SECONDS;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_READY_TOLERANCE_RPM;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_RPM;
 import static frc.robot.util.constants.ShooterConstants.SHOOTER_STOPPED_TOLERANCE_RPM;
@@ -27,8 +29,11 @@ import frc.robot.util.constants.ShooterConstants.ShooterSetpoint;
 /**
  * Controls the shooter flywheel, kicker, and adjustable hood.
  *
- * <p>Flywheel commands are RPM or volts depending on the method name. Hood setpoints are mechanism
- * rotations from the hood encoder. The kicker keeps feeding briefly when stopping so fuel clears
+ * <p>
+ * Flywheel commands are RPM or volts depending on the method name. Hood
+ * setpoints are mechanism
+ * rotations from the hood encoder. The kicker keeps feeding briefly when
+ * stopping so fuel clears
  * the shooter path.
  */
 public class ShooterSubsystem extends SubsystemBase {
@@ -37,6 +42,7 @@ public class ShooterSubsystem extends SubsystemBase {
     STOP,
     PREPFUEL,
     SHOOT,
+    UNJAM,
     TRANSITION
   }
 
@@ -55,18 +61,27 @@ public class ShooterSubsystem extends SubsystemBase {
   protected double targetRPM;
   protected double hoodAngle;
 
-  /** Keeps the kicker running after STOP is requested so already-fed fuel clears the shooter. */
+  /**
+   * Keeps the kicker running after STOP is requested so already-fed fuel clears
+   * the shooter.
+   */
   private final Timer kickerStopTimer = new Timer();
 
   private boolean kickerStopTimerRunning = false;
 
+  /** Holds the shooting motor commands briefly before switching to prep speeds. */
+  private final Timer prepTransitionTimer = new Timer();
+
+  private boolean prepTransitionTimerRunning = false;
+
   /**
    * Creates a new shooter subsystem.
    *
-   * @param shooterLeadIO lead flywheel motor IO; receives flywheel commands
+   * @param shooterLeadIO   lead flywheel motor IO; receives flywheel commands
    * @param shooterFollowIO follower flywheel motor IO; updated for telemetry
    * @param shooterKickerIO kicker motor IO; feeds fuel into the flywheel
-   * @param shooterHoodIO hood motor IO; controls hood position in mechanism rotations
+   * @param shooterHoodIO   hood motor IO; controls hood position in mechanism
+   *                        rotations
    */
   public ShooterSubsystem(
       MotorIO shooterLeadIO,
@@ -95,7 +110,10 @@ public class ShooterSubsystem extends SubsystemBase {
     return this.currShooterState;
   }
 
-  /** Returns the requested shooter state. Name kept for compatibility with existing callers. */
+  /**
+   * Returns the requested shooter state. Name kept for compatibility with
+   * existing callers.
+   */
   public ShooterState getShooterState() {
     return this.desiredShooterState;
   }
@@ -154,6 +172,11 @@ public class ShooterSubsystem extends SubsystemBase {
     runKickerMotorVoltage(SHOOTER_KICKER_PREP_VOLTAGE);
   }
 
+  /** Runs the kicker at the configured reverse voltage. */
+  public void reverseKicker() {
+    runKickerMotorVoltage(SHOOTER_KICKER_REVERSE_VOLTAGE);
+  }
+
   /** Stops the kicker with 0 volts. */
   public void stopKicker() {
     runKickerMotorVoltage(Volts.of(0));
@@ -185,7 +208,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * Directly selects the shooter target.
    *
    * @param shooterRPM flywheel target in RPM
-   * @param hoodAngle hood target in mechanism rotations
+   * @param hoodAngle  hood target in mechanism rotations
    */
   public void setSetpoint(double shooterRPM, double hoodAngle) {
     targetRPM = shooterRPM;
@@ -197,12 +220,16 @@ public class ShooterSubsystem extends SubsystemBase {
     return shooterLeadInputs.getMotorVelocity() * 60.0;
   }
 
-  /** Returns true when the flywheel is moving fast enough to be considered active. */
+  /**
+   * Returns true when the flywheel is moving fast enough to be considered active.
+   */
   public boolean isShooting() {
     return getShooterSpeed() > SHOOTER_READY_TOLERANCE_RPM;
   }
 
-  /** Returns true when the flywheel speed is within the stopped tolerance in RPM. */
+  /**
+   * Returns true when the flywheel speed is within the stopped tolerance in RPM.
+   */
   public boolean isShooterStopped() {
     return Math.abs(getShooterSpeed()) < SHOOTER_STOPPED_TOLERANCE_RPM;
   }
@@ -217,21 +244,34 @@ public class ShooterSubsystem extends SubsystemBase {
   /**
    * Requests a shooter state.
    *
-   * <p>Closed-loop transitions run through {@link ShooterState#TRANSITION} before the requested
+   * <p>
+   * Closed-loop transitions run through {@link ShooterState#TRANSITION} before
+   * the requested
    * steady state is reached.
    */
   public void setDesiredState(ShooterState state) {
+    if (state != desiredShooterState) {
+      clearPrepTransitionTimer();
+      if (state == ShooterState.PREPFUEL && desiredShooterState == ShooterState.SHOOT) {
+        prepTransitionTimer.restart();
+        prepTransitionTimerRunning = true;
+      }
+    }
     this.desiredShooterState = state;
 
     if (desiredShooterState != currShooterState) {
       switch (desiredShooterState) {
         case STOP, PREPFUEL, SHOOT -> currShooterState = ShooterState.TRANSITION;
-        default -> {}
+        default -> {
+        }
       }
     }
   }
 
-  /** Advances the shooter state machine and sends hardware commands for the current state. */
+  /**
+   * Advances the shooter state machine and sends hardware commands for the
+   * current state.
+   */
   public void handleStateTransition() {
     switch (currShooterState) {
       case STOP -> handleStopState();
@@ -273,7 +313,9 @@ public class ShooterSubsystem extends SubsystemBase {
       case STOP -> transitionToStop();
       case PREPFUEL -> transitionToPrepFuel();
       case SHOOT -> transitionToShoot();
-      default -> {}
+      case UNJAM -> transitionUnjam();
+      default -> {
+      }
     }
   }
 
@@ -294,9 +336,19 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   private void transitionToPrepFuel() {
+    clearKickerStopTimer();
+    setHoodAngle(SHOOTER_HOOD_DEFAULT_SETTING);
+
+    if (prepTransitionTimerRunning) {
+      if (!prepTransitionTimer.hasElapsed(SHOOTER_PREP_TRANSITION_DELAY_SECONDS)) {
+        // Motor controllers retain their previous RPM/voltage commands during the hold.
+        return;
+      }
+      clearPrepTransitionTimer();
+    }
+
     prepShooter();
     prepKicker();
-    setHoodAngle(SHOOTER_HOOD_DEFAULT_SETTING);
 
     if (MathUtil.isNear(getPrepRPM(), getShooterSpeed(), SHOOTER_READY_TOLERANCE_RPM)) {
       currShooterState = ShooterState.PREPFUEL;
@@ -316,6 +368,16 @@ public class ShooterSubsystem extends SubsystemBase {
     }
   }
 
+  private void transitionUnjam() {
+    prepShooter();
+    reverseKicker();
+    setHoodAngle(SHOOTER_HOOD_DEFAULT_SETTING);
+
+    if (MathUtil.isNear(getPrepRPM(), getShooterSpeed(), SHOOTER_READY_TOLERANCE_RPM)) {
+      currShooterState = ShooterState.UNJAM;
+    }
+  }
+
   private void startKickerStopTimerIfNeeded() {
     if (kickerStopTimerRunning) {
       return;
@@ -330,6 +392,12 @@ public class ShooterSubsystem extends SubsystemBase {
     kickerStopTimerRunning = false;
     kickerStopTimer.stop();
     kickerStopTimer.reset();
+  }
+
+  private void clearPrepTransitionTimer() {
+    prepTransitionTimerRunning = false;
+    prepTransitionTimer.stop();
+    prepTransitionTimer.reset();
   }
 
   @Override

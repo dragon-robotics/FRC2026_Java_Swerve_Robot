@@ -8,9 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
+import edu.wpi.first.wpilibj.simulation.SimHooks;
 import frc.robot.io.MotorIO;
 import frc.robot.io.MotorIO.MotorIOInputs;
 import frc.robot.subsystems.shooter.ShooterSubsystem.ShooterState;
+import frc.robot.util.constants.ShooterConstants;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
@@ -31,11 +33,13 @@ class ShooterSubsystemTest {
   void setTeleopMode() {
     Assumptions.assumeTrue(halReady, "HAL/simulation unavailable in this environment");
     setAutonomousEnabled(false);
+    SimHooks.pauseTiming();
   }
 
   @AfterEach
   void resetDriverStation() {
     if (halReady) {
+      SimHooks.resumeTiming();
       DriverStationSim.resetData();
       DriverStationSim.notifyNewData();
     }
@@ -94,7 +98,7 @@ class ShooterSubsystemTest {
   }
 
   @Test
-  void teleopPrepCommands2000RpmAndUsesTeleopReadiness() {
+  void teleopPrepUsesConfiguredRpmAndTeleopReadiness() {
     FakeMotorIO lead = new FakeMotorIO();
     lead.velocityRpm = 2700.0;
     ShooterSubsystem shooter =
@@ -102,12 +106,118 @@ class ShooterSubsystemTest {
     shooter.setDesiredState(ShooterState.PREPFUEL);
 
     shooter.periodic();
-    assertEquals(2000.0, lead.lastRpm, 1e-9);
+    assertEquals(ShooterConstants.SHOOTER_PREP_RPM, lead.lastRpm, 1e-9);
     assertSame(ShooterState.TRANSITION, shooter.getCurrentState());
 
-    lead.velocityRpm = 2000.0;
+    lead.velocityRpm = ShooterConstants.SHOOTER_PREP_RPM;
     shooter.periodic();
     assertSame(ShooterState.PREPFUEL, shooter.getCurrentState());
+  }
+
+  @Test
+  void shootingToPrepHoldsMotorCommandsForHalfSecondDespiteRepeatedRequests() {
+    FakeMotorIO lead = new FakeMotorIO();
+    FakeMotorIO kicker = new FakeMotorIO();
+    ShooterSubsystem shooter = startShooting(lead, kicker);
+    shooter.setDesiredState(ShooterState.PREPFUEL);
+    shooter.setSetpoint(3500.0, 0.0);
+
+    shooter.periodic();
+    assertEquals(3000.0, lead.lastRpm, 1e-9);
+    assertEquals(12.0, kicker.lastVoltage.magnitude(), 1e-9);
+    assertSame(ShooterState.TRANSITION, shooter.getCurrentState());
+
+    SimHooks.stepTiming(0.49);
+    shooter.setDesiredState(ShooterState.PREPFUEL);
+    shooter.periodic();
+    assertEquals(3000.0, lead.lastRpm, 1e-9);
+    assertEquals(12.0, kicker.lastVoltage.magnitude(), 1e-9);
+
+    SimHooks.stepTiming(0.02);
+    shooter.setDesiredState(ShooterState.PREPFUEL);
+    shooter.periodic();
+    assertEquals(ShooterConstants.SHOOTER_PREP_RPM, lead.lastRpm, 1e-9);
+    assertEquals(6.0, kicker.lastVoltage.magnitude(), 1e-9);
+    assertSame(ShooterState.TRANSITION, shooter.getCurrentState());
+
+    lead.velocityRpm = ShooterConstants.SHOOTER_PREP_RPM;
+    shooter.periodic();
+    assertSame(ShooterState.PREPFUEL, shooter.getCurrentState());
+  }
+
+  @Test
+  void autonomousShootingToPrepUsesAutoRpmAfterHold() {
+    FakeMotorIO lead = new FakeMotorIO();
+    FakeMotorIO kicker = new FakeMotorIO();
+    setAutonomousEnabled(true);
+    ShooterSubsystem shooter = startShooting(lead, kicker);
+    shooter.setDesiredState(ShooterState.PREPFUEL);
+    lead.velocityRpm = ShooterConstants.SHOOTER_AUTO_PREP_RPM;
+    shooter.periodic();
+    assertEquals(3000.0, lead.lastRpm, 1e-9);
+    assertSame(ShooterState.TRANSITION, shooter.getCurrentState());
+
+    SimHooks.stepTiming(0.51);
+    shooter.periodic();
+    assertEquals(ShooterConstants.SHOOTER_AUTO_PREP_RPM, lead.lastRpm, 1e-9);
+    assertEquals(6.0, kicker.lastVoltage.magnitude(), 1e-9);
+    assertSame(ShooterState.PREPFUEL, shooter.getCurrentState());
+  }
+
+  @Test
+  void stopDuringPrepHoldStopsFlywheelImmediatelyAndClearsHold() {
+    FakeMotorIO lead = new FakeMotorIO();
+    FakeMotorIO kicker = new FakeMotorIO();
+    ShooterSubsystem shooter = startShooting(lead, kicker);
+    shooter.setDesiredState(ShooterState.PREPFUEL);
+    shooter.periodic();
+    SimHooks.stepTiming(0.1);
+
+    shooter.setDesiredState(ShooterState.STOP);
+    shooter.periodic();
+    assertEquals(0.0, lead.lastVoltage.magnitude(), 1e-9);
+    assertEquals(0.5, kicker.lastPercentage, 1e-9);
+
+    shooter.setDesiredState(ShooterState.PREPFUEL);
+    shooter.periodic();
+    assertEquals(ShooterConstants.SHOOTER_PREP_RPM, lead.lastRpm, 1e-9);
+    assertEquals(6.0, kicker.lastVoltage.magnitude(), 1e-9);
+  }
+
+  @Test
+  void returningToShootCancelsHoldAndNextPrepStartsFreshHold() {
+    FakeMotorIO lead = new FakeMotorIO();
+    FakeMotorIO kicker = new FakeMotorIO();
+    ShooterSubsystem shooter = startShooting(lead, kicker);
+    shooter.setDesiredState(ShooterState.PREPFUEL);
+    shooter.periodic();
+    SimHooks.stepTiming(0.3);
+
+    shooter.setDesiredState(ShooterState.SHOOT);
+    shooter.periodic();
+    shooter.periodic();
+    shooter.setDesiredState(ShooterState.PREPFUEL);
+    SimHooks.stepTiming(0.3);
+    shooter.periodic();
+    assertEquals(3000.0, lead.lastRpm, 1e-9);
+    assertEquals(12.0, kicker.lastVoltage.magnitude(), 1e-9);
+
+    SimHooks.stepTiming(0.21);
+    shooter.periodic();
+    assertEquals(ShooterConstants.SHOOTER_PREP_RPM, lead.lastRpm, 1e-9);
+    assertEquals(6.0, kicker.lastVoltage.magnitude(), 1e-9);
+  }
+
+  private static ShooterSubsystem startShooting(FakeMotorIO lead, FakeMotorIO kicker) {
+    lead.velocityRpm = 3000.0;
+    ShooterSubsystem shooter =
+        new ShooterSubsystem(lead, new FakeMotorIO(), kicker, new FakeMotorIO());
+    shooter.setSetpoint(3000.0, 0.0);
+    shooter.setDesiredState(ShooterState.SHOOT);
+    shooter.periodic();
+    shooter.periodic();
+    assertSame(ShooterState.SHOOT, shooter.getCurrentState());
+    return shooter;
   }
 
   private static class FakeMotorIO implements MotorIO {
@@ -115,11 +225,17 @@ class ShooterSubsystemTest {
     private Double lastRpm;
     private Double lastPosition;
     private Voltage lastVoltage;
+    private Double lastPercentage;
     private double velocityRpm;
 
     @Override
     public void setMotorVoltage(Voltage voltage) {
       lastVoltage = voltage;
+    }
+
+    @Override
+    public void setMotorPercentage(double percentage) {
+      lastPercentage = percentage;
     }
 
     @Override
