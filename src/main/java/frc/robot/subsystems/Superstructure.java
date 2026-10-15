@@ -345,44 +345,11 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Shoot with aim, transitioning intake to JUICER after delaySeconds. Owns
-   * intake, shooter, hopper, and swerve in a single command group so there
-   * is no parallel-requirements conflict. Intended for autonomous use.
-   */
-  public Command shootWithJuicerTestDelayCmd(double delaySeconds) {
-    Timer juicerTimer = new Timer();
-    return Commands.runOnce(juicerTimer::restart)
-        .andThen(
-            Commands.run(
-                () -> {
-                  boolean purge = isPurgeZone();
-                  setDesiredSuperState(purge ? SuperState.PURGE : SuperState.SHOOT_WITH_AIM);
-                  if (purge) {
-                    intake.setDesiredState(IntakeState.OUTTAKE);
-                  } else {
-                    intake.setDesiredState(
-                        juicerTimer.hasElapsed(delaySeconds)
-                            ? IntakeState.JUICER
-                            : IntakeState.DEPLOYED);
-                  }
-                  shooter.setDesiredState(ShooterState.SHOOT);
-                  setHopperFeedWhenShooterReady(true);
-                },
-                intake,
-                shooter,
-                hopper)
-                .alongWith(
-                    new AimAtTargetPoseCmd(
-                        swerve, this::setCurrentHeading, this::getCurrentAimTarget)))
-        .withName("SuperState(SHOOT_WITH_AIM+Juicer)");
-  }
-
-  /**
    * Shoot with aim, transitioning intake to JUICER_TOSS after delaySeconds. Owns
    * intake, shooter, hopper, and swerve in a single command group so there is no
    * parallel-requirements conflict. Intended for autonomous use.
    */
-  public Command shootWithJuicerTossTestDelayCmd(double delaySeconds) {
+  public Command shootWithJuicerTossDelayCmd(double delaySeconds) {
     Timer juicerTimer = new Timer();
     return Commands.runOnce(juicerTimer::restart)
         .andThen(
