@@ -108,7 +108,10 @@ public class DefaultDriveCmd extends Command {
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {}
+  public void initialize() {
+    // Reacquire the actual heading after auto or another command controlled the drivetrain.
+    headingSetter.accept(Optional.empty());
+  }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
