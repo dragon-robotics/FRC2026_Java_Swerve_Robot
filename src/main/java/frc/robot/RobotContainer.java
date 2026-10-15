@@ -105,7 +105,8 @@ public class RobotContainer {
   private Command intakeCommand;
 
   /* Shooter Commands */
-  private Command shootCommand;
+  private Command shootWithJuicerCommand;
+  private Command shootWithJuicerTossCommand;
   private Command shootNoAimCommand;
 
   /* Path follower */
@@ -195,14 +196,16 @@ public class RobotContainer {
     swerveBrakeCommand = superstructureSubsystem.swerveBrakeCmd();
     seedFieldCentricCommand = superstructureSubsystem.seedFieldCentricCmd();
     intakeCommand = superstructureSubsystem.setStateCmd(SuperState.INTAKE);
-    shootCommand = superstructureSubsystem.shootWithJuicerTossTestDelayCmd(1.0);
+    shootWithJuicerCommand = superstructureSubsystem.shootWithJuicerDelayCmd(1.0);
+    shootWithJuicerTossCommand = superstructureSubsystem.shootWithJuicerTossDelayCmd(1.0);
     shootNoAimCommand = superstructureSubsystem.shootNoAimWithJuicerDelayCmd();
     driveCommand = superstructureSubsystem.setStateCmd(SuperState.DRIVE);
   }
 
   private void registerNamedCommands() {
     NamedCommands.registerCommand("Intake", intakeCommand);
-    NamedCommands.registerCommand("Shoot", shootCommand);
+    NamedCommands.registerCommand("Shoot", shootWithJuicerCommand);
+    NamedCommands.registerCommand("ShootWithJuicerToss", shootWithJuicerTossCommand);
     NamedCommands.registerCommand("ShootNoAim", shootNoAimCommand);
     NamedCommands.registerCommand("Drive", driveCommand);
   }
@@ -526,19 +529,19 @@ public class RobotContainer {
         .whileTrue(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER_TOSS))
         .onFalse(superstructureSubsystem.intakeOverrideCmd(IntakeState.DEPLOYED));
 
-    // Test default shoot with Juicer delay command
-    testController.a()
-        .whileTrue(superstructureSubsystem.shootWithJuicerTestDelayCmd(1.5))
-        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
-    testController.b()
-        .whileTrue(superstructureSubsystem.shootWithJuicerTestDelayCmd(1.0))
-        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
-    testController.x()
-        .whileTrue(superstructureSubsystem.shootWithJuicerTossTestDelayCmd(1.5))
-        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
-    testController.y()
-        .whileTrue(superstructureSubsystem.shootWithJuicerTossTestDelayCmd(1.0))
-        .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
+    // // Test default shoot with Juicer delay command
+    // testController.a()
+    // .whileTrue(superstructureSubsystem.shootWithJuicerTestDelayCmd(1.5))
+    // .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
+    // testController.b()
+    // .whileTrue(superstructureSubsystem.shootWithJuicerTestDelayCmd(1.0))
+    // .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
+    // testController.x()
+    // .whileTrue(superstructureSubsystem.shootWithJuicerTossTestDelayCmd(1.5))
+    // .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
+    // testController.y()
+    // .whileTrue(superstructureSubsystem.shootWithJuicerTossTestDelayCmd(1.0))
+    // .onFalse(superstructureSubsystem.setStateCmd(SuperState.DRIVE));
   }
 
   public Command getAutonomousCommand() {
