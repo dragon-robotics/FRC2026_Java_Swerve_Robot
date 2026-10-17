@@ -106,7 +106,7 @@ public final class VisionConstants {
 
   /* VisionSubsystem state/reseed behavior */
 
-  /** Snapshots older than this are treated as stale by the dashboard accessor. */
+  /** Maximum accepted snapshot age for the dashboard and manual/automatic pose reseeding. */
   public static final double SNAPSHOT_MAX_AGE_SECONDS = 0.5;
 
   /** Limit how often disabled auto-reseed can reset pose. */

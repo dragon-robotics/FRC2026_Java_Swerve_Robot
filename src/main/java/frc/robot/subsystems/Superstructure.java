@@ -502,11 +502,10 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Operator-triggered vision reseed command. Unconditionally snaps swerve
-   * odometry to the best
-   * available multi-tag vision fix regardless of drift magnitude. Fires once on
-   * button press
-   * (InstantCommand). No-op if no vision fix is available.
+   * Operator-triggered vision reseed command. Snaps the full drivetrain pose to the latest
+   * accepted vision observation, provided it is no older than 0.5 seconds. Fires once on button
+   * press without waiting for a stable-pose streak. No-op if no fresh accepted pose is available;
+   * the vision subsystem logs the result.
    */
   public Command forceReseedFromVisionCmd() {
     return new InstantCommand(
