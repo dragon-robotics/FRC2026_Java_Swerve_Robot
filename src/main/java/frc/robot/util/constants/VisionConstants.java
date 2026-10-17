@@ -98,13 +98,6 @@ public final class VisionConstants {
       .parseDouble(System.getProperty("vision.maxAbsTiltDeg", "8.0"));
 
   /**
-   * Innovation gate on translation: reject vision poses farther than this from
-   * the predicted
-   * drivetrain pose at the same timestamp.
-   */
-  public static final double MAX_POSE_DELTA_METERS = 2.5;
-
-  /**
    * Same-loop vision observations within this XY distance (meters) are treated as
    * agreeing on the
    * robot pose for multi-camera consensus.
