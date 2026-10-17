@@ -11,6 +11,12 @@
           }
         },
         {
+          "type": "path",
+          "data": {
+            "pathName": "Right NZ Cross Bump 27"
+          }
+        },
+        {
           "type": "deadline",
           "data": {
             "commands": [
