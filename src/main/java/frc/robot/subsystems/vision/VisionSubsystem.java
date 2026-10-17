@@ -17,7 +17,6 @@ import static frc.robot.util.constants.VisionConstants.LINEAR_STDDEV_BASELINE;
 import static frc.robot.util.constants.VisionConstants.MAX_ABS_TILT_DEGREES_FOR_VISION;
 import static frc.robot.util.constants.VisionConstants.MAX_AMBIGUITY;
 import static frc.robot.util.constants.VisionConstants.MAX_AVG_TAG_DISTANCE_METERS;
-import static frc.robot.util.constants.VisionConstants.MAX_POSE_DELTA_METERS;
 import static frc.robot.util.constants.VisionConstants.MAX_Z_ERROR;
 import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_MAX_HEADING_DELTA_DEGREES;
 import static frc.robot.util.constants.VisionConstants.MULTITAG_INIT_MAX_TRANSLATION_DELTA_METERS;
@@ -228,14 +227,8 @@ public class VisionSubsystem extends SubsystemBase {
         swerve.samplePoseAt(observation.timestamp()).orElse(swerve.getState().Pose);
     double innovationMeters =
         visionPose.getTranslation().getDistance(referencePose.getTranslation());
-    boolean disabled = DriverStation.isDisabled();
-    if (innovationMeters > MAX_POSE_DELTA_METERS && !disabled) {
-      rejectObservation(cameraLogKey, observation, "POSE_DELTA=" + innovationMeters);
-      return Optional.empty();
-    }
-    if (innovationMeters > MAX_POSE_DELTA_METERS) {
-      DogLog.log(cameraLogKey + "/InnovationBypassedInDisabled", innovationMeters);
-    }
+    // Disagreement is diagnostic only: wheelspin can move odometry far from a valid tag pose.
+    // Keep quality filtering and camera consensus independent of the odometry estimate.
 
     return Optional.of(
         new ConsensusCandidate(
