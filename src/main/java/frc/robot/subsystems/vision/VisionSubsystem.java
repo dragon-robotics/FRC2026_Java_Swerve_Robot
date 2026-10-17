@@ -745,12 +745,21 @@ public class VisionSubsystem extends SubsystemBase {
    * @return true if a recent accepted pose was available
    */
   public boolean forceReseedFromVision() {
+    DogLog.log(
+        "Vision/ForceReseed/SnapshotAgeSeconds",
+        lastAcceptedPose == null ? -1.0 : Timer.getFPGATimestamp() - lastAcceptedTimestamp);
     Optional<AcceptedObservationSnapshot> snapshot = getLatestAcceptedObservationSnapshot();
     if (snapshot.isEmpty()) {
+      DogLog.log("Vision/ForceReseed/Success", false);
+      DogLog.log(
+          "Vision/ForceReseed/RejectedReason",
+          lastAcceptedPose == null ? "NO_ACCEPTED_POSE" : "STALE_ACCEPTED_POSE");
       return false;
     }
     swerve.resetPose(snapshot.get().pose());
     DogLog.log("Vision/ForceReseed", snapshot.get().pose());
+    DogLog.log("Vision/ForceReseed/Success", true);
+    DogLog.log("Vision/ForceReseed/RejectedReason", "");
     return true;
   }
 
