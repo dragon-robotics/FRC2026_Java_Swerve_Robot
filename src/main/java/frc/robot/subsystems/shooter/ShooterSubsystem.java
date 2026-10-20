@@ -69,7 +69,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private boolean kickerStopTimerRunning = false;
 
-  /** Holds the shooting motor commands briefly before switching to prep speeds. */
+  /** Holds the shooting motor commands and hood position briefly before switching to prep. */
   private final Timer prepTransitionTimer = new Timer();
 
   private boolean prepTransitionTimerRunning = false;
@@ -337,16 +337,16 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private void transitionToPrepFuel() {
     clearKickerStopTimer();
-    setHoodAngle(SHOOTER_HOOD_DEFAULT_SETTING);
 
     if (prepTransitionTimerRunning) {
       if (!prepTransitionTimer.hasElapsed(SHOOTER_PREP_TRANSITION_DELAY_SECONDS)) {
-        // Motor controllers retain their previous RPM/voltage commands during the hold.
+        // Motor controllers retain their previous RPM, voltage, and hood-position commands.
         return;
       }
       clearPrepTransitionTimer();
     }
 
+    setHoodAngle(SHOOTER_HOOD_DEFAULT_SETTING);
     prepShooter();
     prepKicker();
 
