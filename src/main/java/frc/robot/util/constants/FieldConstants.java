@@ -102,6 +102,15 @@ public final class FieldConstants {
         return classifyNearNeutralZone(isLeft, normalizedY);
       }
 
+      // Bump exclusions take priority over the extended shooting strips.
+      if (normalizedX >= farNeutralZoneBoundaryX()
+          && normalizedX <= opponentAllianceZoneBoundaryX()) {
+        FieldZones opponentZone = classifyOpponentZone(isLeft, normalizedY);
+        if (opponentZone == OPPONENT_LEFT_BUMP || opponentZone == OPPONENT_RIGHT_BUMP) {
+          return opponentZone;
+        }
+      }
+
       FieldZones neutralSpecialZone = classifyNeutralSpecialZone(normalizedX, normalizedY);
       if (neutralSpecialZone != null) {
         return neutralSpecialZone;
@@ -123,14 +132,9 @@ public final class FieldConstants {
         return null;
       }
 
-      if (isWithinNeutralPurgeXBand(normalizedX) && isInNeutralLeftPurgeBand(normalizedY)) {
-        return NEUTRAL_LEFT_PURGE;
-      }
+      // Former purge areas now use the same neutral shot as the rest of each strip.
       if (isInNeutralLeftShootBand(normalizedY)) {
         return NEUTRAL_LEFT_SHOOT;
-      }
-      if (isWithinNeutralPurgeXBand(normalizedX) && isInNeutralRightPurgeBand(normalizedY)) {
-        return NEUTRAL_RIGHT_PURGE;
       }
       if (isInNeutralRightShootBand(normalizedY)) {
         return NEUTRAL_RIGHT_SHOOT;
@@ -143,25 +147,9 @@ public final class FieldConstants {
       return normalizedX >= neutralShootBandMinX() && normalizedX <= neutralShootBandMaxX();
     }
 
-    private static boolean isWithinNeutralPurgeXBand(double normalizedX) {
-      return normalizedX >= neutralPurgeBandMinX() && normalizedX <= neutralPurgeBandMaxX();
-    }
-
-    private static boolean isInNeutralRightPurgeBand(double normalizedY) {
-      return normalizedY >= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_END
-          && normalizedY <= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_START
-              - SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS;
-    }
-
     private static boolean isInNeutralRightShootBand(double normalizedY) {
       return normalizedY >= LinesHorizontal.BLUE_RIGHT_TRENCH_OPEN_END
           && normalizedY <= LinesHorizontal.BLUE_RIGHT_BUMP_START;
-    }
-
-    private static boolean isInNeutralLeftPurgeBand(double normalizedY) {
-      return normalizedY >= LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_END
-          + SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS
-          && normalizedY <= LinesHorizontal.BLUE_LEFT_TRENCH_OPEN_START;
     }
 
     private static boolean isInNeutralLeftShootBand(double normalizedY) {
@@ -185,16 +173,8 @@ public final class FieldConstants {
     }
 
     private static double neutralShootBandMaxX() {
-      return LinesVertical.CENTER - SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS;
-    }
-
-    private static double neutralPurgeBandMinX() {
-      return LinesVertical.NEUTRAL_ZONE_NEAR
-          + SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS;
-    }
-
-    private static double neutralPurgeBandMaxX() {
-      return (LinesVertical.NEUTRAL_ZONE_NEAR + LinesVertical.CENTER) / 2.0;
+      // Continue through the opponent zone, leaving bumper clearance at the wall.
+      return FIELD_LENGTH - SwerveConstants.ROBOT_CENTER_TO_WIDTH_WITH_BUMPERS_METERS;
     }
 
     private static double farNeutralZoneBoundaryX() {
