@@ -119,10 +119,18 @@ public final class ShooterConstants {
     SHOOTER_RPM_MAP.put(Units.feetToMeters(6), 2550.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(7), 2625.0);
     SHOOTER_RPM_MAP.put(Units.feetToMeters(8), 2750.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(9), 2800.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(10), 2900.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(11), 2950.0);
-    SHOOTER_RPM_MAP.put(Units.feetToMeters(12), 3000.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(9), 2800.0 + 75);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(10), 2900.0 + 50);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(11), 2950.0 + 50);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(12), 3000.0 + 50);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(13), 3100.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(14), 3200.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(15), 3300.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(16), 3400.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(17), 3500.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(22), 4000.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(29), 4500.0);
+    SHOOTER_RPM_MAP.put(Units.feetToMeters(35), 5000.0);
 
     // Hood positions are mechanism rotations.
     SHOOTER_HOOD_MAP.put(Units.feetToMeters(5), 0.00);
@@ -133,6 +141,11 @@ public final class ShooterConstants {
     SHOOTER_HOOD_MAP.put(Units.feetToMeters(10), 0.75);
     SHOOTER_HOOD_MAP.put(Units.feetToMeters(11), 0.75);
     SHOOTER_HOOD_MAP.put(Units.feetToMeters(12), 1.25);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(13), 1.25);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(14), 2.0);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(15), 2.0);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(22), 2.75);
+    SHOOTER_HOOD_MAP.put(Units.feetToMeters(30), 3.0);
   }
 
   /**
