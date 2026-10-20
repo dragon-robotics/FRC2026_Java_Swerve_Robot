@@ -146,6 +146,39 @@ class ShooterSubsystemTest {
   }
 
   @Test
+  void shootingToPrepHoldsLastHoodCommandUntilDelayExpires() {
+    for (boolean autonomous : new boolean[] {false, true}) {
+      setAutonomousEnabled(autonomous);
+      FakeMotorIO lead = new FakeMotorIO();
+      FakeMotorIO hood = new FakeMotorIO();
+      lead.velocityRpm = 3000.0;
+      hood.position = 1.25;
+      ShooterSubsystem shooter =
+          new ShooterSubsystem(lead, new FakeMotorIO(), new FakeMotorIO(), hood);
+      shooter.setSetpoint(3000.0, 1.25);
+      shooter.setDesiredState(ShooterState.SHOOT);
+      shooter.periodic();
+      shooter.periodic();
+      assertSame(ShooterState.SHOOT, shooter.getCurrentState());
+
+      shooter.setDesiredState(ShooterState.PREPFUEL);
+      // Superstructure continues updating the selected setpoint during prep.
+      shooter.setSetpoint(3500.0, 2.0);
+      shooter.periodic();
+      assertEquals(1.25, hood.lastPosition, 1e-9);
+
+      SimHooks.stepTiming(0.49);
+      shooter.setDesiredState(ShooterState.PREPFUEL);
+      shooter.periodic();
+      assertEquals(1.25, hood.lastPosition, 1e-9);
+
+      SimHooks.stepTiming(0.02);
+      shooter.periodic();
+      assertEquals(ShooterConstants.SHOOTER_HOOD_DEFAULT_SETTING, hood.lastPosition, 1e-9);
+    }
+  }
+
+  @Test
   void autonomousShootingToPrepUsesAutoRpmAfterHold() {
     FakeMotorIO lead = new FakeMotorIO();
     FakeMotorIO kicker = new FakeMotorIO();
@@ -227,6 +260,7 @@ class ShooterSubsystemTest {
     private Voltage lastVoltage;
     private Double lastPercentage;
     private double velocityRpm;
+    private double position;
 
     @Override
     public void setMotorVoltage(Voltage voltage) {
@@ -255,6 +289,7 @@ class ShooterSubsystemTest {
     @Override
     public void updateInputs(MotorIOInputs inputs) {
       inputs.setMotorVelocity(velocityRpm / 60.0);
+      inputs.setMotorPosition(position);
     }
   }
 
