@@ -106,7 +106,7 @@ public class Superstructure extends SubsystemBase {
   private static final double MANUAL_BUMPER_UP_HOOD = 0.0;
   private static final double MANUAL_TRENCH_RPM = 2900.0;
   private static final double MANUAL_TRENCH_HOOD = 0.75;
-  private static final double NEUTRAL_ZONE_HOOD_LOCK = 2.0;
+  private static final double NEUTRAL_ZONE_HOOD_LOCK = 2.5;
 
   /** Pre-cached zone names avoid .name() heap allocation every cycle. */
   private static final String[] ZONE_NAMES;
@@ -502,9 +502,12 @@ public class Superstructure extends SubsystemBase {
   }
 
   /**
-   * Operator-triggered vision reseed command. Snaps the full drivetrain pose to the latest
-   * accepted vision observation, provided it is no older than 0.5 seconds. Fires once on button
-   * press without waiting for a stable-pose streak. No-op if no fresh accepted pose is available;
+   * Operator-triggered vision reseed command. Snaps the full drivetrain pose to
+   * the latest
+   * accepted vision observation, provided it is no older than 0.5 seconds. Fires
+   * once on button
+   * press without waiting for a stable-pose streak. No-op if no fresh accepted
+   * pose is available;
    * the vision subsystem logs the result.
    */
   public Command forceReseedFromVisionCmd() {
