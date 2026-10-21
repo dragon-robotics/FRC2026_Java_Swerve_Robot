@@ -27,7 +27,7 @@ public final class FieldConstants {
   public static final AprilTagFieldLayout APTAG_FIELD_LAYOUT = loadAprilTagLayout("2026-rebuilt-welded.json");
 
   public static final AprilTagFieldLayout APTAG_POSE_ESTIMATION_LAYOUT = loadAprilTagLayout(
-      "2026-rebuilt-welded-red.json");
+      "2026-rebuilt-welded-no-single.json");
 
   private static AprilTagFieldLayout loadAprilTagLayout(String layoutFileName) {
     Path defaultPath = Path.of(Filesystem.getDeployDirectory().getPath(), "apriltags", "welded", layoutFileName);
