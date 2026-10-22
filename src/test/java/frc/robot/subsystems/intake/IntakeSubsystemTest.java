@@ -91,7 +91,7 @@ class IntakeSubsystemTest {
     intake.periodic();
 
     assertNotNull(arm.lastTorqueCurrent);
-    assertEquals(-10.0, arm.lastTorqueCurrent.in(edu.wpi.first.units.Units.Amps), 1e-9);
+    assertEquals(-20.0, arm.lastTorqueCurrent.in(edu.wpi.first.units.Units.Amps), 1e-9);
   }
 
   @Test
@@ -160,7 +160,7 @@ class IntakeSubsystemTest {
 
     assertAll(
         () -> assertNotNull(rollerLead.lastTorqueCurrent),
-        () -> assertEquals(90.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertEquals(100.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
         () -> assertNotNull(rollerLead.lastMaxAbsDutyCycle),
         () -> assertEquals(0.5, rollerLead.lastMaxAbsDutyCycle, 1e-9),
         () -> assertNull(rollerLead.lastVoltage));
@@ -178,13 +178,13 @@ class IntakeSubsystemTest {
 
     assertAll(
         () -> assertNotNull(rollerLead.lastTorqueCurrent),
-        () -> assertEquals(90.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertEquals(100.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
         () -> assertNotNull(rollerLead.lastMaxAbsDutyCycle),
         () -> assertEquals(0.8, rollerLead.lastMaxAbsDutyCycle, 1e-9));
   }
 
   @Test
-  void runIntakeUsesNinetyPercentDutyCapDuringAutonomous() {
+  void runIntakeUsesNinetyFivePercentDutyCapDuringAutonomous() {
     FakeTorqueCurrentMotorIO rollerLead = new FakeTorqueCurrentMotorIO();
     IntakeSubsystem intake = new IntakeSubsystem(rollerLead, new FakeMotorIO(), new FakeMotorIO());
     setAutonomousEnabled(true);
@@ -192,19 +192,19 @@ class IntakeSubsystemTest {
     intake.runIntake();
 
     assertAll(
-        () -> assertEquals(90.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
-        () -> assertEquals(0.9, rollerLead.lastMaxAbsDutyCycle, 1e-9));
+        () -> assertEquals(100.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertEquals(0.95, rollerLead.lastMaxAbsDutyCycle, 1e-9));
   }
 
   @Test
-  void runIntakeUsesTenPointEightVoltFallbackDuringAutonomous() {
+  void runIntakeUsesElevenPointFourVoltFallbackDuringAutonomous() {
     FakeMotorIO rollerLead = new FakeMotorIO();
     IntakeSubsystem intake = new IntakeSubsystem(rollerLead, new FakeMotorIO(), new FakeMotorIO());
     setAutonomousEnabled(true);
 
     intake.runIntake();
 
-    assertEquals(10.8, rollerLead.lastVoltage.in(Volts), 1e-9);
+    assertEquals(11.4, rollerLead.lastVoltage.in(Volts), 1e-9);
   }
 
   @Test
@@ -221,7 +221,7 @@ class IntakeSubsystemTest {
 
     setAutonomousEnabled(true);
     intake.periodic();
-    assertEquals(0.9, rollerLead.lastMaxAbsDutyCycle, 1e-9);
+    assertEquals(0.95, rollerLead.lastMaxAbsDutyCycle, 1e-9);
 
     setAutonomousEnabled(false);
     intake.periodic();
@@ -240,7 +240,7 @@ class IntakeSubsystemTest {
 
     assertAll(
         () -> assertNotNull(rollerLead.lastTorqueCurrent),
-        () -> assertEquals(90.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
+        () -> assertEquals(100.0, rollerLead.lastTorqueCurrent.in(Amps), 1e-9),
         () -> assertEquals(0.8, rollerLead.lastMaxAbsDutyCycle, 1e-9),
         () -> assertNull(rollerFollow.lastTorqueCurrent),
         () -> assertNull(rollerFollow.lastMaxAbsDutyCycle));
