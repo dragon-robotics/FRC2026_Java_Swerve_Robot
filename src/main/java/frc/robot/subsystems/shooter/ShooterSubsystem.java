@@ -261,7 +261,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     if (desiredShooterState != currShooterState) {
       switch (desiredShooterState) {
-        case STOP, PREPFUEL, SHOOT -> currShooterState = ShooterState.TRANSITION;
+        case STOP, PREPFUEL, SHOOT, UNJAM -> currShooterState = ShooterState.TRANSITION;
         default -> {
         }
       }
@@ -277,6 +277,12 @@ public class ShooterSubsystem extends SubsystemBase {
       case STOP -> handleStopState();
       case PREPFUEL -> handlePrepFuelState();
       case SHOOT -> handleShootState();
+      case UNJAM -> {
+        clearKickerStopTimer();
+        prepShooter();
+        reverseKicker();
+        setHoodAngle(SHOOTER_HOOD_DEFAULT_SETTING);
+      }
       case TRANSITION -> handleTransitionState();
     }
   }
