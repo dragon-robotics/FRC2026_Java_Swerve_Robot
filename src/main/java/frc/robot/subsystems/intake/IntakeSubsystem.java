@@ -560,7 +560,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     if (phase == JuicerTossPhase.PRE_JUICE_TOSS_PT1) {
-      setIntakeArmSetpoint(INTAKE_ARM_JUICER_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
+      setIntakeArmSetpoint(INTAKE_ARM_JUICER_TOSS_PRE_POSITION, INTAKE_ARM_FAST_PID_SLOT);
     } else if (phase == JuicerTossPhase.PRE_JUICE_TOSS_PT2) {
       setIntakeArmSetpoint(INTAKE_ARM_DEPLOYED_POSITION, INTAKE_ARM_FAST_PID_SLOT);
     } else if (phase == JuicerTossPhase.PRE_JUICE_TOSS_PT3) {
