@@ -241,6 +241,98 @@ class ShooterSubsystemTest {
     assertEquals(6.0, kicker.lastVoltage.magnitude(), 1e-9);
   }
 
+  @Test
+  void unjamReversesKickerFromEachSteadyState() {
+    for (ShooterState initial : new ShooterState[] {
+        ShooterState.STOP, ShooterState.PREPFUEL, ShooterState.SHOOT}) {
+      FakeMotorIO lead = new FakeMotorIO();
+      FakeMotorIO kicker = new FakeMotorIO();
+      FakeMotorIO hood = new FakeMotorIO();
+      ShooterSubsystem shooter =
+          new ShooterSubsystem(lead, new FakeMotorIO(), kicker, hood);
+      lead.velocityRpm = ShooterConstants.SHOOTER_PREP_RPM;
+      shooter.setSetpoint(ShooterConstants.SHOOTER_PREP_RPM, 0.0);
+      shooter.setDesiredState(initial);
+      shooter.periodic();
+      assertSame(initial, shooter.getCurrentState());
+
+      shooter.setDesiredState(ShooterState.UNJAM);
+      shooter.periodic();
+
+      assertNotNull(kicker.lastVoltage, initial.toString());
+      assertEquals(-12.0, kicker.lastVoltage.magnitude(), 1e-9, initial.toString());
+      assertEquals(ShooterConstants.SHOOTER_PREP_RPM, lead.lastRpm, 1e-9);
+      assertEquals(0.0, hood.lastPosition, 1e-9);
+      assertSame(ShooterState.UNJAM, shooter.getCurrentState());
+    }
+  }
+
+  @Test
+  void steadyUnjamRefreshesOutputsAndUsesCurrentModePrepRpm() {
+    FakeMotorIO lead = new FakeMotorIO();
+    FakeMotorIO kicker = new FakeMotorIO();
+    FakeMotorIO hood = new FakeMotorIO();
+    ShooterSubsystem shooter =
+        new ShooterSubsystem(lead, new FakeMotorIO(), kicker, hood);
+    lead.velocityRpm = ShooterConstants.SHOOTER_PREP_RPM;
+    // Enter through an existing transition to test steady handling independently.
+    shooter.setDesiredState(ShooterState.PREPFUEL);
+    shooter.setDesiredState(ShooterState.UNJAM);
+    shooter.periodic();
+    assertSame(ShooterState.UNJAM, shooter.getCurrentState());
+
+    for (boolean autonomous : new boolean[] {false, true, false}) {
+      setAutonomousEnabled(autonomous);
+      lead.lastRpm = null;
+      kicker.lastVoltage = null;
+      hood.lastPosition = null;
+      shooter.setDesiredState(ShooterState.UNJAM);
+      shooter.periodic();
+      assertNotNull(lead.lastRpm);
+      assertNotNull(kicker.lastVoltage);
+      assertNotNull(hood.lastPosition);
+      assertEquals(autonomous ? 2700.0 : ShooterConstants.SHOOTER_PREP_RPM,
+          lead.lastRpm, 1e-9);
+      assertEquals(-12.0, kicker.lastVoltage.magnitude(), 1e-9);
+      assertEquals(0.0, hood.lastPosition, 1e-9);
+      assertSame(ShooterState.UNJAM, shooter.getCurrentState());
+    }
+  }
+
+  @Test
+  void leavingUnjamRestoresRequestedSteadyState() {
+    for (ShooterState next : new ShooterState[] {
+        ShooterState.STOP, ShooterState.PREPFUEL, ShooterState.SHOOT}) {
+      FakeMotorIO lead = new FakeMotorIO();
+      FakeMotorIO kicker = new FakeMotorIO();
+      ShooterSubsystem shooter =
+          new ShooterSubsystem(lead, new FakeMotorIO(), kicker, new FakeMotorIO());
+      lead.velocityRpm = ShooterConstants.SHOOTER_PREP_RPM;
+      shooter.setSetpoint(ShooterConstants.SHOOTER_PREP_RPM, 0.0);
+      shooter.setDesiredState(ShooterState.PREPFUEL);
+      shooter.setDesiredState(ShooterState.UNJAM);
+      shooter.periodic();
+      assertSame(ShooterState.UNJAM, shooter.getCurrentState());
+
+      shooter.setDesiredState(next);
+      shooter.periodic();
+      if (next == ShooterState.STOP) {
+        lead.velocityRpm = 0.0;
+      }
+      shooter.periodic();
+      assertSame(next, shooter.getCurrentState());
+      if (next == ShooterState.STOP) {
+        assertEquals(0.0, lead.lastVoltage.magnitude(), 1e-9);
+        SimHooks.stepTiming(ShooterConstants.SHOOTER_KICKER_STOP_DELAY_SECONDS + 0.01);
+        shooter.periodic();
+        assertEquals(0.0, kicker.lastVoltage.magnitude(), 1e-9);
+      } else {
+        assertEquals(next == ShooterState.SHOOT ? 12.0 : 6.0,
+            kicker.lastVoltage.magnitude(), 1e-9);
+      }
+    }
+  }
+
   private static ShooterSubsystem startShooting(FakeMotorIO lead, FakeMotorIO kicker) {
     lead.velocityRpm = 3000.0;
     ShooterSubsystem shooter =
