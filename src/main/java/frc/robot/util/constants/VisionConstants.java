@@ -37,7 +37,7 @@ public final class VisionConstants {
           Units.inchesToMeters(-11.152),
           Units.inchesToMeters(-9.5165),
           Units.inchesToMeters(20.930)),
-      new Rotation3d(0, Units.degreesToRadians(-15), 0));
+      new Rotation3d(0, Units.degreesToRadians(-12), 0));
 
   public static final Transform3d APTAG_POSE_EST_CAM_R_POS = new Transform3d(
       new Translation3d(
@@ -106,7 +106,10 @@ public final class VisionConstants {
 
   /* VisionSubsystem state/reseed behavior */
 
-  /** Maximum accepted snapshot age for the dashboard and manual/automatic pose reseeding. */
+  /**
+   * Maximum accepted snapshot age for the dashboard and manual/automatic pose
+   * reseeding.
+   */
   public static final double SNAPSHOT_MAX_AGE_SECONDS = 0.5;
 
   /** Limit how often disabled auto-reseed can reset pose. */
