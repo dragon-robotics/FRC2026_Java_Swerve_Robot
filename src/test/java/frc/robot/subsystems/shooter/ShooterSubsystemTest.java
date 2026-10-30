@@ -243,13 +243,12 @@ class ShooterSubsystemTest {
 
   @Test
   void unjamReversesKickerFromEachSteadyState() {
-    for (ShooterState initial : new ShooterState[] {
-        ShooterState.STOP, ShooterState.PREPFUEL, ShooterState.SHOOT}) {
+    for (ShooterState initial :
+        new ShooterState[] {ShooterState.STOP, ShooterState.PREPFUEL, ShooterState.SHOOT}) {
       FakeMotorIO lead = new FakeMotorIO();
       FakeMotorIO kicker = new FakeMotorIO();
       FakeMotorIO hood = new FakeMotorIO();
-      ShooterSubsystem shooter =
-          new ShooterSubsystem(lead, new FakeMotorIO(), kicker, hood);
+      ShooterSubsystem shooter = new ShooterSubsystem(lead, new FakeMotorIO(), kicker, hood);
       lead.velocityRpm = ShooterConstants.SHOOTER_PREP_RPM;
       shooter.setSetpoint(ShooterConstants.SHOOTER_PREP_RPM, 0.0);
       shooter.setDesiredState(initial);
@@ -272,8 +271,7 @@ class ShooterSubsystemTest {
     FakeMotorIO lead = new FakeMotorIO();
     FakeMotorIO kicker = new FakeMotorIO();
     FakeMotorIO hood = new FakeMotorIO();
-    ShooterSubsystem shooter =
-        new ShooterSubsystem(lead, new FakeMotorIO(), kicker, hood);
+    ShooterSubsystem shooter = new ShooterSubsystem(lead, new FakeMotorIO(), kicker, hood);
     lead.velocityRpm = ShooterConstants.SHOOTER_PREP_RPM;
     // Enter through an existing transition to test steady handling independently.
     shooter.setDesiredState(ShooterState.PREPFUEL);
@@ -291,8 +289,7 @@ class ShooterSubsystemTest {
       assertNotNull(lead.lastRpm);
       assertNotNull(kicker.lastVoltage);
       assertNotNull(hood.lastPosition);
-      assertEquals(autonomous ? 2700.0 : ShooterConstants.SHOOTER_PREP_RPM,
-          lead.lastRpm, 1e-9);
+      assertEquals(autonomous ? 2700.0 : ShooterConstants.SHOOTER_PREP_RPM, lead.lastRpm, 1e-9);
       assertEquals(-12.0, kicker.lastVoltage.magnitude(), 1e-9);
       assertEquals(0.0, hood.lastPosition, 1e-9);
       assertSame(ShooterState.UNJAM, shooter.getCurrentState());
@@ -301,8 +298,8 @@ class ShooterSubsystemTest {
 
   @Test
   void leavingUnjamRestoresRequestedSteadyState() {
-    for (ShooterState next : new ShooterState[] {
-        ShooterState.STOP, ShooterState.PREPFUEL, ShooterState.SHOOT}) {
+    for (ShooterState next :
+        new ShooterState[] {ShooterState.STOP, ShooterState.PREPFUEL, ShooterState.SHOOT}) {
       FakeMotorIO lead = new FakeMotorIO();
       FakeMotorIO kicker = new FakeMotorIO();
       ShooterSubsystem shooter =
@@ -327,8 +324,7 @@ class ShooterSubsystemTest {
         shooter.periodic();
         assertEquals(0.0, kicker.lastVoltage.magnitude(), 1e-9);
       } else {
-        assertEquals(next == ShooterState.SHOOT ? 12.0 : 6.0,
-            kicker.lastVoltage.magnitude(), 1e-9);
+        assertEquals(next == ShooterState.SHOOT ? 12.0 : 6.0, kicker.lastVoltage.magnitude(), 1e-9);
       }
     }
   }

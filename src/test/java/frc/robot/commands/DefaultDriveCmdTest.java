@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
-import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import java.util.Optional;
@@ -40,14 +39,10 @@ class DefaultDriveCmdTest {
     assertAll(
         () ->
             assertEquals(
-                TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.5,
-                request.VelocityX,
-                1e-9),
+                TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.5, request.VelocityX, 1e-9),
         () ->
             assertEquals(
-                -TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.5,
-                request.VelocityY,
-                1e-9),
+                -TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.5, request.VelocityY, 1e-9),
         () -> assertEquals(Math.PI, request.RotationalRate, 1e-9));
   }
 

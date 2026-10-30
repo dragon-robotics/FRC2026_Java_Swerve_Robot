@@ -86,9 +86,7 @@ class FieldZonesTest {
     Pose2d pose =
         alliance == Alliance.Red
             ? new Pose2d(
-                FieldConstants.FIELD_LENGTH - x,
-                FieldConstants.FIELD_WIDTH - y,
-                Rotation2d.kZero)
+                FieldConstants.FIELD_LENGTH - x, FieldConstants.FIELD_WIDTH - y, Rotation2d.kZero)
             : new Pose2d(x, y, Rotation2d.kZero);
     assertEquals(expected, FieldZones.fromPose(pose, alliance), alliance + " at " + x + ", " + y);
   }

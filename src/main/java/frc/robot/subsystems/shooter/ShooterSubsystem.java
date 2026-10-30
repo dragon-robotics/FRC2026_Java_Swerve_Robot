@@ -29,11 +29,8 @@ import frc.robot.util.constants.ShooterConstants.ShooterSetpoint;
 /**
  * Controls the shooter flywheel, kicker, and adjustable hood.
  *
- * <p>
- * Flywheel commands are RPM or volts depending on the method name. Hood
- * setpoints are mechanism
- * rotations from the hood encoder. The kicker keeps feeding briefly when
- * stopping so fuel clears
+ * <p>Flywheel commands are RPM or volts depending on the method name. Hood setpoints are mechanism
+ * rotations from the hood encoder. The kicker keeps feeding briefly when stopping so fuel clears
  * the shooter path.
  */
 public class ShooterSubsystem extends SubsystemBase {
@@ -61,10 +58,7 @@ public class ShooterSubsystem extends SubsystemBase {
   protected double targetRPM;
   protected double hoodAngle;
 
-  /**
-   * Keeps the kicker running after STOP is requested so already-fed fuel clears
-   * the shooter.
-   */
+  /** Keeps the kicker running after STOP is requested so already-fed fuel clears the shooter. */
   private final Timer kickerStopTimer = new Timer();
 
   private boolean kickerStopTimerRunning = false;
@@ -77,11 +71,10 @@ public class ShooterSubsystem extends SubsystemBase {
   /**
    * Creates a new shooter subsystem.
    *
-   * @param shooterLeadIO   lead flywheel motor IO; receives flywheel commands
+   * @param shooterLeadIO lead flywheel motor IO; receives flywheel commands
    * @param shooterFollowIO follower flywheel motor IO; updated for telemetry
    * @param shooterKickerIO kicker motor IO; feeds fuel into the flywheel
-   * @param shooterHoodIO   hood motor IO; controls hood position in mechanism
-   *                        rotations
+   * @param shooterHoodIO hood motor IO; controls hood position in mechanism rotations
    */
   public ShooterSubsystem(
       MotorIO shooterLeadIO,
@@ -110,10 +103,7 @@ public class ShooterSubsystem extends SubsystemBase {
     return this.currShooterState;
   }
 
-  /**
-   * Returns the requested shooter state. Name kept for compatibility with
-   * existing callers.
-   */
+  /** Returns the requested shooter state. Name kept for compatibility with existing callers. */
   public ShooterState getShooterState() {
     return this.desiredShooterState;
   }
@@ -208,7 +198,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * Directly selects the shooter target.
    *
    * @param shooterRPM flywheel target in RPM
-   * @param hoodAngle  hood target in mechanism rotations
+   * @param hoodAngle hood target in mechanism rotations
    */
   public void setSetpoint(double shooterRPM, double hoodAngle) {
     targetRPM = shooterRPM;
@@ -220,16 +210,12 @@ public class ShooterSubsystem extends SubsystemBase {
     return shooterLeadInputs.getMotorVelocity() * 60.0;
   }
 
-  /**
-   * Returns true when the flywheel is moving fast enough to be considered active.
-   */
+  /** Returns true when the flywheel is moving fast enough to be considered active. */
   public boolean isShooting() {
     return getShooterSpeed() > SHOOTER_READY_TOLERANCE_RPM;
   }
 
-  /**
-   * Returns true when the flywheel speed is within the stopped tolerance in RPM.
-   */
+  /** Returns true when the flywheel speed is within the stopped tolerance in RPM. */
   public boolean isShooterStopped() {
     return Math.abs(getShooterSpeed()) < SHOOTER_STOPPED_TOLERANCE_RPM;
   }
@@ -249,9 +235,7 @@ public class ShooterSubsystem extends SubsystemBase {
   /**
    * Requests a shooter state.
    *
-   * <p>
-   * Closed-loop transitions run through {@link ShooterState#TRANSITION} before
-   * the requested
+   * <p>Closed-loop transitions run through {@link ShooterState#TRANSITION} before the requested
    * steady state is reached.
    */
   public void setDesiredState(ShooterState state) {
@@ -267,16 +251,12 @@ public class ShooterSubsystem extends SubsystemBase {
     if (desiredShooterState != currShooterState) {
       switch (desiredShooterState) {
         case STOP, PREPFUEL, SHOOT, UNJAM -> currShooterState = ShooterState.TRANSITION;
-        default -> {
-        }
+        default -> {}
       }
     }
   }
 
-  /**
-   * Advances the shooter state machine and sends hardware commands for the
-   * current state.
-   */
+  /** Advances the shooter state machine and sends hardware commands for the current state. */
   public void handleStateTransition() {
     switch (currShooterState) {
       case STOP -> handleStopState();
@@ -325,8 +305,7 @@ public class ShooterSubsystem extends SubsystemBase {
       case PREPFUEL -> transitionToPrepFuel();
       case SHOOT -> transitionToShoot();
       case UNJAM -> transitionUnjam();
-      default -> {
-      }
+      default -> {}
     }
   }
 
