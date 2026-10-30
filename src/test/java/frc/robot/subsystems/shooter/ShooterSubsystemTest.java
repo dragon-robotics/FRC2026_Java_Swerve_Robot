@@ -90,6 +90,7 @@ class ShooterSubsystemTest {
     shooter.periodic();
     assertEquals(2700.0, lead.lastRpm, 1e-9);
     assertNotNull(kicker.lastVoltage);
+    assertEquals(0.0, kicker.lastVoltage.magnitude(), 1e-9);
     assertSame(ShooterState.TRANSITION, shooter.getCurrentState());
 
     lead.velocityRpm = 2700.0;
@@ -100,18 +101,23 @@ class ShooterSubsystemTest {
   @Test
   void teleopPrepUsesConfiguredRpmAndTeleopReadiness() {
     FakeMotorIO lead = new FakeMotorIO();
+    FakeMotorIO kicker = new FakeMotorIO();
     lead.velocityRpm = 2700.0;
     ShooterSubsystem shooter =
-        new ShooterSubsystem(lead, new FakeMotorIO(), new FakeMotorIO(), new FakeMotorIO());
+        new ShooterSubsystem(lead, new FakeMotorIO(), kicker, new FakeMotorIO());
     shooter.setDesiredState(ShooterState.PREPFUEL);
 
     shooter.periodic();
-    assertEquals(ShooterConstants.SHOOTER_PREP_RPM, lead.lastRpm, 1e-9);
+    assertEquals(0.0, lead.lastRpm, 1e-9);
+    assertEquals(0.0, kicker.lastVoltage.magnitude(), 1e-9);
     assertSame(ShooterState.TRANSITION, shooter.getCurrentState());
 
     lead.velocityRpm = ShooterConstants.SHOOTER_PREP_RPM;
     shooter.periodic();
     assertSame(ShooterState.PREPFUEL, shooter.getCurrentState());
+    shooter.periodic();
+    assertEquals(0.0, lead.lastRpm, 1e-9);
+    assertEquals(0.0, kicker.lastVoltage.magnitude(), 1e-9);
   }
 
   @Test
@@ -137,7 +143,7 @@ class ShooterSubsystemTest {
     shooter.setDesiredState(ShooterState.PREPFUEL);
     shooter.periodic();
     assertEquals(ShooterConstants.SHOOTER_PREP_RPM, lead.lastRpm, 1e-9);
-    assertEquals(6.0, kicker.lastVoltage.magnitude(), 1e-9);
+    assertEquals(0.0, kicker.lastVoltage.magnitude(), 1e-9);
     assertSame(ShooterState.TRANSITION, shooter.getCurrentState());
 
     lead.velocityRpm = ShooterConstants.SHOOTER_PREP_RPM;
@@ -193,7 +199,7 @@ class ShooterSubsystemTest {
     SimHooks.stepTiming(0.51);
     shooter.periodic();
     assertEquals(ShooterConstants.SHOOTER_AUTO_PREP_RPM, lead.lastRpm, 1e-9);
-    assertEquals(6.0, kicker.lastVoltage.magnitude(), 1e-9);
+    assertEquals(0.0, kicker.lastVoltage.magnitude(), 1e-9);
     assertSame(ShooterState.PREPFUEL, shooter.getCurrentState());
   }
 
@@ -214,7 +220,7 @@ class ShooterSubsystemTest {
     shooter.setDesiredState(ShooterState.PREPFUEL);
     shooter.periodic();
     assertEquals(ShooterConstants.SHOOTER_PREP_RPM, lead.lastRpm, 1e-9);
-    assertEquals(6.0, kicker.lastVoltage.magnitude(), 1e-9);
+    assertEquals(0.0, kicker.lastVoltage.magnitude(), 1e-9);
   }
 
   @Test
@@ -238,7 +244,7 @@ class ShooterSubsystemTest {
     SimHooks.stepTiming(0.21);
     shooter.periodic();
     assertEquals(ShooterConstants.SHOOTER_PREP_RPM, lead.lastRpm, 1e-9);
-    assertEquals(6.0, kicker.lastVoltage.magnitude(), 1e-9);
+    assertEquals(0.0, kicker.lastVoltage.magnitude(), 1e-9);
   }
 
   @Test
@@ -324,7 +330,7 @@ class ShooterSubsystemTest {
         shooter.periodic();
         assertEquals(0.0, kicker.lastVoltage.magnitude(), 1e-9);
       } else {
-        assertEquals(next == ShooterState.SHOOT ? 12.0 : 6.0, kicker.lastVoltage.magnitude(), 1e-9);
+        assertEquals(next == ShooterState.SHOOT ? 12.0 : 0.0, kicker.lastVoltage.magnitude(), 1e-9);
       }
     }
   }

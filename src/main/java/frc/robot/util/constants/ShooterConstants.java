@@ -64,7 +64,8 @@ public final class ShooterConstants {
   public static final double SHOOTER_V = 0.015;
   public static final double SHOOTER_DUTY_CYCLE = 1.0;
   public static final double SHOOTER_RPM = 2500.0;
-  public static final double SHOOTER_PREP_RPM = 2475.0;
+  // public static final double SHOOTER_PREP_RPM = 2475.0;
+  public static final double SHOOTER_PREP_RPM = 0.0;
   public static final double SHOOTER_AUTO_PREP_RPM = 2700.0;
   public static final double SHOOTER_READY_TOLERANCE_RPM = 60.0;
   public static final double SHOOTER_STOPPED_TOLERANCE_RPM = 0.5;
@@ -77,7 +78,8 @@ public final class ShooterConstants {
   public static final Current SHOOTER_KICKER_SUPPLY_CURRENT_LOWER_LIMIT = Amps.of(20.0);
   public static final Time SHOOTER_KICKER_SUPPLY_CURRENT_LOWER_TIME = Seconds.of(0.25);
   public static final double SHOOTER_KICKER_DUTY_CYCLE = 1.0;
-  public static final Voltage SHOOTER_KICKER_PREP_VOLTAGE = Volts.of(6.0);
+  // public static final Voltage SHOOTER_KICKER_PREP_VOLTAGE = Volts.of(6.0);
+  public static final Voltage SHOOTER_KICKER_PREP_VOLTAGE = Volts.of(0.0);
   public static final Voltage SHOOTER_KICKER_REVERSE_VOLTAGE = Volts.of(-12.0);
   public static final double SHOOTER_KICKER_STOP_PERCENT_OUTPUT = 0.5;
   public static final double SHOOTER_KICKER_STOP_DELAY_SECONDS = 1.0;
