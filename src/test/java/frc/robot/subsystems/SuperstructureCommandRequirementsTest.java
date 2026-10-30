@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import dev.doglog.DogLog;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -131,6 +133,38 @@ class SuperstructureCommandRequirementsTest {
       shoot.end(true);
     } finally {
       container.superstructureSubsystem.setShootMode(ShootMode.MANUAL_BUMPER_UP);
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "DEFAULT_SHOOT_WITH_AIM, DefaultShootWithAim",
+    "MANUAL_BUMPER_UP, ManualBumperUp",
+    "MANUAL_TRENCH, ManualTrench",
+    "MANUAL_BUMPER_UP_FAR, ManualBumperUpFar",
+    "MANUAL_TRENCH_FAR, ManualTrenchFar",
+    "MANUAL_BUMPER_UP_FULL_POWER, ManualBumperUpFullPower",
+    "MANUAL_TRENCH_FULL_POWER, ManualTrenchFullPower"
+  })
+  void selectedModePublishesTrueToElasticTopic(String mode, String topic) {
+    Assumptions.assumeTrue(halReady && container != null, "HAL/simulation unavailable");
+    var originalOptions = DogLog.getOptions();
+    try {
+      DogLog.setOptions(originalOptions.withUseLogThread(false));
+      container.superstructureSubsystem.setShootMode(ShootMode.valueOf(mode));
+      container.superstructureSubsystem.periodic();
+      var entry =
+          NetworkTableInstance.getDefault().getEntry("/Robot/Superstructure/ShootMode/" + topic);
+      assertTrue(entry.exists(), "Missing Elastic topic: " + entry.getName());
+      assertTrue(entry.getBoolean(false), "Selected mode indicator must be true");
+
+      container.superstructureSubsystem.setShootMode(
+          mode.equals("MANUAL_BUMPER_UP") ? ShootMode.MANUAL_TRENCH : ShootMode.MANUAL_BUMPER_UP);
+      container.superstructureSubsystem.periodic();
+      assertFalse(entry.getBoolean(true), "Deselected mode indicator must be false");
+    } finally {
+      container.superstructureSubsystem.setShootMode(ShootMode.MANUAL_BUMPER_UP);
+      DogLog.setOptions(originalOptions);
     }
   }
 
