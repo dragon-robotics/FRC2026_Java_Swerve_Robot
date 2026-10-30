@@ -35,7 +35,7 @@
                 }
               },
               {
-                "title": "Manual Bumper Up (X + A)",
+                "title": "Manual Bumper Up (LB + RB)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
@@ -52,7 +52,7 @@
                 }
               },
               {
-                "title": "Manual Trench (A + B)",
+                "title": "Manual Trench (A + Y)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
@@ -60,6 +60,74 @@
                 "type": "Boolean Box",
                 "properties": {
                   "topic": "/Robot/Superstructure/ShootMode/ManualTrench",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Bumper Up Far (A + B)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualBumperUpFar",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Trench Far (X + B)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualTrenchFar",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Bumper Up Full Power (A + X)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualBumperUpFullPower",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Trench Full Power (X + Y)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualTrenchFullPower",
                   "period": 0.06,
                   "data_type": "boolean",
                   "true_color": 4283215696,
@@ -270,7 +338,7 @@
                 }
               },
               {
-                "title": "Manual Bumper Up (X + A)",
+                "title": "Manual Bumper Up (LB + RB)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
@@ -287,7 +355,7 @@
                 }
               },
               {
-                "title": "Manual Trench (A + B)",
+                "title": "Manual Trench (A + Y)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
@@ -295,6 +363,74 @@
                 "type": "Boolean Box",
                 "properties": {
                   "topic": "/Robot/Superstructure/ShootMode/ManualTrench",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Bumper Up Far (A + B)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualBumperUpFar",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Trench Far (X + B)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualTrenchFar",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Bumper Up Full Power (A + X)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualBumperUpFullPower",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Trench Full Power (X + Y)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualTrenchFullPower",
                   "period": 0.06,
                   "data_type": "boolean",
                   "true_color": 4283215696,
@@ -492,7 +628,7 @@
                 }
               },
               {
-                "title": "Manual Bumper Up (X + A)",
+                "title": "Manual Bumper Up (LB + RB)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
@@ -509,7 +645,7 @@
                 }
               },
               {
-                "title": "Manual Trench (A + B)",
+                "title": "Manual Trench (A + Y)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
@@ -517,6 +653,74 @@
                 "type": "Boolean Box",
                 "properties": {
                   "topic": "/Robot/Superstructure/ShootMode/ManualTrench",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Bumper Up Far (A + B)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualBumperUpFar",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Trench Far (X + B)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualTrenchFar",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Bumper Up Full Power (A + X)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualBumperUpFullPower",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Trench Full Power (X + Y)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualTrenchFullPower",
                   "period": 0.06,
                   "data_type": "boolean",
                   "true_color": 4283215696,
@@ -727,7 +931,7 @@
                 }
               },
               {
-                "title": "Manual Bumper Up (X + A)",
+                "title": "Manual Bumper Up (LB + RB)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
@@ -744,7 +948,7 @@
                 }
               },
               {
-                "title": "Manual Trench (A + B)",
+                "title": "Manual Trench (A + Y)",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
@@ -752,6 +956,74 @@
                 "type": "Boolean Box",
                 "properties": {
                   "topic": "/Robot/Superstructure/ShootMode/ManualTrench",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Bumper Up Far (A + B)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualBumperUpFar",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Trench Far (X + B)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualTrenchFar",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Bumper Up Full Power (A + X)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualBumperUpFullPower",
+                  "period": 0.06,
+                  "data_type": "boolean",
+                  "true_color": 4283215696,
+                  "false_color": 4294198070,
+                  "true_icon": "None",
+                  "false_icon": "None"
+                }
+              },
+              {
+                "title": "Manual Trench Full Power (X + Y)",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Boolean Box",
+                "properties": {
+                  "topic": "/Robot/Superstructure/ShootMode/ManualTrenchFullPower",
                   "period": 0.06,
                   "data_type": "boolean",
                   "true_color": 4283215696,
