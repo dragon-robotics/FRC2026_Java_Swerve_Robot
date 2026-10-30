@@ -13,11 +13,16 @@ import edu.wpi.first.wpilibj.simulation.DriverStationSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.RobotContainer;
+import frc.robot.subsystems.Superstructure.ShootMode;
 import frc.robot.subsystems.Superstructure.SuperState;
+import frc.robot.subsystems.intake.IntakeSubsystem.IntakeState;
+import frc.robot.util.constants.OperatorConstants;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class SuperstructureCommandRequirementsTest {
 
@@ -104,6 +109,64 @@ class SuperstructureCommandRequirementsTest {
     assertTrue(shootNoAimWithJuicer.getRequirements().contains(container.hopperSubsystem));
     assertTrue(shootNoAimWithJuicer.getRequirements().contains(container.shooterSubsystem));
     assertFalse(shootNoAimWithJuicer.getRequirements().contains(container.swerveSubsystem));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "MANUAL_BUMPER_UP_FAR, 2800.0, 0.0",
+    "MANUAL_TRENCH_FAR, 3500.0, 0.75",
+    "MANUAL_BUMPER_UP_FULL_POWER, 5800.0, 0.0",
+    "MANUAL_TRENCH_FULL_POWER, 5800.0, 0.75"
+  })
+  void manualModesCommandRequestedRpmAndExistingHood(String mode, double rpm, double hood) {
+    Assumptions.assumeTrue(halReady && container != null, "HAL/simulation unavailable");
+    try {
+      container.superstructureSubsystem.setShootMode(ShootMode.valueOf(mode));
+      Command shoot = container.superstructureSubsystem.selectedShootModeCmd();
+      shoot.initialize();
+      shoot.execute();
+      assertAll(
+          () -> assertEquals(rpm, container.shooterSubsystem.getTargetRPM(), 1e-9),
+          () -> assertEquals(hood, container.shooterSubsystem.getTargetHoodAngle(), 1e-9));
+      shoot.end(true);
+    } finally {
+      container.superstructureSubsystem.setShootMode(ShootMode.MANUAL_BUMPER_UP);
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "3, MANUAL_BUMPER_UP_FAR",
+    "6, MANUAL_TRENCH_FAR",
+    "5, MANUAL_BUMPER_UP_FULL_POWER",
+    "12, MANUAL_TRENCH_FULL_POWER"
+  })
+  void operatorCombosToggleManualModesWithoutJuicer(int buttons, String mode) {
+    Assumptions.assumeTrue(halReady && container != null, "HAL/simulation unavailable");
+    CommandScheduler scheduler = CommandScheduler.getInstance();
+    int port = OperatorConstants.OPERATOR_PORT;
+    DriverStationSim.setJoystickButtonCount(port, 10);
+    try {
+      container.superstructureSubsystem.setShootMode(ShootMode.DEFAULT_SHOOT_WITH_AIM);
+      for (int press = 0; press < 2; press++) {
+        DriverStationSim.setJoystickButtons(port, 0);
+        DriverStationSim.notifyNewData();
+        scheduler.run();
+        DriverStationSim.setJoystickButtons(port, buttons);
+        DriverStationSim.notifyNewData();
+        scheduler.run();
+        assertEquals(
+            press == 0 ? mode : ShootMode.DEFAULT_SHOOT_WITH_AIM.name(),
+            container.superstructureSubsystem.getShootMode().name());
+        assertFalse(container.intakeSubsystem.getDesiredState() == IntakeState.JUICER);
+      }
+    } finally {
+      DriverStationSim.setJoystickButtons(port, 0);
+      DriverStationSim.notifyNewData();
+      scheduler.run();
+      scheduler.cancelAll();
+      container.superstructureSubsystem.setShootMode(ShootMode.MANUAL_BUMPER_UP);
+    }
   }
 
   private static RobotContainer createContainerInAllowedShootZone() {

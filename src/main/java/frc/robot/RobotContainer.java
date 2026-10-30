@@ -489,6 +489,7 @@ public class RobotContainer {
     operatorController
         .b()
         .and(operatorController.a().negate())
+        .and(operatorController.x().negate())
         .whileTrue(superstructureSubsystem.intakeOverrideCmd(IntakeState.JUICER))
         .onFalse(superstructureSubsystem.intakeOverrideCmd(IntakeState.DEPLOYED));
 
@@ -501,7 +502,37 @@ public class RobotContainer {
     operatorController
         .y()
         .and(operatorController.a())
+        .and(operatorController.b().negate())
+        .and(operatorController.x().negate())
         .onTrue(superstructureSubsystem.toggleShootModeCmd(ShootMode.MANUAL_TRENCH));
+
+    operatorController
+        .a()
+        .and(operatorController.b())
+        .and(operatorController.x().negate())
+        .and(operatorController.y().negate())
+        .onTrue(superstructureSubsystem.toggleShootModeCmd(ShootMode.MANUAL_BUMPER_UP_FAR));
+
+    operatorController
+        .x()
+        .and(operatorController.b())
+        .and(operatorController.a().negate())
+        .and(operatorController.y().negate())
+        .onTrue(superstructureSubsystem.toggleShootModeCmd(ShootMode.MANUAL_TRENCH_FAR));
+
+    operatorController
+        .a()
+        .and(operatorController.x())
+        .and(operatorController.b().negate())
+        .and(operatorController.y().negate())
+        .onTrue(superstructureSubsystem.toggleShootModeCmd(ShootMode.MANUAL_BUMPER_UP_FULL_POWER));
+
+    operatorController
+        .x()
+        .and(operatorController.y())
+        .and(operatorController.a().negate())
+        .and(operatorController.b().negate())
+        .onTrue(superstructureSubsystem.toggleShootModeCmd(ShootMode.MANUAL_TRENCH_FULL_POWER));
 
     operatorController
         .rightBumper()

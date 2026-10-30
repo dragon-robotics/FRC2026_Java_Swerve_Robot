@@ -61,7 +61,11 @@ public class Superstructure extends SubsystemBase {
   public enum ShootMode {
     DEFAULT_SHOOT_WITH_AIM,
     MANUAL_BUMPER_UP,
-    MANUAL_TRENCH
+    MANUAL_TRENCH,
+    MANUAL_BUMPER_UP_FAR,
+    MANUAL_TRENCH_FAR,
+    MANUAL_BUMPER_UP_FULL_POWER,
+    MANUAL_TRENCH_FULL_POWER
   }
 
   /* Subsystem references */
@@ -99,6 +103,9 @@ public class Superstructure extends SubsystemBase {
   private static final double MANUAL_BUMPER_UP_HOOD = 0.0;
   private static final double MANUAL_TRENCH_RPM = 2900.0;
   private static final double MANUAL_TRENCH_HOOD = 0.75;
+  private static final double MANUAL_BUMPER_UP_FAR_RPM = 2800.0;
+  private static final double MANUAL_TRENCH_FAR_RPM = 3500.0;
+  private static final double MANUAL_FULL_POWER_RPM = 5800.0;
   private static final double NEUTRAL_ZONE_HOOD_LOCK = 2.5;
 
   /** Pre-cached zone names avoid .name() heap allocation every cycle. */
@@ -409,6 +416,18 @@ public class Superstructure extends SubsystemBase {
           .withName("SuperState(SHOOT->MANUAL_BUMPER_UP)");
       case MANUAL_TRENCH -> createManualShootStateCommand(MANUAL_TRENCH_RPM, MANUAL_TRENCH_HOOD)
           .withName("SuperState(SHOOT->MANUAL_TRENCH)");
+      case MANUAL_BUMPER_UP_FAR -> createManualShootStateCommand(
+              MANUAL_BUMPER_UP_FAR_RPM, MANUAL_BUMPER_UP_HOOD)
+          .withName("SuperState(SHOOT->MANUAL_BUMPER_UP_FAR)");
+      case MANUAL_TRENCH_FAR -> createManualShootStateCommand(
+              MANUAL_TRENCH_FAR_RPM, MANUAL_TRENCH_HOOD)
+          .withName("SuperState(SHOOT->MANUAL_TRENCH_FAR)");
+      case MANUAL_BUMPER_UP_FULL_POWER -> createManualShootStateCommand(
+              MANUAL_FULL_POWER_RPM, MANUAL_BUMPER_UP_HOOD)
+          .withName("SuperState(SHOOT->MANUAL_BUMPER_UP_FULL_POWER)");
+      case MANUAL_TRENCH_FULL_POWER -> createManualShootStateCommand(
+              MANUAL_FULL_POWER_RPM, MANUAL_TRENCH_HOOD)
+          .withName("SuperState(SHOOT->MANUAL_TRENCH_FULL_POWER)");
     };
   }
 
@@ -843,5 +862,15 @@ public class Superstructure extends SubsystemBase {
         "Superstructure/ShootMode/ManualBumperUp", shootMode == ShootMode.MANUAL_BUMPER_UP);
     DogLog.forceNt.log(
         "Superstructure/ShootMode/ManualTrench", shootMode == ShootMode.MANUAL_TRENCH);
+    DogLog.forceNt.log(
+        "Superstructure/ShootMode/ManualBumperUpFar", shootMode == ShootMode.MANUAL_BUMPER_UP_FAR);
+    DogLog.forceNt.log(
+        "Superstructure/ShootMode/ManualTrenchFar", shootMode == ShootMode.MANUAL_TRENCH_FAR);
+    DogLog.forceNt.log(
+        "Superstructure/ShootMode/ManualBumperUpFullPower",
+        shootMode == ShootMode.MANUAL_BUMPER_UP_FULL_POWER);
+    DogLog.forceNt.log(
+        "Superstructure/ShootMode/ManualTrenchFullPower",
+        shootMode == ShootMode.MANUAL_TRENCH_FULL_POWER);
   }
 }
